@@ -33,8 +33,8 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:#F8FAFC; -webkit-t
 }
 #user-map { height:200px; min-height:200px; border:none; box-shadow:inset 0 2px 4px rgba(0,0,0,.05); }
 .video-wrap {
-  position: relative; width: 100%; padding-bottom: 133%;
-  background: #000; border-radius: 20px; overflow: hidden;
+  position: relative; width: 100%; max-width: 320px; height: 400px;
+  background: #000; border-radius: 20px; overflow: hidden; margin: 0 auto;
 }
 .video-wrap video {
   position: absolute; top:0; left:0; width:100%; height:100%;
@@ -167,7 +167,6 @@ input, select { font-size:16px !important; }
 .kiosk-time {
   font-size: 16px; color: #64748b; font-weight: 700; margin-top: 14px;
 }
-
 .kiosk-avatar-fallback {
   width:140px; height:140px; border-radius:50%;
   background:linear-gradient(135deg,#6366f1,#8b5cf6);
@@ -225,8 +224,14 @@ input, select { font-size:16px !important; }
       <i class="fas fa-wand-magic-sparkles mr-1"></i> OTOMATIS
     </button>
   </div>
+  <div class="flex justify-center mb-3">
+    <button id="btnAutoCapture" onclick="autoCaptureEnroll()"
+      class="px-6 py-3 rounded-xl text-sm font-black bg-emerald-600 text-white shadow-lg active:scale-95 transition-all">
+      <i class="fas fa-bolt mr-2"></i> AUTO CAPTURE 3x
+    </button>
+  </div>
   <div class="flex-1 flex flex-col justify-center items-center space-y-4">
-    <div class="video-wrap max-w-xs w-full">
+    <div class="video-wrap">
       <video id="enrollVideo" autoplay playsinline muted></video>
       <div class="video-overlay">
         <div class="face-guide" id="enrollGuide">
@@ -257,7 +262,7 @@ input, select { font-size:16px !important; }
     <p class="text-xs text-gray-400 mt-1">Hadapkan wajah ke kamera</p>
   </div>
   <div class="flex-1 flex flex-col justify-center items-center space-y-4">
-    <div class="video-wrap max-w-xs w-full">
+    <div class="video-wrap">
       <video id="absVideo" autoplay playsinline muted></video>
       <div class="video-overlay">
         <div class="face-guide" id="absGuide">
@@ -523,7 +528,7 @@ input, select { font-size:16px !important; }
       <i class="fas fa-clock-rotate-left text-lg"></i><span class="text-[8px] font-bold uppercase">Log</span>
     </button>
     <button onclick="switchTab('kiosk')" id="nav-kiosk" class="hidden flex-col items-center gap-1 text-gray-400 transition-all">
-      <i class="fas fa-video text-lg"></i><span class="text-[8px] font-bold uppercase">Kiosk</span>
+      <i class="fas fa-video text-lg"></i><span class="text-[8px] font-bold uppercase">Massal</span>
     </button>
     <button onclick="handleLogout()" class="flex flex-col items-center gap-1 text-red-400">
       <i class="fas fa-power-off text-lg"></i><span class="text-[8px] font-bold uppercase">Keluar</span>
@@ -581,9 +586,8 @@ input, select { font-size:16px !important; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-// ============================================================
-// GLOBAL STATE
-// ============================================================
+var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
+
 var user = null;
 var office = { lat: 0, lng: 0, rad: 100 };
 var currentLoc = { lat: 0, lng: 0 };
@@ -599,9 +603,9 @@ var _mapInitDone = false;
 
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
-var FACE_THRESHOLD = 0.50;          // diperketat untuk akurasi
-var FACE_LOOP_INTERVAL = 150;       // lebih cepat dari 300ms
-var FACE_DETECT_INPUT = 160;        // lebih kecil = lebih cepat
+var FACE_THRESHOLD = 0.50;
+var FACE_LOOP_INTERVAL = 150;
+var FACE_DETECT_INPUT = 160;
 var FACE_DETECT_THRESHOLD = 0.5;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
@@ -612,12 +616,13 @@ var enrollLoopTimer = null;
 var enrollInferenceBusy = false;
 var enrollDescriptors = [];
 var enrollStep = 0;
-var enrollMode = 'manual';           // 'manual' | 'auto'
+var enrollMode = 'manual';
 var enrollStableFrames = 0;
 var enrollLastStableBox = null;
 var enrollLastAutoCaptureAt = 0;
 var ENROLL_STABLE_REQUIRED = 5;
-var ENROLL_AUTO_COOLDOWN = 1200;     // ms
+var ENROLL_AUTO_COOLDOWN = 1200;
+var enrollCaptureInProgress = false;
 
 // Absen state
 var absStream = null;
@@ -628,14 +633,15 @@ var absInferenceBusy = false;
 var kioskStream = null;
 var kioskLoopTimer = null;
 var kioskInferenceBusy = false;
-var kioskMode = 'auto';              // 'auto' | 'manual'
+var kioskMode = 'auto';
 var kioskKnownFaces = [];
 var kioskLastResultAt = 0;
-var KIOSK_RESULT_DURATION = 4500;    // ms
+var KIOSK_RESULT_DURATION = 2500;
+var KIOSK_UNKNOWN_COOLDOWN = 2000;
+var kioskLastUnknownAt = 0;
+var kioskCurrentDescriptor = null;
+var kioskProcessingUser = null;
 
-// ============================================================
-// UTILITY
-// ============================================================
 function escapeHtml(str) {
   return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
@@ -645,14 +651,10 @@ function escapeJsArg(str) {
   return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/**
- * Toast BESAR
- * type: 'ok' | 'err' | 'info' | 'warn'
- */
 function showToast(msg, type, duration) {
   var t = document.getElementById('toast');
   type = type || 'info';
-  duration = duration || 5000;
+  duration = duration || 4000;
   var icons = {
     ok: 'fa-circle-check',
     err: 'fa-circle-xmark',
@@ -687,7 +689,8 @@ function calculateDist(l1, ln1, l2, ln2) {
 }
 
 /**
- * Buat thumbnail 100x100 dari video, return dataURL JPEG q=0.6 (~5KB)
+ * Buat thumbnail 100x100 dari video
+ * Return: dataURL JPEG q=0.6 (~5KB)
  */
 function makeThumbnail(video) {
   var can = document.getElementById('thumbCanvas');
@@ -701,9 +704,6 @@ function makeThumbnail(video) {
   return can.toDataURL('image/jpeg', 0.6);
 }
 
-// ============================================================
-// FACE MODELS
-// ============================================================
 function loadFaceModels() {
   if (faceModelsLoaded) return Promise.resolve(true);
   if (faceModelsLoading) {
@@ -742,6 +742,7 @@ function loadFaceModels() {
     ]).then(function() {
       faceModelsLoaded = true;
       faceModelsLoading = false;
+      console.log('Face models loaded (fallback)');
       return true;
     }).catch(function(err2) {
       faceModelsLoading = false;
@@ -751,9 +752,6 @@ function loadFaceModels() {
   });
 }
 
-// ============================================================
-// INIT
-// ============================================================
 window.onload = function() {
   startTime();
   initGPS();
@@ -771,7 +769,7 @@ window.onload = function() {
       setupApp();
     } catch (e) { localStorage.removeItem('presensi_user_v3'); }
   }
-  // Preload model SEGERA (tidak delay)
+  // Preload model SEGERA
   loadFaceModels().then(function(ok) { console.log('Face models preload:', ok); });
 };
 
@@ -839,9 +837,6 @@ function switchTab(id) {
   }, 20);
 }
 
-// ============================================================
-// LOGIN
-// ============================================================
 function handleLogin() {
   var phone = document.getElementById('loginPhone').value.trim();
   var pass = document.getElementById('loginPass').value;
@@ -920,7 +915,7 @@ function updateFaceBanner() {
 }
 
 // ============================================================
-// ENROLLMENT (Manual + Auto)
+// ENROLLMENT (Manual + Auto + Auto Capture 3x)
 // ============================================================
 function setEnrollMode(mode) {
   enrollMode = mode;
@@ -947,6 +942,7 @@ function openEnrollment() {
   enrollStableFrames = 0;
   enrollLastStableBox = null;
   enrollLastAutoCaptureAt = 0;
+  enrollCaptureInProgress = false;
   document.getElementById('enrollStep').innerText = '0';
   document.getElementById('enrollGuide').className = 'face-guide';
   document.getElementById('enrollStatus').className = 'face-status info';
@@ -988,15 +984,14 @@ function startEnrollLoop() {
   var video = document.getElementById('enrollVideo');
   enrollLoopTimer = setInterval(function() {
     if (enrollInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
+    if (enrollCaptureInProgress) return;
     enrollInferenceBusy = true;
-    var t0 = performance.now();
     faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
       .withFaceLandmarks()
       .then(function(det) {
         var guide = document.getElementById('enrollGuide');
         var status = document.getElementById('enrollStatus');
         var btn = document.getElementById('enrollBtn');
-        var elapsed = performance.now() - t0;
 
         if (det) {
           guide.className = 'face-guide detected';
@@ -1005,7 +1000,6 @@ function startEnrollLoop() {
           btn.disabled = false;
           btn.classList.remove('opacity-50', 'cursor-not-allowed');
 
-          // Auto mode: cek stabilitas
           if (enrollMode === 'auto') {
             var box = det.detection.box;
             if (enrollLastStableBox) {
@@ -1026,7 +1020,7 @@ function startEnrollLoop() {
               status.className = 'face-status stable';
               status.innerText = 'Wajah stabil - capture otomatis...';
               var now = Date.now();
-              if (now - enrollLastAutoCaptureAt > ENROLL_AUTO_COOLDOWN && !btn.disabled) {
+              if (now - enrollLastAutoCaptureAt > ENROLL_AUTO_COOLDOWN) {
                 enrollLastAutoCaptureAt = now;
                 enrollStableFrames = 0;
                 enrollLastStableBox = null;
@@ -1043,19 +1037,69 @@ function startEnrollLoop() {
           enrollStableFrames = 0;
           enrollLastStableBox = null;
         }
-
-        // Adaptive frame skip
-        if (elapsed > 200) {
-          // frame berikutnya langsung skip 1x
-          enrollInferenceBusy = true;
-        }
       })
       .catch(function() {})
       .then(function() { enrollInferenceBusy = false; });
   }, FACE_LOOP_INTERVAL);
 }
 
+/**
+ * AUTO CAPTURE 3x dengan jeda 1 detik antar capture
+ */
+function autoCaptureEnroll() {
+  if (enrollCaptureInProgress) {
+    showToast("Sedang capture, tunggu...", 'warn');
+    return;
+  }
+  enrollCaptureInProgress = true;
+  showToast("Auto Capture 3x dimulai...", 'info', 2500);
+  enrollStep = 0;
+  enrollDescriptors = [];
+  document.getElementById('enrollStep').innerText = '0';
+
+  var instructions = ['Hadap depan', 'Miring ke kiri', 'Miring ke kanan'];
+
+  function doCapture(index) {
+    if (index >= 3) {
+      enrollCaptureInProgress = false;
+      finalizeEnrollment();
+      return;
+    }
+    document.getElementById('enrollInstruction').innerText = instructions[index];
+    document.getElementById('enrollStatus').className = 'face-status stable';
+    document.getElementById('enrollStatus').innerText = 'Capture ' + (index + 1) + '/3... jangan bergerak';
+
+    setTimeout(function() {
+      var video = document.getElementById('enrollVideo');
+      faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: FACE_DETECT_THRESHOLD }))
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+        .then(function(det) {
+          if (!det) {
+            showToast("Wajah tidak terdeteksi. Coba lagi.", 'err', 3000);
+            enrollCaptureInProgress = false;
+            document.getElementById('enrollInstruction').innerText = 'Capture gagal, klik Auto Capture lagi';
+            return;
+          }
+          enrollDescriptors.push(Array.from(det.descriptor));
+          enrollStep++;
+          document.getElementById('enrollStep').innerText = enrollStep;
+          showToast('Capture ' + enrollStep + '/3 berhasil!', 'ok', 1500);
+          setTimeout(function() { doCapture(index + 1); }, 1000);
+        })
+        .catch(function(e) {
+          console.error(e);
+          showToast("Gagal capture, coba lagi", 'err', 3000);
+          enrollCaptureInProgress = false;
+        });
+    }, 800);
+  }
+
+  doCapture(0);
+}
+
 function captureEnroll() {
+  if (enrollCaptureInProgress) return;
   var video = document.getElementById('enrollVideo');
   var btn = document.getElementById('enrollBtn');
   btn.disabled = true;
@@ -1083,10 +1127,7 @@ function captureEnroll() {
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
         btn.innerHTML = '<i class="fas fa-camera mr-2"></i> AMBIL FOTO';
       } else {
-        showToast("Menyimpan data wajah...", 'info', 3000);
-        var avgDescriptor = averageDescriptors(enrollDescriptors);
-        var thumb = makeThumbnail(video);
-        saveEnrollment(avgDescriptor, thumb);
+        finalizeEnrollment();
       }
     })
     .catch(function(e) {
@@ -1096,6 +1137,18 @@ function captureEnroll() {
       btn.classList.remove('opacity-50', 'cursor-not-allowed');
       btn.innerHTML = '<i class="fas fa-camera mr-2"></i> AMBIL FOTO';
     });
+}
+
+function finalizeEnrollment() {
+  if (enrollDescriptors.length < 3) {
+    showToast("Capture belum lengkap. Butuh 3x.", 'warn');
+    return;
+  }
+  showToast("Menyimpan data wajah...", 'info', 3000);
+  var video = document.getElementById('enrollVideo');
+  var avgDescriptor = averageDescriptors(enrollDescriptors);
+  var thumb = makeThumbnail(video);
+  saveEnrollment(avgDescriptor, thumb);
 }
 
 function averageDescriptors(descriptors) {
@@ -1118,10 +1171,15 @@ function saveEnrollment(descriptor, thumbnail) {
         updateFaceBanner();
       } else {
         showToast(res ? res.message : "Gagal menyimpan wajah", 'err', 5000);
+        enrollStep = 0;
+        enrollDescriptors = [];
+        enrollCaptureInProgress = false;
+        document.getElementById('enrollStep').innerText = '0';
       }
     })
     .withFailureHandler(function(err) {
       showToast("Gagal terhubung ke server", 'err');
+      enrollCaptureInProgress = false;
     })
     .saveFaceDescriptor(user.id, descriptor, thumbnail);
 }
@@ -1139,6 +1197,7 @@ function closeEnrollment() {
     enrollStream.getTracks().forEach(function(t) { t.stop(); });
     enrollStream = null;
   }
+  enrollCaptureInProgress = false;
   document.getElementById('enrollScreen').classList.add('hidden');
 }
 
@@ -1266,7 +1325,6 @@ function captureAbsen() {
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
   btn.innerHTML = 'Mengirim...';
-  // TIDAK kirim foto ke server
   google.script.run
     .withSuccessHandler(function(res) {
       btn.disabled = false;
@@ -1298,20 +1356,35 @@ function closeAbsen() {
 }
 
 // ============================================================
-// KIOSK MODE
+// KIOSK MODE (Tab Massal - khusus admin)
 // ============================================================
 function openKiosk() {
   if (!user || user.role !== 'admin') return;
+  if (!office.lat || !office.lng) {
+    showToast("Lokasi kantor belum diatur!", 'err');
+    return;
+  }
+  if (currentLoc.lat === 0 && currentLoc.lng === 0) {
+    showToast("Menunggu GPS...", 'warn');
+    return;
+  }
+  var dist = calculateDist(currentLoc.lat, currentLoc.lng, office.lat, office.lng);
+  if (dist > office.rad) {
+    showToast("Di luar radius kantor (" + Math.round(dist) + "m)", 'err');
+    return;
+  }
+
   document.getElementById('kioskScreen').classList.remove('hidden');
   kioskMode = 'auto';
   updateKioskModeUI();
+  document.getElementById('kioskResult').className = 'kiosk-result hidden';
+
   loadFaceModels().then(function(ok) {
     if (!ok) {
       showToast("Gagal memuat model AI", 'err');
       closeKiosk();
       return;
     }
-    // Ambil semua descriptor
     google.script.run
       .withSuccessHandler(function(res) {
         if (!res || !res.success) {
@@ -1358,7 +1431,7 @@ function updateKioskModeUI() {
 function toggleKioskMode() {
   kioskMode = kioskMode === 'auto' ? 'manual' : 'auto';
   updateKioskModeUI();
-  showToast('Mode kiosk: ' + kioskMode.toUpperCase(), 'info', 2000);
+  showToast('Mode: ' + kioskMode.toUpperCase(), 'info', 2000);
 }
 
 function startKioskCamera() {
@@ -1383,29 +1456,11 @@ function startKioskLoop() {
   var video = document.getElementById('kioskVideo');
   kioskLoopTimer = setInterval(function() {
     if (kioskInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
-    // Kalau lagi nampilin hasil, skip detection
+    // Kalau sedang proses absen, skip
+    if (kioskProcessingUser) return;
+    // Kalau sedang nampilin hasil, skip
     if (Date.now() - kioskLastResultAt < KIOSK_RESULT_DURATION) return;
-    if (kioskMode === 'manual') {
-      // Di mode manual, hanya deteksi (jangan auto-absen)
-      kioskInferenceBusy = true;
-      faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
-        .withFaceLandmarks()
-        .withFaceDescriptor()
-        .then(function(det) {
-          var guide = document.getElementById('kioskGuide');
-          if (det) {
-            guide.className = 'kiosk-face-guide detected';
-            window._kioskCurrentDescriptor = Array.from(det.descriptor);
-          } else {
-            guide.className = 'kiosk-face-guide';
-            window._kioskCurrentDescriptor = null;
-          }
-        })
-        .catch(function() {})
-        .then(function() { kioskInferenceBusy = false; });
-      return;
-    }
-    // Mode AUTO
+
     kioskInferenceBusy = true;
     faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
       .withFaceLandmarks()
@@ -1414,9 +1469,12 @@ function startKioskLoop() {
         var guide = document.getElementById('kioskGuide');
         if (!det) {
           guide.className = 'kiosk-face-guide';
+          kioskCurrentDescriptor = null;
           return;
         }
         var descriptor = Array.from(det.descriptor);
+        kioskCurrentDescriptor = descriptor;
+
         // Cari match terbaik
         var bestMatch = null;
         var bestDist = FACE_THRESHOLD;
@@ -1429,12 +1487,22 @@ function startKioskLoop() {
             bestMatch = f;
           }
         }
+
         if (bestMatch) {
           guide.className = 'kiosk-face-guide matched';
-          // Trigger absen
-          kioskProcessAttendance(bestMatch);
+          if (kioskMode === 'auto') {
+            // Auto proses absen
+            kioskProcessAttendance(bestMatch);
+          }
+          // Kalau manual: biarkan user klik tombol
         } else {
           guide.className = 'kiosk-face-guide detected';
+          // Notifikasi "tidak dikenali" (max 1x per 2 detik)
+          var now = Date.now();
+          if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN) {
+            kioskLastUnknownAt = now;
+            showToast('Wajah tidak dikenali', 'warn', 2000);
+          }
         }
       })
       .catch(function() {})
@@ -1443,11 +1511,11 @@ function startKioskLoop() {
 }
 
 function manualKioskCapture() {
-  if (!window._kioskCurrentDescriptor) {
+  if (!kioskCurrentDescriptor) {
     showToast("Wajah belum terdeteksi", 'warn');
     return;
   }
-  var descriptor = window._kioskCurrentDescriptor;
+  var descriptor = kioskCurrentDescriptor;
   var bestMatch = null;
   var bestDist = FACE_THRESHOLD;
   for (var i = 0; i < kioskKnownFaces.length; i++) {
@@ -1462,17 +1530,21 @@ function manualKioskCapture() {
   if (bestMatch) {
     kioskProcessAttendance(bestMatch);
   } else {
-    showToast("Wajah tidak dikenali", 'err', 4000);
+    showToast("Wajah tidak dikenali", 'err', 3000);
   }
 }
 
 function kioskProcessAttendance(face) {
+  if (kioskProcessingUser) return;
+  kioskProcessingUser = face.userId;
   kioskLastResultAt = Date.now();
   google.script.run
     .withSuccessHandler(function(res) {
+      kioskProcessingUser = null;
       showKioskResult(res, face);
     })
     .withFailureHandler(function(err) {
+      kioskProcessingUser = null;
       showKioskResult({ success: false, message: 'Gagal terhubung server' }, face);
     })
     .submitAttendanceKiosk(face.userId, currentLoc.lat, currentLoc.lng);
@@ -1485,15 +1557,15 @@ function showKioskResult(res, face) {
   var isOk = res && res.success;
   var type = res && res.type;
 
-  // Suara
+  // TTS: "Ramadan tercatat hadir" / "Ramadan tercatat pulang"
   try {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       var utter = new SpeechSynthesisUtterance();
       if (isOk) {
-        utter.text = nama + ', ' + (type === 'IN' ? 'selamat datang' : 'selamat jalan');
+        utter.text = nama + ' tercatat ' + (type === 'IN' ? 'hadir' : 'pulang');
       } else {
-        utter.text = (res && res.alreadyRecent) ? nama + ', baru saja absen' : (res && res.message ? res.message : 'Absen gagal');
+        utter.text = (res && res.alreadyRecent) ? nama + ' baru saja absen' : (res && res.message ? res.message : 'Absen gagal');
       }
       utter.lang = 'id-ID';
       utter.rate = 0.95;
@@ -1539,6 +1611,7 @@ function showKioskResult(res, face) {
   setTimeout(function() {
     el.className = 'kiosk-result hidden';
     el.innerHTML = '';
+    kioskLastResultAt = 0;
   }, KIOSK_RESULT_DURATION);
 }
 
@@ -1548,6 +1621,8 @@ function closeKiosk() {
     kioskStream.getTracks().forEach(function(t) { t.stop(); });
     kioskStream = null;
   }
+  kioskProcessingUser = null;
+  kioskCurrentDescriptor = null;
   document.getElementById('kioskResult').className = 'kiosk-result hidden';
   document.getElementById('kioskScreen').classList.add('hidden');
   switchTab('home');
@@ -1917,7 +1992,1084 @@ function resetLogFilter() {
 }
 
 // ============================================================
-// PERMIT
+// ENROLLMENT (Manual + Auto + Auto Capture 3x)
+// ============================================================
+function setEnrollMode(mode) {
+  enrollMode = mode;
+  var btnM = document.getElementById('btnModeManual');
+  var btnA = document.getElementById('btnModeAuto');
+  if (mode === 'manual') {
+    btnM.className = 'px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white transition-all';
+    btnA.className = 'px-4 py-2 rounded-xl text-xs font-black bg-white/10 text-gray-400 transition-all';
+    document.getElementById('enrollAutoHint').innerText = '';
+  } else {
+    btnA.className = 'px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white transition-all';
+    btnM.className = 'px-4 py-2 rounded-xl text-xs font-black bg-white/10 text-gray-400 transition-all';
+    document.getElementById('enrollAutoHint').innerText = 'Mode otomatis: wajah stabil akan otomatis di-capture';
+  }
+  enrollStableFrames = 0;
+  enrollLastStableBox = null;
+}
+
+function openEnrollment() {
+  if (!user) return;
+  document.getElementById('enrollScreen').classList.remove('hidden');
+  enrollDescriptors = [];
+  enrollStep = 0;
+  enrollStableFrames = 0;
+  enrollLastStableBox = null;
+  enrollLastAutoCaptureAt = 0;
+  enrollCaptureInProgress = false;
+  document.getElementById('enrollStep').innerText = '0';
+  document.getElementById('enrollGuide').className = 'face-guide';
+  document.getElementById('enrollStatus').className = 'face-status info';
+  document.getElementById('enrollStatus').innerText = 'Memuat model AI...';
+  document.getElementById('enrollInstruction').innerText = 'Mohon tunggu...';
+  document.getElementById('enrollBtn').disabled = true;
+  document.getElementById('enrollBtn').classList.add('opacity-50', 'cursor-not-allowed');
+  setEnrollMode('manual');
+
+  loadFaceModels().then(function(ok) {
+    if (!ok) {
+      document.getElementById('enrollStatus').innerText = 'Gagal memuat model AI';
+      document.getElementById('enrollStatus').className = 'face-status warn';
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+      audio: false
+    }).then(function(stream) {
+      enrollStream = stream;
+      var v = document.getElementById('enrollVideo');
+      v.srcObject = enrollStream;
+      v.play();
+      document.getElementById('enrollStatus').innerText = 'Posisikan wajah di dalam lingkaran';
+      document.getElementById('enrollStatus').className = 'face-status info';
+      document.getElementById('enrollInstruction').innerText = 'Hadap depan';
+      startEnrollLoop();
+    }).catch(function(e) {
+      console.error('Camera error:', e);
+      document.getElementById('enrollStatus').innerText = 'Kamera tidak bisa diakses';
+      document.getElementById('enrollStatus').className = 'face-status warn';
+      showToast('Izinkan akses kamera di browser Anda', 'err');
+    });
+  });
+}
+
+function startEnrollLoop() {
+  if (enrollLoopTimer) clearInterval(enrollLoopTimer);
+  var video = document.getElementById('enrollVideo');
+  enrollLoopTimer = setInterval(function() {
+    if (enrollInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
+    if (enrollCaptureInProgress) return;
+    enrollInferenceBusy = true;
+    faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
+      .withFaceLandmarks()
+      .then(function(det) {
+        var guide = document.getElementById('enrollGuide');
+        var status = document.getElementById('enrollStatus');
+        var btn = document.getElementById('enrollBtn');
+
+        if (det) {
+          guide.className = 'face-guide detected';
+          status.className = 'face-status ok';
+          status.innerText = 'Wajah terdeteksi - siap capture';
+          btn.disabled = false;
+          btn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+          if (enrollMode === 'auto') {
+            var box = det.detection.box;
+            if (enrollLastStableBox) {
+              var dx = Math.abs(box.x - enrollLastStableBox.x);
+              var dy = Math.abs(box.y - enrollLastStableBox.y);
+              var dw = Math.abs(box.width - enrollLastStableBox.width);
+              var threshold = box.width * 0.10;
+              if (dx < threshold && dy < threshold && dw < threshold) {
+                enrollStableFrames++;
+              } else {
+                enrollStableFrames = 0;
+              }
+            }
+            enrollLastStableBox = { x: box.x, y: box.y, width: box.width, height: box.height };
+
+            if (enrollStableFrames >= ENROLL_STABLE_REQUIRED) {
+              guide.className = 'face-guide stable';
+              status.className = 'face-status stable';
+              status.innerText = 'Wajah stabil - capture otomatis...';
+              var now = Date.now();
+              if (now - enrollLastAutoCaptureAt > ENROLL_AUTO_COOLDOWN) {
+                enrollLastAutoCaptureAt = now;
+                enrollStableFrames = 0;
+                enrollLastStableBox = null;
+                captureEnroll();
+              }
+            }
+          }
+        } else {
+          guide.className = 'face-guide';
+          status.className = 'face-status info';
+          status.innerText = 'Posisikan wajah di tengah';
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-not-allowed');
+          enrollStableFrames = 0;
+          enrollLastStableBox = null;
+        }
+      })
+      .catch(function() {})
+      .then(function() { enrollInferenceBusy = false; });
+  }, FACE_LOOP_INTERVAL);
+}
+
+/**
+ * AUTO CAPTURE 3x dengan jeda 1 detik antar capture
+ */
+function autoCaptureEnroll() {
+  if (enrollCaptureInProgress) {
+    showToast("Sedang capture, tunggu...", 'warn');
+    return;
+  }
+  enrollCaptureInProgress = true;
+  showToast("Auto Capture 3x dimulai...", 'info', 2500);
+  enrollStep = 0;
+  enrollDescriptors = [];
+  document.getElementById('enrollStep').innerText = '0';
+
+  var instructions = ['Hadap depan', 'Miring ke kiri', 'Miring ke kanan'];
+
+  function doCapture(index) {
+    if (index >= 3) {
+      enrollCaptureInProgress = false;
+      finalizeEnrollment();
+      return;
+    }
+    document.getElementById('enrollInstruction').innerText = instructions[index];
+    document.getElementById('enrollStatus').className = 'face-status stable';
+    document.getElementById('enrollStatus').innerText = 'Capture ' + (index + 1) + '/3... jangan bergerak';
+
+    setTimeout(function() {
+      var video = document.getElementById('enrollVideo');
+      faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: FACE_DETECT_THRESHOLD }))
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+        .then(function(det) {
+          if (!det) {
+            showToast("Wajah tidak terdeteksi. Coba lagi.", 'err', 3000);
+            enrollCaptureInProgress = false;
+            document.getElementById('enrollInstruction').innerText = 'Capture gagal, klik Auto Capture lagi';
+            return;
+          }
+          enrollDescriptors.push(Array.from(det.descriptor));
+          enrollStep++;
+          document.getElementById('enrollStep').innerText = enrollStep;
+          showToast('Capture ' + enrollStep + '/3 berhasil!', 'ok', 1500);
+          setTimeout(function() { doCapture(index + 1); }, 1000);
+        })
+        .catch(function(e) {
+          console.error(e);
+          showToast("Gagal capture, coba lagi", 'err', 3000);
+          enrollCaptureInProgress = false;
+        });
+    }, 800);
+  }
+
+  doCapture(0);
+}
+
+function captureEnroll() {
+  if (enrollCaptureInProgress) return;
+  var video = document.getElementById('enrollVideo');
+  var btn = document.getElementById('enrollBtn');
+  btn.disabled = true;
+  btn.classList.add('opacity-50', 'cursor-not-allowed');
+  btn.innerHTML = 'Memproses...';
+  faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: FACE_DETECT_THRESHOLD }))
+    .withFaceLandmarks()
+    .withFaceDescriptor()
+    .then(function(det) {
+      if (!det) {
+        showToast("Wajah tidak terdeteksi, coba lagi", 'warn');
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-camera mr-2"></i> AMBIL FOTO';
+        return;
+      }
+      enrollDescriptors.push(Array.from(det.descriptor));
+      enrollStep++;
+      document.getElementById('enrollStep').innerText = enrollStep;
+      var instructions = ['Hadap depan', 'Miringkan wajah ke kiri sedikit', 'Miringkan wajah ke kanan sedikit'];
+      if (enrollStep < 3) {
+        document.getElementById('enrollInstruction').innerText = instructions[enrollStep];
+        showToast('Capture ' + enrollStep + '/3 berhasil!', 'ok', 2500);
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-camera mr-2"></i> AMBIL FOTO';
+      } else {
+        finalizeEnrollment();
+      }
+    })
+    .catch(function(e) {
+      console.error(e);
+      showToast("Gagal memproses wajah", 'err');
+      btn.disabled = false;
+      btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      btn.innerHTML = '<i class="fas fa-camera mr-2"></i> AMBIL FOTO';
+    });
+}
+
+function finalizeEnrollment() {
+  if (enrollDescriptors.length < 3) {
+    showToast("Capture belum lengkap. Butuh 3x.", 'warn');
+    return;
+  }
+  showToast("Menyimpan data wajah...", 'info', 3000);
+  var video = document.getElementById('enrollVideo');
+  var avgDescriptor = averageDescriptors(enrollDescriptors);
+  var thumb = makeThumbnail(video);
+  saveEnrollment(avgDescriptor, thumb);
+}
+
+function averageDescriptors(descriptors) {
+  var len = descriptors[0].length;
+  var avg = new Array(len).fill(0);
+  for (var k = 0; k < descriptors.length; k++) {
+    for (var i = 0; i < len; i++) avg[i] += descriptors[k][i];
+  }
+  for (var j = 0; j < len; j++) avg[j] /= descriptors.length;
+  return avg;
+}
+
+function saveEnrollment(descriptor, thumbnail) {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success) {
+        showToast("Wajah berhasil didaftarkan!", 'ok', 4000);
+        userFaceEnrolled = true;
+        closeEnrollment();
+        updateFaceBanner();
+      } else {
+        showToast(res ? res.message : "Gagal menyimpan wajah", 'err', 5000);
+        enrollStep = 0;
+        enrollDescriptors = [];
+        enrollCaptureInProgress = false;
+        document.getElementById('enrollStep').innerText = '0';
+      }
+    })
+    .withFailureHandler(function(err) {
+      showToast("Gagal terhubung ke server", 'err');
+      enrollCaptureInProgress = false;
+    })
+    .saveFaceDescriptor(user.id, descriptor, thumbnail);
+}
+
+function cancelEnroll() {
+  closeEnrollment();
+  if (!userFaceEnrolled) {
+    showToast("Wajah belum terdaftar. Absen tidak akan bisa.", 'warn');
+  }
+}
+
+function closeEnrollment() {
+  if (enrollLoopTimer) { clearInterval(enrollLoopTimer); enrollLoopTimer = null; }
+  if (enrollStream) {
+    enrollStream.getTracks().forEach(function(t) { t.stop(); });
+    enrollStream = null;
+  }
+  enrollCaptureInProgress = false;
+  document.getElementById('enrollScreen').classList.add('hidden');
+}
+
+// ============================================================
+// ABSEN (IN / OUT) - TANPA UPLOAD FOTO
+// ============================================================
+function startAttendance(type) {
+  attType = type;
+  if (!userFaceEnrolled) {
+    showToast("Wajah belum terdaftar! Daftar dulu.", 'warn');
+    setTimeout(openEnrollment, 800);
+    return;
+  }
+  if (!office.lat || !office.lng) return showToast("Lokasi kantor belum diatur!", 'err');
+  if (currentLoc.lat === 0 && currentLoc.lng === 0) return showToast("Menunggu GPS...", 'warn');
+  var dist = calculateDist(currentLoc.lat, currentLoc.lng, office.lat, office.lng);
+  if (dist > office.rad) {
+    showToast("Gagal: Anda di luar radius kantor (" + Math.round(dist) + "m)", 'err');
+    return;
+  }
+  document.getElementById('absTitle').innerText = type === 'IN' ? 'Absen Masuk' : 'Absen Keluar';
+  document.getElementById('absScreen').classList.remove('hidden');
+  document.getElementById('absDistance').innerText = 'Jarak: ' + Math.round(dist) + ' m';
+  document.getElementById('absGuide').className = 'face-guide';
+  document.getElementById('absStatus').className = 'face-status info';
+  document.getElementById('absStatus').innerText = 'Memuat model AI...';
+  document.getElementById('absInstruction').innerText = 'Bersiap...';
+  document.getElementById('absBtn').disabled = true;
+  document.getElementById('absBtn').classList.add('opacity-50', 'cursor-not-allowed');
+
+  loadFaceModels().then(function(ok) {
+    if (!ok) {
+      document.getElementById('absStatus').innerText = 'Gagal memuat model AI';
+      document.getElementById('absStatus').className = 'face-status warn';
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res || !res.success) {
+          showToast("Wajah belum terdaftar", 'err');
+          closeAbsen();
+          return;
+        }
+        window._savedDescriptor = res.descriptor;
+        startAbsCamera();
+      })
+      .withFailureHandler(function(err) {
+        showToast("Gagal ambil data wajah", 'err');
+        closeAbsen();
+      })
+      .getFaceDescriptor(user.id);
+  });
+}
+
+function startAbsCamera() {
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+    audio: false
+  }).then(function(stream) {
+    absStream = stream;
+    var v = document.getElementById('absVideo');
+    v.srcObject = absStream;
+    v.play();
+    document.getElementById('absStatus').innerText = 'Cocokkan wajah Anda...';
+    document.getElementById('absStatus').className = 'face-status info';
+    document.getElementById('absInstruction').innerText = 'Hadapkan wajah ke kamera';
+    startAbsLoop();
+  }).catch(function(e) {
+    console.error(e);
+    document.getElementById('absStatus').innerText = 'Kamera tidak bisa diakses';
+    document.getElementById('absStatus').className = 'face-status warn';
+    showToast('Izinkan akses kamera', 'err');
+  });
+}
+
+function startAbsLoop() {
+  if (absLoopTimer) clearInterval(absLoopTimer);
+  var video = document.getElementById('absVideo');
+  absLoopTimer = setInterval(function() {
+    if (absInferenceBusy || !faceModelsLoaded || !video.videoWidth || !window._savedDescriptor) return;
+    absInferenceBusy = true;
+    faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
+      .withFaceLandmarks()
+      .withFaceDescriptor()
+      .then(function(det) {
+        var guide = document.getElementById('absGuide');
+        var status = document.getElementById('absStatus');
+        var btn = document.getElementById('absBtn');
+        if (!det) {
+          guide.className = 'face-guide';
+          status.className = 'face-status info';
+          status.innerText = 'Wajah tidak terdeteksi';
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-not-allowed');
+          return;
+        }
+        var dist = faceapi.euclideanDistance(Array.from(det.descriptor), window._savedDescriptor);
+        if (dist < FACE_THRESHOLD) {
+          guide.className = 'face-guide matched';
+          status.className = 'face-status ok';
+          status.innerText = 'Wajah COCOK (skor: ' + (1 - dist).toFixed(2) + ')';
+          document.getElementById('absInstruction').innerText = 'Wajah dikenali! Tekan Absen Sekarang';
+          btn.disabled = false;
+          btn.classList.remove('opacity-50', 'cursor-not-allowed');
+          window._currentAbsDescriptor = Array.from(det.descriptor);
+        } else {
+          guide.className = 'face-guide detected';
+          status.className = 'face-status warn';
+          status.innerText = 'Wajah tidak cocok (skor: ' + (1 - dist).toFixed(2) + ')';
+          document.getElementById('absInstruction').innerText = 'Wajah tidak dikenali';
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+      })
+      .catch(function() {})
+      .then(function() { absInferenceBusy = false; });
+  }, FACE_LOOP_INTERVAL);
+}
+
+function captureAbsen() {
+  if (!window._currentAbsDescriptor) {
+    showToast("Wajah belum terverifikasi", 'warn');
+    return;
+  }
+  var btn = document.getElementById('absBtn');
+  btn.disabled = true;
+  btn.innerHTML = 'Mengirim...';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
+      if (res && res.success) {
+        showToast(res.message || "Absen berhasil!", 'ok', 5000);
+        closeAbsen();
+        refreshData();
+      } else {
+        showToast(res && res.message ? res.message : "Gagal absen", 'err', 5000);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
+      showToast("Gagal kirim absensi", 'err');
+    })
+    .submitAttendance(attType, currentLoc.lat, currentLoc.lng, user.id, true);
+}
+
+function closeAbsen() {
+  if (absLoopTimer) { clearInterval(absLoopTimer); absLoopTimer = null; }
+  if (absStream) {
+    absStream.getTracks().forEach(function(t) { t.stop(); });
+    absStream = null;
+  }
+  window._currentAbsDescriptor = null;
+  document.getElementById('absScreen').classList.add('hidden');
+}
+
+// ============================================================
+// KIOSK MODE (Tab Massal - khusus admin)
+// ============================================================
+function openKiosk() {
+  if (!user || user.role !== 'admin') return;
+  if (!office.lat || !office.lng) {
+    showToast("Lokasi kantor belum diatur!", 'err');
+    return;
+  }
+  if (currentLoc.lat === 0 && currentLoc.lng === 0) {
+    showToast("Menunggu GPS...", 'warn');
+    return;
+  }
+  var dist = calculateDist(currentLoc.lat, currentLoc.lng, office.lat, office.lng);
+  if (dist > office.rad) {
+    showToast("Di luar radius kantor (" + Math.round(dist) + "m)", 'err');
+    return;
+  }
+
+  document.getElementById('kioskScreen').classList.remove('hidden');
+  kioskMode = 'auto';
+  updateKioskModeUI();
+  document.getElementById('kioskResult').className = 'kiosk-result hidden';
+
+  loadFaceModels().then(function(ok) {
+    if (!ok) {
+      showToast("Gagal memuat model AI", 'err');
+      closeKiosk();
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res || !res.success) {
+          showToast("Gagal memuat data wajah", 'err');
+          closeKiosk();
+          return;
+        }
+        kioskKnownFaces = res.data || [];
+        if (kioskKnownFaces.length === 0) {
+          showToast("Belum ada wajah terdaftar", 'warn');
+          closeKiosk();
+          return;
+        }
+        startKioskCamera();
+      })
+      .withFailureHandler(function(err) {
+        showToast("Gagal ambil data wajah", 'err');
+        closeKiosk();
+      })
+      .getAllFaceDescriptors();
+  });
+}
+
+function updateKioskModeUI() {
+  var status = document.getElementById('kioskModeStatus');
+  var text = document.getElementById('kioskModeText');
+  var toggle = document.getElementById('kioskToggleMode');
+  var manualBtn = document.getElementById('kioskManualBtn');
+  if (kioskMode === 'auto') {
+    status.className = 'kiosk-status on';
+    text.innerText = 'AUTO';
+    toggle.innerHTML = '<i class="fas fa-arrows-rotate mr-2"></i> GANTI KE MANUAL';
+    toggle.className = 'px-8 py-4 rounded-2xl font-black text-lg bg-indigo-600 text-white shadow-2xl active:scale-95 transition-all';
+    manualBtn.classList.add('hidden');
+  } else {
+    status.className = 'kiosk-status off';
+    text.innerText = 'MANUAL';
+    toggle.innerHTML = '<i class="fas fa-arrows-rotate mr-2"></i> GANTI KE AUTO';
+    toggle.className = 'px-8 py-4 rounded-2xl font-black text-lg bg-amber-600 text-white shadow-2xl active:scale-95 transition-all';
+    manualBtn.classList.remove('hidden');
+  }
+}
+
+function toggleKioskMode() {
+  kioskMode = kioskMode === 'auto' ? 'manual' : 'auto';
+  updateKioskModeUI();
+  showToast('Mode: ' + kioskMode.toUpperCase(), 'info', 2000);
+}
+
+function startKioskCamera() {
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+    audio: false
+  }).then(function(stream) {
+    kioskStream = stream;
+    var v = document.getElementById('kioskVideo');
+    v.srcObject = kioskStream;
+    v.play();
+    startKioskLoop();
+  }).catch(function(e) {
+    console.error(e);
+    showToast('Kamera tidak bisa diakses', 'err');
+    closeKiosk();
+  });
+}
+
+function startKioskLoop() {
+  if (kioskLoopTimer) clearInterval(kioskLoopTimer);
+  var video = document.getElementById('kioskVideo');
+  kioskLoopTimer = setInterval(function() {
+    if (kioskInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
+    // Kalau sedang proses absen, skip
+    if (kioskProcessingUser) return;
+    // Kalau sedang nampilin hasil, skip
+    if (Date.now() - kioskLastResultAt < KIOSK_RESULT_DURATION) return;
+
+    kioskInferenceBusy = true;
+    faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
+      .withFaceLandmarks()
+      .withFaceDescriptor()
+      .then(function(det) {
+        var guide = document.getElementById('kioskGuide');
+        if (!det) {
+          guide.className = 'kiosk-face-guide';
+          kioskCurrentDescriptor = null;
+          return;
+        }
+        var descriptor = Array.from(det.descriptor);
+        kioskCurrentDescriptor = descriptor;
+
+        // Cari match terbaik
+        var bestMatch = null;
+        var bestDist = FACE_THRESHOLD;
+        for (var i = 0; i < kioskKnownFaces.length; i++) {
+          var f = kioskKnownFaces[i];
+          if (!f.descriptor || f.descriptor.length !== 128) continue;
+          var d = faceapi.euclideanDistance(descriptor, f.descriptor);
+          if (d < bestDist) {
+            bestDist = d;
+            bestMatch = f;
+          }
+        }
+
+        if (bestMatch) {
+          guide.className = 'kiosk-face-guide matched';
+          if (kioskMode === 'auto') {
+            // Auto proses absen
+            kioskProcessAttendance(bestMatch);
+          }
+          // Kalau manual: biarkan user klik tombol
+        } else {
+          guide.className = 'kiosk-face-guide detected';
+          // Notifikasi "tidak dikenali" (max 1x per 2 detik)
+          var now = Date.now();
+          if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN) {
+            kioskLastUnknownAt = now;
+            showToast('Wajah tidak dikenali', 'warn', 2000);
+          }
+        }
+      })
+      .catch(function() {})
+      .then(function() { kioskInferenceBusy = false; });
+  }, FACE_LOOP_INTERVAL);
+}
+
+function manualKioskCapture() {
+  if (!kioskCurrentDescriptor) {
+    showToast("Wajah belum terdeteksi", 'warn');
+    return;
+  }
+  var descriptor = kioskCurrentDescriptor;
+  var bestMatch = null;
+  var bestDist = FACE_THRESHOLD;
+  for (var i = 0; i < kioskKnownFaces.length; i++) {
+    var f = kioskKnownFaces[i];
+    if (!f.descriptor || f.descriptor.length !== 128) continue;
+    var d = faceapi.euclideanDistance(descriptor, f.descriptor);
+    if (d < bestDist) {
+      bestDist = d;
+      bestMatch = f;
+    }
+  }
+  if (bestMatch) {
+    kioskProcessAttendance(bestMatch);
+  } else {
+    showToast("Wajah tidak dikenali", 'err', 3000);
+  }
+}
+
+function kioskProcessAttendance(face) {
+  if (kioskProcessingUser) return;
+  kioskProcessingUser = face.userId;
+  kioskLastResultAt = Date.now();
+  google.script.run
+    .withSuccessHandler(function(res) {
+      kioskProcessingUser = null;
+      showKioskResult(res, face);
+    })
+    .withFailureHandler(function(err) {
+      kioskProcessingUser = null;
+      showKioskResult({ success: false, message: 'Gagal terhubung server' }, face);
+    })
+    .submitAttendanceKiosk(face.userId, currentLoc.lat, currentLoc.lng);
+}
+
+function showKioskResult(res, face) {
+  var el = document.getElementById('kioskResult');
+  var nama = (res && res.namaUser) || (face && face.nama) || 'Pegawai';
+  var thumb = (res && res.thumbnail) || (face && face.thumbnail) || '';
+  var isOk = res && res.success;
+  var type = res && res.type;
+
+  // TTS: "Ramadan tercatat hadir" / "Ramadan tercatat pulang"
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      var utter = new SpeechSynthesisUtterance();
+      if (isOk) {
+        utter.text = nama + ' tercatat ' + (type === 'IN' ? 'hadir' : 'pulang');
+      } else {
+        utter.text = (res && res.alreadyRecent) ? nama + ' baru saja absen' : (res && res.message ? res.message : 'Absen gagal');
+      }
+      utter.lang = 'id-ID';
+      utter.rate = 0.95;
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
+      window.speechSynthesis.speak(utter);
+    }
+  } catch (e) { console.warn('TTS error:', e); }
+
+  var cardClass = 'kiosk-result-card';
+  if (!isOk) cardClass += (res && res.alreadyRecent) ? ' warn' : ' err';
+
+  var photoHtml = '';
+  if (thumb && thumb.indexOf('data:image') === 0) {
+    photoHtml = '<img src="' + thumb + '" class="kiosk-photo" alt="Foto">';
+  } else {
+    var initial = (nama || '?').charAt(0).toUpperCase();
+    photoHtml = '<div class="kiosk-avatar-fallback">' + initial + '</div>';
+  }
+
+  var typeLabel = '';
+  var typeClass = '';
+  if (isOk) {
+    if (type === 'IN') { typeLabel = 'MASUK'; typeClass = ''; }
+    else { typeLabel = 'PULANG'; typeClass = 'out'; }
+  } else {
+    typeLabel = 'GAGAL';
+    typeClass = 'err';
+  }
+
+  var timeStr = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+  el.className = 'kiosk-result';
+  el.innerHTML =
+    '<div class="' + cardClass + '">' +
+      photoHtml +
+      '<div class="kiosk-name">' + escapeHtml(nama) + '</div>' +
+      '<div class="kiosk-type ' + typeClass + '">' + typeLabel + '</div>' +
+      '<div class="kiosk-time">' + timeStr + '</div>' +
+      '<div class="kiosk-time" style="margin-top:8px; font-size:13px;">' + escapeHtml((res && res.message) || '') + '</div>' +
+    '</div>';
+
+  setTimeout(function() {
+    el.className = 'kiosk-result hidden';
+    el.innerHTML = '';
+    kioskLastResultAt = 0;
+  }, KIOSK_RESULT_DURATION);
+}
+
+function closeKiosk() {
+  if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
+  if (kioskStream) {
+    kioskStream.getTracks().forEach(function(t) { t.stop(); });
+    kioskStream = null;
+  }
+  kioskProcessingUser = null;
+  kioskCurrentDescriptor = null;
+  document.getElementById('kioskResult').className = 'kiosk-result hidden';
+  document.getElementById('kioskScreen').classList.add('hidden');
+  switchTab('home');
+}
+
+// ============================================================
+// DASHBOARD REFRESH
+// ============================================================
+function refreshData() {
+  if (!user) return;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || res.error) {
+        console.warn('refreshData error:', res);
+        initUserMap(office.lat, office.lng, office.rad);
+        updateGPSUI();
+        return;
+      }
+      if (res.settings) {
+        var s = res.settings;
+        if (s.office_lat && s.office_lng) {
+          office = { lat: parseFloat(s.office_lat), lng: parseFloat(s.office_lng), rad: parseInt(s.radius) || 100 };
+          localStorage.setItem('presensi_office_v3', JSON.stringify(office));
+        }
+      }
+      if (typeof res.faceEnrolled !== 'undefined') {
+        userFaceEnrolled = res.faceEnrolled;
+        updateFaceBanner();
+      }
+      initUserMap(office.lat, office.lng, office.rad);
+      var historyDiv = document.getElementById('userHistory');
+      if (res.history && res.history.length > 0) {
+        historyDiv.innerHTML = res.history.map(function(h) {
+          return '<div class="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm">' +
+            '<div><p class="text-[10px] font-black text-indigo-600">' + escapeHtml(h[2]) + '</p>' +
+            '<h4 class="font-bold text-gray-900">' + escapeHtml(h[3]) + ' - ' + escapeHtml(h[4] || '--:--') + '</h4></div>' +
+            '<div class="text-right"><span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold">' + escapeHtml(h[9] || 'Hadir') + '</span></div></div>';
+        }).join('');
+      } else {
+        historyDiv.innerHTML = '<p class="text-center text-xs py-4 text-gray-400">Belum ada riwayat</p>';
+      }
+      if (user.role === 'admin') renderAdmin(res);
+      updateGPSUI();
+    })
+    .withFailureHandler(function(err) {
+      console.error('refreshData GAGAL:', err);
+      initUserMap(office.lat, office.lng, office.rad);
+    })
+    .getDashboardData(user.id, user.role);
+}
+
+function renderAdmin(res) {
+  if (!res || !res.stats) return;
+  document.getElementById('statTotal').innerText = res.stats.totalPegawai;
+  document.getElementById('statHadir').innerText = res.stats.absenHariIni;
+  document.getElementById('statTotal2').innerText = res.stats.totalPegawai;
+  document.getElementById('statHadir2').innerText = res.stats.absenHariIni;
+  if (document.getElementById('tab-setting').classList.contains('active')) {
+    initAdminMap(office.lat, office.lng, office.rad);
+  }
+  if (res.allUsers) {
+    document.getElementById('pegawaiCount').innerText = res.allUsers.length;
+    document.getElementById('adminUserTable').innerHTML = res.allUsers.map(function(u, i) {
+      return renderUserRow(u, i);
+    }).join('');
+  }
+}
+
+function renderUserRow(u, i) {
+  var role = u[4] || 'pegawai';
+  var roleBadge = role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-50 text-indigo-600';
+  var roleAttr = escapeJsArg(role), passAttr = escapeJsArg(u[5] || ''), idAttr = escapeJsArg(u[0]);
+  var namaAttr = escapeJsArg(u[1]), jabAttr = escapeJsArg(u[2] || ''), phoneAttr = escapeJsArg(u[3]);
+  return '<tr class="' + (i % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' border-b border-gray-100">' +
+    '<td class="py-3 px-3 font-bold text-gray-400">' + (i + 1) + '</td>' +
+    '<td class="py-3 px-3 font-bold text-gray-900">' + escapeHtml(u[1]) + '</td>' +
+    '<td class="py-3 px-3 text-gray-600">' + escapeHtml(u[2] || '-') + '</td>' +
+    '<td class="py-3 px-3 text-gray-600">' + escapeHtml(u[3]) + '</td>' +
+    '<td class="py-3 px-3 text-center"><span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase ' + roleBadge + '">' + escapeHtml(role) + '</span></td>' +
+    '<td class="py-3 px-3 text-center"><div class="flex gap-1 justify-center">' +
+    '<button onclick="openUserModal(\'' + idAttr + '\',\'' + namaAttr + '\',\'' + jabAttr + '\',\'' + phoneAttr + '\',\'' + roleAttr + '\',\'' + passAttr + '\')" class="w-7 h-7 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="fas fa-edit text-[10px]"></i></button>' +
+    '<button onclick="deleteUserUI(\'' + idAttr + '\')" class="w-7 h-7 bg-red-50 text-red-600 rounded-lg flex items-center justify-center"><i class="fas fa-trash text-[10px]"></i></button>' +
+    '</div></td></tr>';
+}
+
+function loadPegawaiData() {
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (!data || !data.length) {
+        document.getElementById('adminUserTable').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400 text-xs">Belum ada data</td></tr>';
+        document.getElementById('pegawaiCount').innerText = '0';
+        return;
+      }
+      document.getElementById('pegawaiCount').innerText = data.length;
+      document.getElementById('adminUserTable').innerHTML = data.map(function(u, i) {
+        return renderUserRow(u, i);
+      }).join('');
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('adminUserTable').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
+    })
+    .getUsers();
+}
+
+function openUserModal(id, nama, jab, phone, role, pass) {
+  document.getElementById('editId').value = id || '';
+  document.getElementById('uNama').value = nama || '';
+  document.getElementById('uJab').value = jab || '';
+  document.getElementById('uPhone').value = phone || '';
+  document.getElementById('uRole').value = role || 'pegawai';
+  document.getElementById('uPass').value = id ? '' : (pass || '');
+  document.getElementById('modalTitle').innerText = id ? "Edit Pegawai" : "Tambah Pegawai";
+  document.getElementById('userModal').classList.remove('hidden');
+  document.getElementById('userModal').classList.add('flex');
+}
+function closeUserModal() {
+  document.getElementById('userModal').classList.add('hidden');
+  document.getElementById('userModal').classList.remove('flex');
+}
+function submitUser() {
+  var data = {
+    id: document.getElementById('editId').value,
+    nama: document.getElementById('uNama').value.trim(),
+    jabatan: document.getElementById('uJab').value.trim(),
+    phone: document.getElementById('uPhone').value.trim(),
+    role: document.getElementById('uRole').value,
+    password: document.getElementById('uPass').value
+  };
+  if (!data.nama || !data.phone) return showToast("Nama & HP wajib diisi!", 'warn');
+  if (!data.id && !data.password) return showToast("Password wajib diisi!", 'warn');
+  showToast("Menyimpan...", 'info', 2000);
+  var onSuccess = function(res) {
+    showToast(res && res.message ? res.message : "Selesai", res && res.success ? 'ok' : 'err');
+    closeUserModal();
+    refreshData();
+    if (document.getElementById('tab-pegawai').classList.contains('active')) loadPegawaiData();
+  };
+  var onFailure = function(err) { showToast("Gagal simpan", 'err'); };
+  if (data.id) {
+    google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).editUser(data);
+  } else {
+    google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).addUser(data);
+  }
+}
+function deleteUserUI(id) {
+  if (confirm("Hapus pegawai ini?")) {
+    google.script.run.withSuccessHandler(function(res) {
+      showToast(res && res.message ? res.message : "Dihapus", 'ok');
+      refreshData();
+      if (document.getElementById('tab-pegawai').classList.contains('active')) loadPegawaiData();
+    }).withFailureHandler(function(err) { showToast("Gagal hapus", 'err'); }).deleteUser(id);
+  }
+}
+
+// ============================================================
+// GPS
+// ============================================================
+function initGPS() {
+  if (!navigator.geolocation) return showToast("Browser tidak mendukung GPS", 'err');
+  navigator.geolocation.watchPosition(function(pos) {
+    currentLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    updateGPSUI();
+    updateUserMapLive();
+    if (!hasInitialGPSFix) { hasInitialGPSFix = true; centerMapOnUser(); }
+  }, function(err) { console.error("GPS error:", err); }, {
+    enableHighAccuracy: true, maximumAge: 0, timeout: 10000
+  });
+}
+
+function updateGPSUI() {
+  if (!office.lat || !office.lng) {
+    var el = document.getElementById('gpsStatus');
+    if (el) el.innerHTML = '<span class="w-2 h-2 rounded-full bg-gray-300"></span> GPS...';
+    return;
+  }
+  var dist = calculateDist(currentLoc.lat, currentLoc.lng, office.lat, office.lng);
+  var el = document.getElementById('gpsStatus');
+  var distInfo = document.getElementById('distInfo');
+  if (!el || !distInfo) return;
+  if (dist <= office.rad) {
+    el.innerHTML = '<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> LOKASI VALID';
+    el.className = "px-3 py-2 rounded-xl text-[9px] font-black border border-emerald-100 bg-emerald-50 text-emerald-600 flex items-center gap-2";
+    distInfo.innerHTML = '<span class="text-emerald-600 italic font-black">Sudah dalam area kantor</span>';
+    if (userOfficeCircle) userOfficeCircle.setStyle({ color:'#10b981', fillColor:'#10b981' });
+  } else {
+    el.innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> LUAR RADIUS (' + Math.round(dist) + 'm)';
+    el.className = "px-3 py-2 rounded-xl text-[9px] font-black border border-red-100 bg-red-50 text-red-600 flex items-center gap-2";
+    distInfo.innerHTML = 'Jarak: <span class="text-red-500 font-bold">' + Math.round(dist) + 'm</span> lagi untuk bisa absen';
+    if (userOfficeCircle) userOfficeCircle.setStyle({ color:'#ef4444', fillColor:'#ef4444' });
+  }
+}
+
+// ============================================================
+// MAPS
+// ============================================================
+function initUserMap(lat, lng, rad) {
+  var mc = document.getElementById('user-map');
+  if (!mc) return;
+  if (lat && lng && !(lat === 0 && lng === 0)) {
+    office.lat = lat; office.lng = lng; office.rad = rad || office.rad;
+  }
+  if (!office.lat || !office.lng || (office.lat === 0 && office.lng === 0)) {
+    mc.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f59e0b;font-size:12px;font-weight:bold;text-align:center;padding:20px;">Koordinat kantor belum diatur</div>';
+    return;
+  }
+  if (userMap) {
+    try {
+      userOfficeCircle.setLatLng([office.lat, office.lng]).setRadius(office.rad);
+      userOfficeMarker.setLatLng([office.lat, office.lng]);
+      userMap.invalidateSize();
+      fitMapView();
+    } catch (e) {}
+    return;
+  }
+  if (_mapInitDone) return;
+  _mapInitDone = true;
+  mc.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:12px;font-weight:bold;">Memuat peta...</div>';
+  setTimeout(function() {
+    mc.innerHTML = '';
+    try {
+      var oLat = office.lat, oLng = office.lng, oRad = office.rad;
+      userMap = L.map(mc, { zoomControl:false, center:[oLat, oLng], zoom:15, preferCanvas:true, fadeAnimation:false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, subdomains: ['a','b','c'], attribution: 'OpenStreetMap', crossOrigin: true, keepBuffer: 4
+      }).addTo(userMap);
+      var officeIcon = L.divIcon({ className:'', html:'<div style="font-size:24px;">B</div>', iconSize:[24,24], iconAnchor:[12,12] });
+      userOfficeMarker = L.marker([oLat, oLng], { icon: officeIcon }).addTo(userMap);
+      userOfficeCircle = L.circle([oLat, oLng], { color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.12, weight:2, radius:oRad, dashArray:'6 4' }).addTo(userMap);
+      var userIcon = L.divIcon({ className:'', html:'<div style="width:14px;height:14px;background:#3b82f6;border:3px solid white;border-radius:50%;"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+      var posLat = (currentLoc.lat !== 0) ? currentLoc.lat : oLat;
+      var posLng = (currentLoc.lng !== 0) ? currentLoc.lng : oLng;
+      userPosMarker = L.marker([posLat, posLng], { icon: userIcon }).addTo(userMap);
+      userMap.invalidateSize();
+      setTimeout(function() { if (userMap) { userMap.invalidateSize(); fitMapView(); } }, 100);
+    } catch (e) {
+      mc.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;font-weight:bold;">Gagal memuat peta</div>';
+    }
+  }, 0);
+}
+function fitMapView() {
+  if (!userMap) return;
+  var bounds = L.latLngBounds([]);
+  if (userOfficeCircle) bounds.extend(userOfficeCircle.getBounds());
+  if (currentLoc.lat !== 0 && currentLoc.lng !== 0) bounds.extend([currentLoc.lat, currentLoc.lng]);
+  if (bounds.isValid()) userMap.fitBounds(bounds, { padding:[25, 25], maxZoom:18 });
+}
+function updateUserMapLive() {
+  if (!userMap || !userPosMarker) return;
+  if (currentLoc.lat !== 0 && currentLoc.lng !== 0) userPosMarker.setLatLng([currentLoc.lat, currentLoc.lng]);
+}
+function centerMapOnUser() {
+  if (!userMap) return;
+  userMap.invalidateSize();
+  setTimeout(fitMapView, 50);
+}
+
+function initAdminMap(lat, lng, rad) {
+  if (!lat || !lng || (lat === 0 && lng === 0)) return;
+  var mc = document.getElementById('admin-map');
+  if (!mc) return;
+  if (adminMap) { try { adminMap.remove(); } catch (e) {} adminMap = null; }
+  mc.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:white;font-size:12px;font-weight:bold;">Memuat peta...</div>';
+  setTimeout(function() {
+    mc.innerHTML = '';
+    try {
+      adminMap = L.map(mc, { zoomControl:false, center:[lat, lng], zoom:17, preferCanvas:true, fadeAnimation:false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, subdomains: ['a','b','c'], attribution: 'OpenStreetMap', crossOrigin: true, keepBuffer: 4
+      }).addTo(adminMap);
+      var icon = L.divIcon({ className:'', html:'<div style="font-size:24px;">B</div>', iconSize:[24,24], iconAnchor:[12,12] });
+      adminMarker = L.marker([lat, lng], { icon: icon, draggable:true }).addTo(adminMap);
+      adminCircle = L.circle([lat, lng], { color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.2, weight:2, radius:rad }).addTo(adminMap);
+      document.getElementById('adm-lat').value = lat.toFixed(6);
+      document.getElementById('adm-lng').value = lng.toFixed(6);
+      document.getElementById('adm-rad').value = rad;
+      adminMarker.on('drag', function(e) {
+        var p = e.target.getLatLng();
+        document.getElementById('adm-lat').value = p.lat.toFixed(6);
+        document.getElementById('adm-lng').value = p.lng.toFixed(6);
+        adminCircle.setLatLng(p);
+      });
+      adminMap.on('click', function(e) {
+        adminMarker.setLatLng(e.latlng);
+        adminCircle.setLatLng(e.latlng);
+        document.getElementById('adm-lat').value = e.latlng.lat.toFixed(6);
+        document.getElementById('adm-lng').value = e.latlng.lng.toFixed(6);
+      });
+      adminMap.invalidateSize();
+      setTimeout(function() { if (adminMap) adminMap.invalidateSize(); }, 100);
+    } catch (e) {
+      mc.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;font-weight:bold;">Gagal memuat peta</div>';
+    }
+  }, 0);
+}
+function updateMapCircle() {
+  var r = document.getElementById('adm-rad').value;
+  if (adminCircle) adminCircle.setRadius(parseInt(r) || 0);
+}
+function saveGPS() {
+  var la = document.getElementById('adm-lat').value;
+  var ln = document.getElementById('adm-lng').value;
+  var rd = document.getElementById('adm-rad').value;
+  if (!la || !ln || !rd) return showToast("Isi semua data!", 'warn');
+  office = { lat: parseFloat(la), lng: parseFloat(ln), rad: parseInt(rd) };
+  localStorage.setItem('presensi_office_v3', JSON.stringify(office));
+  showToast("Menyimpan...", 'info', 2000);
+  google.script.run
+    .withSuccessHandler(function(res) { showToast(res && res.message ? res.message : "Tersimpan", 'ok'); refreshData(); })
+    .withFailureHandler(function(err) { showToast("Gagal simpan", 'err'); })
+    .updateOfficeSettings(la, ln, rd);
+}
+
+// ============================================================
+// ATTENDANCE LOG
+// ============================================================
+function loadAttendanceLog() {
+  google.script.run
+    .withSuccessHandler(function(data) {
+      allLogData = data || [];
+      renderLogTable(allLogData);
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('adminAbsenceLog').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
+    })
+    .getAttendanceLog();
+}
+function renderLogTable(data) {
+  document.getElementById('logCount').innerText = 'Total: ' + data.length + ' data';
+  if (!data.length) {
+    document.getElementById('adminAbsenceLog').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400 text-xs">Belum ada data</td></tr>';
+    return;
+  }
+  document.getElementById('adminAbsenceLog').innerHTML = data.map(function(a, i) {
+    var nama = a[a.length - 1] || 'Anonim';
+    var mapsUrl = a[a.length - 2] || '#';
+    var status = a[9] || 'Hadir';
+    var statusBadge = status === 'Hadir'
+      ? '<span class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase">' + escapeHtml(status) + '</span>'
+      : '<span class="px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase">' + escapeHtml(status) + '</span>';
+    var rowClass = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+    return '<tr class="' + rowClass + ' border-b border-gray-100">' +
+      '<td class="py-3 px-3 font-bold text-gray-900 whitespace-nowrap">' + escapeHtml(nama) + '</td>' +
+      '<td class="py-3 px-3 font-bold text-gray-600">' + escapeHtml(a[2]) + '</td>' +
+      '<td class="py-3 px-3 font-bold text-indigo-600">' + escapeHtml(a[3]) + '</td>' +
+      '<td class="py-3 px-3 font-bold text-red-500">' + escapeHtml(a[4] || '--:--') + '</td>' +
+      '<td class="py-3 px-3 text-center">' + statusBadge + '</td>' +
+      '<td class="py-3 px-3 text-center"><a href="' + escapeHtml(mapsUrl) + '" target="_blank" class="inline-flex items-center justify-center w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg"><i class="fas fa-map-location-dot text-[10px]"></i></a></td>' +
+      '</tr>';
+  }).join('');
+}
+function applyLogFilter() {
+  var fb = document.getElementById('filterBulan').value;
+  var ft = document.getElementById('filterTanggal').value;
+  var filtered = allLogData.filter(function(a) {
+    var tgl = a[2];
+    if (!tgl) return false;
+    if (ft) return String(tgl) === ft;
+    if (fb) return String(tgl).startsWith(fb);
+    return true;
+  });
+  renderLogTable(filtered);
+}
+function resetLogFilter() {
+  document.getElementById('filterBulan').value = '';
+  document.getElementById('filterTanggal').value = '';
+  renderLogTable(allLogData);
+}
+
+// ============================================================
+// PERMIT / IZIN
 // ============================================================
 function openPermitModal() {
   var tzoffset = (new Date()).getTimezoneOffset() * 60000;
