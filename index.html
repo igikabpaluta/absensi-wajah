@@ -174,6 +174,11 @@ input, select { font-size:16px !important; }
   font-size:60px; font-weight:900; margin:0 auto 20px;
   border:6px solid #10b981; box-shadow:0 10px 30px rgba(16,185,129,.5);
 }
+.kiosk-telat {
+  display:inline-block; padding: 6px 16px; border-radius:999px;
+  font-size:14px; font-weight:900; background:#f59e0b; color:white;
+  margin-top:8px; animation: pulseRing 2s infinite;
+}
 </style>
 </head>
 
@@ -416,6 +421,33 @@ input, select { font-size:16px !important; }
         <p class="text-[9px] text-gray-400 text-center italic">*Geser pin biru atau klik peta untuk ubah lokasi</p>
       </div>
     </div>
+
+    <!-- PANEL JAM KERJA (BARU) -->
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-clock text-indigo-600 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Pengaturan Jam Kerja</h4>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Jam Masuk</label>
+          <input type="time" id="jk-masuk" class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Jam Keluar</label>
+          <input type="time" id="jk-keluar" class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Batas Telat</label>
+          <input type="time" id="jk-telat" class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+          <p class="text-[10px] text-gray-400 italic ml-2 mt-1">Lewat jam ini = Terlambat</p>
+        </div>
+        <button onclick="saveJamKerja()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+          <i class="fas fa-save mr-2"></i> SIMPAN JAM KERJA
+        </button>
+      </div>
+    </div>
+
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <h4 class="font-black text-sm uppercase tracking-widest text-gray-400 mb-4">Kelola Wajah Saya</h4>
       <button onclick="openEnrollment()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
@@ -503,11 +535,12 @@ input, select { font-size:16px !important; }
               <th class="py-3 px-3 text-left font-bold">Masuk</th>
               <th class="py-3 px-3 text-left font-bold">Keluar</th>
               <th class="py-3 px-3 text-center font-bold">Status</th>
+              <th class="py-3 px-3 text-left font-bold">Keterangan</th>
               <th class="py-3 px-3 text-center font-bold">Lokasi</th>
             </tr>
           </thead>
           <tbody id="adminAbsenceLog">
-            <tr><td colspan="6" class="py-8 text-center text-gray-400 text-xs">Memuat data...</td></tr>
+            <tr><td colspan="7" class="py-8 text-center text-gray-400 text-xs">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -593,6 +626,7 @@ var office = { lat: 0, lng: 0, rad: 100 };
 var currentLoc = { lat: 0, lng: 0 };
 var attType = '';
 var userFaceEnrolled = false;
+var jamKerja = { jam_masuk: '08:00', jam_keluar: '17:00', batas_telat: '08:15' };
 
 var adminMap, adminMarker, adminCircle;
 var userMap, userPosMarker, userOfficeCircle, userOfficeMarker;
@@ -690,6 +724,22 @@ function showToast(msg, type, duration) {
   t._timer = setTimeout(function() {
     t.classList.remove('show');
   }, duration);
+}
+
+/**
+ * TTS - Suara Bahasa Indonesia
+ */
+function speakText(text) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'id-ID';
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
+    window.speechSynthesis.speak(utter);
+  } catch (e) { console.warn('TTS error:', e); }
 }
 
 function startTime() {
@@ -806,6 +856,7 @@ function setupApp() {
   }
   setTimeout(function() {
     refreshData();
+    loadJamKerja();
     window.dispatchEvent(new Event('resize'));
   }, 50);
   callAPI('getOfficeLocation', {})
@@ -841,7 +892,10 @@ function switchTab(id) {
   }
   setTimeout(function() {
     window.dispatchEvent(new Event('resize'));
-    if (id === 'setting') initAdminMap(office.lat, office.lng, office.rad);
+    if (id === 'setting') {
+      initAdminMap(office.lat, office.lng, office.rad);
+      loadJamKerja();
+    }
     else if (id === 'home') {
       if (userMap) { userMap.invalidateSize(); centerMapOnUser(); }
       else initUserMap(office.lat, office.lng, office.rad);
@@ -924,6 +978,43 @@ function updateFaceBanner() {
       '<p class="text-[10px] text-amber-700">Daftarkan wajah dulu untuk bisa absen</p></div>' +
       '<button onclick="openEnrollment()" class="bg-amber-500 text-white text-[10px] font-black px-3 py-2 rounded-lg">DAFTAR</button>';
   }
+}
+
+// ============================================================
+// JAM KERJA
+// ============================================================
+function loadJamKerja() {
+  callAPI('getJamKerja', {})
+    .then(function(res) {
+      if (res && res.success && res.data) {
+        jamKerja = res.data;
+        var el1 = document.getElementById('jk-masuk');
+        var el2 = document.getElementById('jk-keluar');
+        var el3 = document.getElementById('jk-telat');
+        if (el1) el1.value = jamKerja.jam_masuk || '08:00';
+        if (el2) el2.value = jamKerja.jam_keluar || '17:00';
+        if (el3) el3.value = jamKerja.batas_telat || '08:15';
+      }
+    })
+    .catch(function(err) { console.warn('loadJamKerja gagal:', err); });
+}
+
+function saveJamKerja() {
+  var masuk = document.getElementById('jk-masuk').value;
+  var keluar = document.getElementById('jk-keluar').value;
+  var telat = document.getElementById('jk-telat').value;
+  if (!masuk || !keluar || !telat) return showToast("Semua field wajib diisi!", 'warn');
+  showToast("Menyimpan...", 'info', 2000);
+  callAPI('updateJamKerja', { jam_masuk: masuk, jam_keluar: keluar, batas_telat: telat })
+    .then(function(res) {
+      if (res && res.success) {
+        jamKerja = { jam_masuk: masuk, jam_keluar: keluar, batas_telat: telat };
+        showToast(res.message || "Jam kerja tersimpan!", 'ok');
+      } else {
+        showToast(res ? res.message : "Gagal simpan", 'err');
+      }
+    })
+    .catch(function(err) { showToast("Gagal terhubung ke server", 'err'); });
 }
 
 // ============================================================
@@ -1175,6 +1266,7 @@ function saveEnrollment(descriptor, thumbnail) {
     .then(function(res) {
       if (res && res.success) {
         showToast("Wajah berhasil didaftarkan!", 'ok', 4000);
+        speakText(user.nama + ' wajah berhasil didaftarkan');
         userFaceEnrolled = true;
         closeEnrollment();
         updateFaceBanner();
@@ -1343,7 +1435,26 @@ function captureAbsen() {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
       if (res && res.success) {
-        showToast(res.message || "Absen berhasil!", 'ok', 5000);
+        // TTS dinamis
+        var suara = '';
+        if (attType === 'IN') {
+          if (res.keterangan && res.keterangan.indexOf('Terlambat') >= 0) {
+            suara = user.nama + ' tercatat hadir, tapi terlambat';
+          } else {
+            suara = user.nama + ' tercatat hadir';
+          }
+        } else {
+          if (res.keterangan && res.keterangan.indexOf('Pulang Awal') >= 0) {
+            suara = user.nama + ' tercatat pulang, pulang awal';
+          } else {
+            suara = user.nama + ' tercatat pulang';
+          }
+        }
+        speakText(suara);
+        // Toast dengan keterangan
+        var toastMsg = res.message || "Absen berhasil!";
+        if (res.keterangan) toastMsg += ' — ' + res.keterangan;
+        showToast(toastMsg, 'ok', 5000);
         closeAbsen();
         refreshData();
       } else {
@@ -1564,21 +1675,32 @@ function showKioskResult(res, face) {
   var thumb = (res && res.thumbnail) || (face && face.thumbnail) || '';
   var isOk = res && res.success;
   var type = res && res.type;
+  var ket = (res && res.keterangan) || '';
 
+  // TTS dinamis
   try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      var utter = new SpeechSynthesisUtterance();
-      if (isOk) {
-        utter.text = nama + ' tercatat ' + (type === 'IN' ? 'hadir' : 'pulang');
+    if (isOk) {
+      if (type === 'IN') {
+        if (ket.indexOf('Terlambat') >= 0) {
+          speakText(nama + ' tercatat hadir, tapi terlambat');
+        } else {
+          speakText(nama + ' tercatat hadir');
+        }
       } else {
-        utter.text = (res && res.alreadyRecent) ? nama + ' baru saja absen' : (res && res.message ? res.message : 'Absen gagal');
+        if (ket.indexOf('Pulang Awal') >= 0) {
+          speakText(nama + ' tercatat pulang, pulang awal');
+        } else {
+          speakText(nama + ' tercatat pulang');
+        }
       }
-      utter.lang = 'id-ID';
-      utter.rate = 0.95;
-      utter.pitch = 1.0;
-      utter.volume = 1.0;
-      window.speechSynthesis.speak(utter);
+    } else {
+      if (res && res.alreadyRecent) {
+        speakText(nama + ' baru saja absen');
+      } else if (res && res.message) {
+        speakText(res.message);
+      } else {
+        speakText('Absen gagal');
+      }
     }
   } catch (e) { console.warn('TTS error:', e); }
 
@@ -1605,12 +1727,18 @@ function showKioskResult(res, face) {
 
   var timeStr = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
 
+  var ketHtml = '';
+  if (ket) {
+    ketHtml = '<div class="kiosk-telat">' + escapeHtml(ket) + '</div>';
+  }
+
   el.className = 'kiosk-result';
   el.innerHTML =
     '<div class="' + cardClass + '">' +
       photoHtml +
       '<div class="kiosk-name">' + escapeHtml(nama) + '</div>' +
       '<div class="kiosk-type ' + typeClass + '">' + typeLabel + '</div>' +
+      ketHtml +
       '<div class="kiosk-time">' + timeStr + '</div>' +
       '<div class="kiosk-time" style="margin-top:8px; font-size:13px;">' + escapeHtml((res && res.message) || '') + '</div>' +
     '</div>';
@@ -1655,6 +1783,7 @@ function refreshData() {
           localStorage.setItem('presensi_office_v3', JSON.stringify(office));
         }
       }
+      if (res.jamKerja) jamKerja = res.jamKerja;
       if (typeof res.faceEnrolled !== 'undefined') {
         userFaceEnrolled = res.faceEnrolled;
         updateFaceBanner();
@@ -1663,9 +1792,12 @@ function refreshData() {
       var historyDiv = document.getElementById('userHistory');
       if (res.history && res.history.length > 0) {
         historyDiv.innerHTML = res.history.map(function(h) {
+          var ket = h[12] || '';
+          var ketBadge = ket ? '<span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[8px] font-black">' + escapeHtml(ket) + '</span>' : '';
           return '<div class="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm">' +
             '<div><p class="text-[10px] font-black text-indigo-600">' + escapeHtml(h[2]) + '</p>' +
-            '<h4 class="font-bold text-gray-900">' + escapeHtml(h[3]) + ' - ' + escapeHtml(h[4] || '--:--') + '</h4></div>' +
+            '<h4 class="font-bold text-gray-900">' + escapeHtml(h[3]) + ' - ' + escapeHtml(h[4] || '--:--') + '</h4>' +
+            ketBadge + '</div>' +
             '<div class="text-right"><span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-bold">' + escapeHtml(h[9] || 'Hadir') + '</span></div></div>';
         }).join('');
       } else {
@@ -1948,22 +2080,26 @@ function loadAttendanceLog() {
       renderLogTable(allLogData);
     })
     .catch(function(err) {
-      document.getElementById('adminAbsenceLog').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
+      document.getElementById('adminAbsenceLog').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
     });
 }
 function renderLogTable(data) {
   document.getElementById('logCount').innerText = 'Total: ' + data.length + ' data';
   if (!data.length) {
-    document.getElementById('adminAbsenceLog').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400 text-xs">Belum ada data</td></tr>';
+    document.getElementById('adminAbsenceLog').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-gray-400 text-xs">Belum ada data</td></tr>';
     return;
   }
   document.getElementById('adminAbsenceLog').innerHTML = data.map(function(a, i) {
     var nama = a[a.length - 1] || 'Anonim';
     var mapsUrl = a[a.length - 2] || '#';
     var status = a[9] || 'Hadir';
+    var ket = a[12] || '';
     var statusBadge = status === 'Hadir'
       ? '<span class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase">' + escapeHtml(status) + '</span>'
       : '<span class="px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase">' + escapeHtml(status) + '</span>';
+    var ketBadge = ket
+      ? '<span class="px-2 py-1 bg-red-50 text-red-600 rounded-lg text-[9px] font-black uppercase">' + escapeHtml(ket) + '</span>'
+      : '<span class="text-[9px] text-gray-400 italic">—</span>';
     var rowClass = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
     return '<tr class="' + rowClass + ' border-b border-gray-100">' +
       '<td class="py-3 px-3 font-bold text-gray-900 whitespace-nowrap">' + escapeHtml(nama) + '</td>' +
@@ -1971,6 +2107,7 @@ function renderLogTable(data) {
       '<td class="py-3 px-3 font-bold text-indigo-600">' + escapeHtml(a[3]) + '</td>' +
       '<td class="py-3 px-3 font-bold text-red-500">' + escapeHtml(a[4] || '--:--') + '</td>' +
       '<td class="py-3 px-3 text-center">' + statusBadge + '</td>' +
+      '<td class="py-3 px-3">' + ketBadge + '</td>' +
       '<td class="py-3 px-3 text-center"><a href="' + escapeHtml(mapsUrl) + '" target="_blank" class="inline-flex items-center justify-center w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg"><i class="fas fa-map-location-dot text-[10px]"></i></a></td>' +
       '</tr>';
   }).join('');
