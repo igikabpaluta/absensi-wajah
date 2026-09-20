@@ -104,14 +104,39 @@ input, select { font-size:16px !important; }
 .kiosk-face-guide.detected { border-color:#3b82f6; border-style:solid; }
 .kiosk-header {
   position:absolute; top:0; left:0; right:0;
-  padding:20px 24px; z-index:20;
-  background:linear-gradient(180deg, rgba(0,0,0,0.75), transparent);
+  padding:16px 20px; z-index:20;
+  background:linear-gradient(180deg, rgba(0,0,0,0.85), transparent);
+}
+.kiosk-subtabs {
+  display:flex; gap:8px; margin-bottom:12px;
+  justify-content:center;
+}
+.kiosk-subtab {
+  flex:1; max-width:200px;
+  padding:14px 20px; border-radius:16px;
+  font-size:15px; font-weight:900; letter-spacing:0.5px;
+  background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.6);
+  border:2px solid rgba(255,255,255,0.15);
+  transition: all .25s; cursor:pointer; pointer-events:auto;
+  text-align:center;
+}
+.kiosk-subtab.active {
+  background:linear-gradient(135deg,#3b82f6,#2563eb);
+  color:white; border-color:#3b82f6;
+  box-shadow:0 8px 24px rgba(59,130,246,.5);
+}
+.kiosk-subtab.pulang.active {
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:white; border-color:#ef4444;
+  box-shadow:0 8px 24px rgba(239,68,68,.5);
+}
+.kiosk-statusbar {
   display:flex; justify-content:space-between; align-items:center;
 }
 .kiosk-bottom {
   position:absolute; bottom:0; left:0; right:0;
-  padding:24px; z-index:20;
-  background:linear-gradient(0deg, rgba(0,0,0,0.85), transparent);
+  padding:20px; z-index:20;
+  background:linear-gradient(0deg, rgba(0,0,0,0.9), transparent);
   display:flex; justify-content:center; gap:12px; flex-wrap:wrap;
 }
 .kiosk-status {
@@ -290,7 +315,7 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- KIOSK SCREEN -->
+<!-- KIOSK SCREEN - dengan sub-tab Masuk/Pulang -->
 <div id="kioskScreen" class="fixed inset-0 z-[670] hidden bg-black">
   <div class="kiosk-video-wrap">
     <video id="kioskVideo" autoplay playsinline muted></video>
@@ -298,12 +323,22 @@ input, select { font-size:16px !important; }
       <div class="kiosk-face-guide" id="kioskGuide"></div>
     </div>
     <div class="kiosk-header">
-      <div class="kiosk-status on" id="kioskModeStatus">
-        <span class="dot"></span> <span id="kioskModeText">AUTO</span>
+      <div class="kiosk-subtabs">
+        <button id="kioskTabMasuk" onclick="setKioskType('IN')" class="kiosk-subtab active">
+          <i class="fas fa-sign-in-alt mr-1"></i> ABSEN MASUK
+        </button>
+        <button id="kioskTabPulang" onclick="setKioskType('OUT')" class="kiosk-subtab pulang">
+          <i class="fas fa-sign-out-alt mr-1"></i> ABSEN PULANG
+        </button>
       </div>
-      <button onclick="closeKiosk()" class="kiosk-status" style="pointer-events:auto; cursor:pointer;">
-        <i class="fas fa-times"></i> TUTUP
-      </button>
+      <div class="kiosk-statusbar">
+        <div class="kiosk-status on" id="kioskModeStatus">
+          <span class="dot"></span> <span id="kioskModeText">AUTO</span>
+        </div>
+        <button onclick="openKioskPasswordModal()" class="kiosk-status" style="pointer-events:auto; cursor:pointer; background:rgba(239,68,68,0.85); border-color:#ef4444;">
+          <i class="fas fa-lock"></i> TUTUP
+        </button>
+      </div>
     </div>
     <div class="kiosk-bottom">
       <button id="kioskToggleMode" onclick="toggleKioskMode()"
@@ -422,7 +457,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- PANEL JAM KERJA (BARU) -->
+    <!-- PANEL JAM KERJA -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-clock text-indigo-600 text-lg"></i>
@@ -444,6 +479,25 @@ input, select { font-size:16px !important; }
         </div>
         <button onclick="saveJamKerja()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
           <i class="fas fa-save mr-2"></i> SIMPAN JAM KERJA
+        </button>
+      </div>
+    </div>
+
+    <!-- PANEL PASSWORD KIOSK (BARU) -->
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-lock text-red-500 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Password Kiosk</h4>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Password Tutup Kiosk</label>
+          <input type="text" id="kiosk-pwd" placeholder="Masukkan password"
+            class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+          <p class="text-[10px] text-gray-400 italic ml-2 mt-1">Password untuk menutup Mode Absen Massal</p>
+        </div>
+        <button onclick="saveKioskPassword()" class="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+          <i class="fas fa-save mr-2"></i> SIMPAN PASSWORD
         </button>
       </div>
     </div>
@@ -615,6 +669,26 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
+<!-- MODAL PASSWORD KIOSK -->
+<div id="kioskPasswordModal" class="fixed inset-0 z-[800] bg-black/80 backdrop-blur-md hidden items-center justify-center p-6">
+  <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i class="fas fa-lock text-red-500 text-2xl"></i>
+      </div>
+      <h3 class="text-xl font-black text-gray-900">Tutup Mode Massal</h3>
+      <p class="text-xs text-gray-500 mt-1">Masukkan password untuk keluar</p>
+    </div>
+    <input type="password" id="kioskPwdInput" placeholder="Password"
+      class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-center text-lg tracking-widest">
+    <p class="text-[10px] text-red-500 text-center font-bold hidden" id="kioskPwdError">Password salah!</p>
+    <div class="flex gap-3 pt-2">
+      <button onclick="closeKioskPasswordModal()" class="flex-1 py-4 font-bold text-gray-400">Batal</button>
+      <button onclick="verifyKioskPasswordAndClose()" class="flex-1 bg-red-500 text-white rounded-2xl font-bold shadow-lg shadow-red-200">TUTUP</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast">Notifikasi...</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
@@ -627,6 +701,7 @@ var currentLoc = { lat: 0, lng: 0 };
 var attType = '';
 var userFaceEnrolled = false;
 var jamKerja = { jam_masuk: '08:00', jam_keluar: '17:00', batas_telat: '08:15' };
+var kioskPassword = '1234';
 
 var adminMap, adminMarker, adminCircle;
 var userMap, userPosMarker, userOfficeCircle, userOfficeMarker;
@@ -634,6 +709,7 @@ var hasInitialGPSFix = false;
 var allLogData = [];
 var _clockInterval = null;
 var _mapInitDone = false;
+var _welcomeSpoken = false;
 
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
@@ -655,7 +731,7 @@ var enrollStableFrames = 0;
 var enrollLastStableBox = null;
 var enrollLastAutoCaptureAt = 0;
 var ENROLL_STABLE_REQUIRED = 5;
-var ENROLL_AUTO_COOLDOWN = 1200;
+var ENROLL_AUTO_CAPTURE_COOLDOWN = 1200;
 var enrollCaptureInProgress = false;
 
 // Absen state
@@ -668,6 +744,7 @@ var kioskStream = null;
 var kioskLoopTimer = null;
 var kioskInferenceBusy = false;
 var kioskMode = 'auto';
+var kioskType = 'IN';  // 'IN' | 'OUT'
 var kioskKnownFaces = [];
 var kioskLastResultAt = 0;
 var KIOSK_RESULT_DURATION = 2500;
@@ -854,6 +931,13 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.remove('hidden');
     document.getElementById('nav-kiosk').classList.add('flex');
   }
+  // TTS Selamat Datang (sekali per sesi)
+  if (!_welcomeSpoken) {
+    _welcomeSpoken = true;
+    setTimeout(function() {
+      speakText('Selamat datang, ' + user.nama);
+    }, 800);
+  }
   setTimeout(function() {
     refreshData();
     loadJamKerja();
@@ -895,6 +979,7 @@ function switchTab(id) {
     if (id === 'setting') {
       initAdminMap(office.lat, office.lng, office.rad);
       loadJamKerja();
+      loadKioskPassword();
     }
     else if (id === 'home') {
       if (userMap) { userMap.invalidateSize(); centerMapOnUser(); }
@@ -917,6 +1002,7 @@ function handleLogin() {
       if (res && res.success) {
         user = res.user;
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
+        _welcomeSpoken = false; // Reset supaya TTS selamat datang berbunyi
         setupApp();
         checkFaceAndRedirect();
       } else {
@@ -933,6 +1019,7 @@ function handleLogout() {
   localStorage.removeItem('presensi_user_v3');
   user = null;
   userFaceEnrolled = false;
+  _welcomeSpoken = false;
   document.getElementById('app').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginPhone').value = '';
@@ -1015,6 +1102,82 @@ function saveJamKerja() {
       }
     })
     .catch(function(err) { showToast("Gagal terhubung ke server", 'err'); });
+}
+
+// ============================================================
+// KIOSK PASSWORD
+// ============================================================
+function loadKioskPassword() {
+  callAPI('getKioskPassword', {})
+    .then(function(res) {
+      if (res && res.password) {
+        kioskPassword = res.password;
+        var el = document.getElementById('kiosk-pwd');
+        if (el) el.value = kioskPassword;
+      }
+    })
+    .catch(function(err) { console.warn('loadKioskPassword gagal:', err); });
+}
+
+function saveKioskPassword() {
+  var pwd = document.getElementById('kiosk-pwd').value.trim();
+  if (!pwd) return showToast("Password tidak boleh kosong!", 'warn');
+  showToast("Menyimpan...", 'info', 2000);
+  callAPI('updateKioskPassword', { password: pwd })
+    .then(function(res) {
+      if (res && res.success) {
+        kioskPassword = pwd;
+        showToast(res.message || "Password kiosk tersimpan!", 'ok');
+      } else {
+        showToast(res ? res.message : "Gagal simpan", 'err');
+      }
+    })
+    .catch(function(err) { showToast("Gagal terhubung ke server", 'err'); });
+}
+
+function openKioskPasswordModal() {
+  document.getElementById('kioskPwdInput').value = '';
+  document.getElementById('kioskPwdError').classList.add('hidden');
+  document.getElementById('kioskPasswordModal').classList.remove('hidden');
+  document.getElementById('kioskPasswordModal').classList.add('flex');
+  setTimeout(function() {
+    document.getElementById('kioskPwdInput').focus();
+  }, 200);
+}
+
+function closeKioskPasswordModal() {
+  document.getElementById('kioskPasswordModal').classList.add('hidden');
+  document.getElementById('kioskPasswordModal').classList.remove('flex');
+}
+
+function verifyKioskPasswordAndClose() {
+  var input = document.getElementById('kioskPwdInput').value;
+  if (!input) {
+    document.getElementById('kioskPwdError').classList.remove('hidden');
+    return;
+  }
+  callAPI('verifyKioskPassword', { password: input })
+    .then(function(res) {
+      if (res && res.success) {
+        closeKioskPasswordModal();
+        closeKiosk();
+        showToast("Mode Massal ditutup", 'ok', 2000);
+      } else {
+        document.getElementById('kioskPwdError').classList.remove('hidden');
+        document.getElementById('kioskPwdInput').value = '';
+      }
+    })
+    .catch(function(err) {
+      // Fallback: cek lokal
+      if (input === kioskPassword) {
+        closeKioskPasswordModal();
+        closeKiosk();
+        showToast("Mode Massal ditutup", 'ok', 2000);
+      } else {
+        document.getElementById('kioskPwdError').classList.remove('hidden');
+        document.getElementById('kioskPwdInput').value = '';
+      }
+    });
 }
 
 // ============================================================
@@ -1123,7 +1286,7 @@ function startEnrollLoop() {
               status.className = 'face-status stable';
               status.innerText = 'Wajah stabil - capture otomatis...';
               var now = Date.now();
-              if (now - enrollLastAutoCaptureAt > ENROLL_AUTO_COOLDOWN) {
+              if (now - enrollLastAutoCaptureAt > ENROLL_AUTO_CAPTURE_COOLDOWN) {
                 enrollLastAutoCaptureAt = now;
                 enrollStableFrames = 0;
                 enrollLastStableBox = null;
@@ -1451,7 +1614,6 @@ function captureAbsen() {
           }
         }
         speakText(suara);
-        // Toast dengan keterangan
         var toastMsg = res.message || "Absen berhasil!";
         if (res.keterangan) toastMsg += ' — ' + res.keterangan;
         showToast(toastMsg, 'ok', 5000);
@@ -1479,8 +1641,26 @@ function closeAbsen() {
 }
 
 // ============================================================
-// KIOSK MODE (Tab Massal - khusus admin)
+// KIOSK MODE (Tab Massal - dengan sub-tab MASUK/PULANG)
 // ============================================================
+function setKioskType(type) {
+  kioskType = type;
+  var tabMasuk = document.getElementById('kioskTabMasuk');
+  var tabPulang = document.getElementById('kioskTabPulang');
+  if (type === 'IN') {
+    tabMasuk.classList.add('active');
+    tabPulang.classList.remove('active');
+  } else {
+    tabPulang.classList.add('active');
+    tabMasuk.classList.remove('active');
+  }
+  // Reset overlay supaya tidak konflik
+  var overlay = document.getElementById('kioskResult');
+  overlay.className = 'kiosk-result hidden';
+  kioskLastResultAt = 0;
+  showToast('Mode: ' + (type === 'IN' ? 'ABSEN MASUK' : 'ABSEN PULANG'), 'info', 1500);
+}
+
 function openKiosk() {
   if (!user || user.role !== 'admin') return;
   if (!office.lat || !office.lng) {
@@ -1499,6 +1679,8 @@ function openKiosk() {
 
   document.getElementById('kioskScreen').classList.remove('hidden');
   kioskMode = 'auto';
+  kioskType = 'IN';
+  setKioskType('IN');
   updateKioskModeUI();
   document.getElementById('kioskResult').className = 'kiosk-result hidden';
 
@@ -1657,7 +1839,8 @@ function kioskProcessAttendance(face) {
   callAPI('submitAttendanceKiosk', {
     userId: face.userId,
     lat: currentLoc.lat,
-    lng: currentLoc.lng
+    lng: currentLoc.lng,
+    mode: kioskType
   })
     .then(function(res) {
       kioskProcessingUser = null;
@@ -1674,7 +1857,7 @@ function showKioskResult(res, face) {
   var nama = (res && res.namaUser) || (face && face.nama) || 'Pegawai';
   var thumb = (res && res.thumbnail) || (face && face.thumbnail) || '';
   var isOk = res && res.success;
-  var type = res && res.type;
+  var type = (res && res.type) || kioskType;
   var ket = (res && res.keterangan) || '';
 
   // TTS dinamis
@@ -1694,18 +1877,23 @@ function showKioskResult(res, face) {
         }
       }
     } else {
-      if (res && res.alreadyRecent) {
+      // Error: sudah absen / belum masuk / sudah keluar
+      if (res && res.alreadyAbsen) {
+        speakText(nama + ' sudah absen masuk');
+      } else if (res && res.belumMasuk) {
+        speakText(nama + ' belum absen masuk');
+      } else if (res && res.sudahKeluar) {
+        speakText(nama + ' sudah absen keluar');
+      } else if (res && res.alreadyRecent) {
         speakText(nama + ' baru saja absen');
       } else if (res && res.message) {
         speakText(res.message);
-      } else {
-        speakText('Absen gagal');
       }
     }
   } catch (e) { console.warn('TTS error:', e); }
 
   var cardClass = 'kiosk-result-card';
-  if (!isOk) cardClass += (res && res.alreadyRecent) ? ' warn' : ' err';
+  if (!isOk) cardClass += (res && (res.alreadyAbsen || res.belumMasuk || res.sudahKeluar || res.alreadyRecent)) ? ' warn' : ' err';
 
   var photoHtml = '';
   if (thumb && thumb.indexOf('data:image') === 0) {
@@ -1721,14 +1909,17 @@ function showKioskResult(res, face) {
     if (type === 'IN') { typeLabel = 'MASUK'; typeClass = ''; }
     else { typeLabel = 'PULANG'; typeClass = 'out'; }
   } else {
-    typeLabel = 'GAGAL';
-    typeClass = 'err';
+    if (res && res.alreadyAbsen) { typeLabel = 'SUDAH ABSEN'; typeClass = 'err'; }
+    else if (res && res.belumMasuk) { typeLabel = 'BELUM MASUK'; typeClass = 'err'; }
+    else if (res && res.sudahKeluar) { typeLabel = 'SUDAH PULANG'; typeClass = 'err'; }
+    else if (res && res.alreadyRecent) { typeLabel = 'BARU SAJA ABSEN'; typeClass = 'err'; }
+    else { typeLabel = 'GAGAL'; typeClass = 'err'; }
   }
 
   var timeStr = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
 
   var ketHtml = '';
-  if (ket) {
+  if (ket && isOk) {
     ketHtml = '<div class="kiosk-telat">' + escapeHtml(ket) + '</div>';
   }
 
