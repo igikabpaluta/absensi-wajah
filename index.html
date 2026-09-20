@@ -1565,7 +1565,7 @@ function startAbsLoop() {
           guide.className = 'face-guide detected';
           status.className = 'face-status warn';
           status.innerText = 'Wajah tidak cocok (skor: ' + (1 - dist).toFixed(2) + ')';
-          document.getElementById('absInstruction').innerText = 'Wajah tidak dikenali, Coba Kembali';
+          document.getElementById('absInstruction').innerText = 'Wajah tidak dikenali, Tunggu / Coba Kembali /Posisikan Wajah di tengah dan jangan bergerak';
           btn.disabled = true;
           btn.classList.add('opacity-50', 'cursor-not-allowed');
         }
@@ -1793,7 +1793,7 @@ function startKioskLoop() {
           var now = Date.now();
           if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN) {
             kioskLastUnknownAt = now;
-            showToast('Wajah tidak dikenali , Coba Kembali', 'warn', 2000);
+            showToast('Wajah tidak dikenali, Tunggu / Coba Kembali /Posisikan Wajah di tengah dan jangan bergerak', 'warn', 2000);
           }
         }
       })
@@ -1822,7 +1822,7 @@ function manualKioskCapture() {
   if (bestMatch) {
     kioskProcessAttendance(bestMatch);
   } else {
-    showToast("Wajah tidak dikenali, Coba Kembali", 'err', 3000);
+    showToast("Wajah tidak dikenali, Tunggu / Coba Kembali /Posisikan Wajah di tengah dan jangan bergerak", 'err', 3000);
   }
 }
 
