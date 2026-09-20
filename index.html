@@ -2172,9 +2172,70 @@ function initUserMap(lat, lng, rad) {
     try {
       var oLat = office.lat, oLng = office.lng, oRad = office.rad;
       userMap = L.map(mc, { zoomControl:false, center:[oLat, oLng], zoom:15, preferCanvas:true, fadeAnimation:false });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19, subdomains: ['a','b','c'], attribution: 'OpenStreetMap', crossOrigin: true, keepBuffer: 4
+      
+
+
+// SATELIT ESRI (base layer)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri'
       }).addTo(userMap);
+
+
+
+// CARTO LABELS (overlay: nama jalan, tempat, dll)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        subdomains: ['a','b','c','d'],
+        maxZoom: 19,
+        attribution: '&copy; CARTO'
+      }).addTo(userMap);
+
+
+// ICON MARKER: gedung kantor
+      var officeIcon = L.divIcon({ 
+        className:'', 
+        html:'<div style="font-size:32px; text-shadow: 0 2px 6px rgba(0,0,0,0.8);">🏢</div>', 
+        iconSize:[32,32], 
+        iconAnchor:[16,16] 
+      });
+      userOfficeMarker = L.marker([oLat, oLng], { icon: officeIcon }).addTo(userMap).bindPopup('🏢 Titik Kantor');
+
+
+// Circle radius (merah)
+      userOfficeCircle = L.circle([oLat, oLng], { 
+        color:'#ef4444', 
+        fillColor:'#ef4444', 
+        fillOpacity:0.15, 
+        weight:3, 
+        radius:oRad, 
+        dashArray:'8 6' 
+      }).addTo(userMap);
+
+
+      // ICON MARKER: posisi user (titik biru berkedip)
+      var userIcon = L.divIcon({ 
+        className:'', 
+        html:'<div style="width:18px;height:18px;background:#3b82f6;border:4px solid white;border-radius:50%;box-shadow:0 0 0 6px rgba(59,130,246,0.4), 0 2px 8px rgba(0,0,0,0.5);"></div>', 
+        iconSize:[18,18], 
+        iconAnchor:[9,9] 
+      });
+      var posLat = (currentLoc.lat !== 0) ? currentLoc.lat : oLat;
+      var posLng = (currentLoc.lng !== 0) ? currentLoc.lng : oLng;
+      userPosMarker = L.marker([posLat, posLng], { icon: userIcon }).addTo(userMap).bindPopup('📱 Posisi Anda');
+      
+      userMap.invalidateSize();
+      setTimeout(function() { if (userMap) { userMap.invalidateSize(); fitMapView(); } }, 100);
+    } catch (e) {
+      console.error('Map error:', e);
+      mc.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;font-weight:bold;">Gagal memuat peta</div>';
+    }
+  }, 0);
+}
+
+
+
+
+
       var officeIcon = L.divIcon({ className:'', html:'<div style="font-size:24px;">B</div>', iconSize:[24,24], iconAnchor:[12,12] });
       userOfficeMarker = L.marker([oLat, oLng], { icon: officeIcon }).addTo(userMap);
       userOfficeCircle = L.circle([oLat, oLng], { color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.12, weight:2, radius:oRad, dashArray:'6 4' }).addTo(userMap);
@@ -2216,9 +2277,68 @@ function initAdminMap(lat, lng, rad) {
     mc.innerHTML = '';
     try {
       adminMap = L.map(mc, { zoomControl:false, center:[lat, lng], zoom:17, preferCanvas:true, fadeAnimation:false });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19, subdomains: ['a','b','c'], attribution: 'OpenStreetMap', crossOrigin: true, keepBuffer: 4
+      
+// SATELIT ESRI (base layer)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri'
       }).addTo(adminMap);
+      
+      // CARTO LABELS (overlay: nama jalan, tempat, dll)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        subdomains: ['a','b','c','d'],
+        maxZoom: 19,
+        attribution: '&copy; CARTO'
+      }).addTo(adminMap);
+
+      // ICON MARKER: pin gedung (draggable)
+      var icon = L.divIcon({ 
+        className:'', 
+        html:'<div style="font-size:36px; text-shadow: 0 2px 8px rgba(0,0,0,0.9); cursor:grab;">📍</div>', 
+        iconSize:[36,36], 
+        iconAnchor:[18,36] 
+      });
+      adminMarker = L.marker([lat, lng], { icon: icon, draggable:true }).addTo(adminMap);
+      
+      // Circle radius
+      adminCircle = L.circle([lat, lng], { 
+        color:'#ef4444', 
+        fillColor:'#ef4444', 
+        fillOpacity:0.2, 
+        weight:3, 
+        radius:rad 
+      }).addTo(adminMap);
+
+      document.getElementById('adm-lat').value = lat.toFixed(6);
+      document.getElementById('adm-lng').value = lng.toFixed(6);
+      document.getElementById('adm-rad').value = rad;
+
+      // Handle drag
+      adminMarker.on('drag', function(e) {
+        var p = e.target.getLatLng();
+        document.getElementById('adm-lat').value = p.lat.toFixed(6);
+        document.getElementById('adm-lng').value = p.lng.toFixed(6);
+        adminCircle.setLatLng(p);
+      });
+      
+      // Handle click di peta
+      adminMap.on('click', function(e) {
+        adminMarker.setLatLng(e.latlng);
+        adminCircle.setLatLng(e.latlng);
+        document.getElementById('adm-lat').value = e.latlng.lat.toFixed(6);
+        document.getElementById('adm-lng').value = e.latlng.lng.toFixed(6);
+      });
+
+      adminMap.invalidateSize();
+      setTimeout(function() { if (adminMap) adminMap.invalidateSize(); }, 100);
+    } catch (e) {
+      console.error('Admin map error:', e);
+      mc.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;font-weight:bold;">Gagal memuat peta</div>';
+    }
+  }, 0);
+}
+
+
       var icon = L.divIcon({ className:'', html:'<div style="font-size:24px;">B</div>', iconSize:[24,24], iconAnchor:[12,12] });
       adminMarker = L.marker([lat, lng], { icon: icon, draggable:true }).addTo(adminMap);
       adminCircle = L.circle([lat, lng], { color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.2, weight:2, radius:rad }).addTo(adminMap);
