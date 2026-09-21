@@ -788,10 +788,8 @@ var kioskProcessingUser = null;
 var _permitFile = null;
 
 // ============================================================
-// TTS SYSTEM BARU - Unlock + Queue + Anti Terpotong
+// TTS SYSTEM BARU
 // ============================================================
-
-// Unlock TTS pada interaksi user pertama
 function unlockTTS() {
   if (_ttsUnlocked) return;
   try {
@@ -805,11 +803,9 @@ function unlockTTS() {
   } catch(e) { console.warn('TTS unlock error:', e); }
 }
 
-// Panggil unlock saat user klik / tap di halaman
 document.addEventListener('click', unlockTTS, { once: false });
 document.addEventListener('touchstart', unlockTTS, { once: false });
 
-// TTS Queue — tidak cancel yang lama, tunggu selesai
 function speakText(text) {
   if (!text) return;
   try {
@@ -853,7 +849,6 @@ function processTTSQueue() {
       finishOnce();
     };
 
-    // Safety timeout — kalau onend tidak fire (bug Chrome), reset setelah 20 detik
     setTimeout(function() {
       if (!finished) {
         console.warn('TTS timeout — paksa lanjut');
@@ -868,36 +863,88 @@ function processTTSQueue() {
   }
 }
 
-// Test TTS dari Setting
 function testTTS() {
   unlockTTS();
   speakText('Tes suara berhasil. Selamat datang di aplikasi absensi.');
   showToast('🔊 Test suara dijalankan', 'info', 3000);
 }
 
-// Build TTS absensi
+// ============================================================
+// BUILD TTS ABSENSI - VERSI ROBUST
+// ============================================================
 function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
+  // Ambil jam:menit dari serverTime (format "HH:mm:ss" → "HH:mm")
   var jamAbsen = '';
   if (serverTime) {
-    jamAbsen = String(serverTime).substring(0, 5);
+    var st = String(serverTime);
+    jamAbsen = st.substring(0, 5);
   }
+  // Kalau serverTime kosong, pakai jam HP
+  if (!jamAbsen) {
+    var now = new Date();
+    jamAbsen = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+
+  // Ambil data dari jamKerja (dengan fallback)
+  var jamMasuk = jamKerja.jam_masuk || '08:00';
+  var jamKeluar = jamKerja.jam_keluar || '17:00';
+  var toleransi = jamKerja.toleransi_telat || '15';
+
+  // Debug log
+  console.log('buildAttendanceTTS:', {
+    namaUser: namaUser,
+    type: type,
+    keterangan: keterangan,
+    serverTime: serverTime,
+    jamAbsen: jamAbsen,
+    jamMasuk: jamMasuk,
+    jamKeluar: jamKeluar,
+    toleransi: toleransi
+  });
+
   if (type === 'IN') {
-    var matchTelat = keterangan ? keterangan.match(/Terlambat\s+(\d+)\s+menit/i) : null;
-    if (matchTelat) {
-      var menitTelat = matchTelat[1];
+    var menitTelat = null;
+    if (keterangan) {
+      var ket = String(keterangan);
+      var m1 = ket.match(/Terlambat\s+(\d+)\s*menit/i);
+      if (m1) menitTelat = m1[1];
+      if (!menitTelat) {
+        var m2 = ket.match(/Terlambat[:\s]+(\d+)\s*menit/i);
+        if (m2) menitTelat = m2[1];
+      }
+      if (!menitTelat) {
+        var m3 = ket.match(/Terlambat\s+(\d+)/i);
+        if (m3) menitTelat = m3[1];
+      }
+    }
+
+    if (menitTelat) {
       return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. ' +
-             'Jam masuk ' + (jamKerja.jam_masuk || '08:00') + ', ' +
-             'toleransi ' + (jamKerja.toleransi_telat || '15') + ' menit. ' +
-             'Anda absen saat ini ' + jamAbsen + '.';
+             'Jam masuk ' + jamMasuk + ', ' +
+             'toleransi ' + toleransi + ' menit. ' +
+             'Anda absen saat ini jam ' + jamAbsen + '.';
     }
     return namaUser + ' tercatat hadir.';
   } else {
-    var matchAwal = keterangan ? keterangan.match(/Pulang Awal\s+(\d+)\s+menit/i) : null;
-    if (matchAwal) {
-      var menitAwal = matchAwal[1];
+    var menitAwal = null;
+    if (keterangan) {
+      var ket2 = String(keterangan);
+      var n1 = ket2.match(/Pulang Awal\s+(\d+)\s*menit/i);
+      if (n1) menitAwal = n1[1];
+      if (!menitAwal) {
+        var n2 = ket2.match(/Pulang Awal[:\s]+(\d+)\s*menit/i);
+        if (n2) menitAwal = n2[1];
+      }
+      if (!menitAwal) {
+        var n3 = ket2.match(/Pulang Awal\s+(\d+)/i);
+        if (n3) menitAwal = n3[1];
+      }
+    }
+
+    if (menitAwal) {
       return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
-             'Jam keluar ' + (jamKerja.jam_keluar || '17:00') + ', ' +
-             'Anda absen saat ini ' + jamAbsen + '.';
+             'Jam keluar ' + jamKeluar + ', ' +
+             'Anda absen saat ini jam ' + jamAbsen + '.';
     }
     return namaUser + ' tercatat pulang.';
   }
@@ -1066,7 +1113,6 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.remove('hidden');
     document.getElementById('nav-kiosk').classList.add('flex');
   }
-  // TTS welcome_text saat buka ulang
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
   setTimeout(function() {
@@ -1126,7 +1172,6 @@ function switchTab(id) {
 }
 
 function handleLogin() {
-  // Unlock TTS saat klik login (penting untuk Chrome HP)
   unlockTTS();
   var phone = document.getElementById('loginPhone').value.trim();
   var pass = document.getElementById('loginPass').value;
@@ -1139,7 +1184,6 @@ function handleLogin() {
       if (res && res.success) {
         user = res.user;
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
-        // TTS selamat datang login fresh
         speakText('Selamat datang, ' + user.nama);
         setupApp();
         checkFaceAndRedirect();
@@ -1962,7 +2006,7 @@ function startKioskLoop() {
     if (kioskInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
     if (kioskProcessingUser) return;
     if (Date.now() - kioskLastResultAt < KIOSK_RESULT_DURATION) return;
-    if (_ttsQueueRunning) return; // tunggu TTS selesai
+    if (_ttsQueueRunning) return;
 
     kioskInferenceBusy = true;
     faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
