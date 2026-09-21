@@ -280,7 +280,7 @@ input, select { font-size:16px !important; }
 <div id="absScreen" class="fixed inset-0 z-[660] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-4">
     <h2 class="text-2xl font-black" id="absTitle">Absen Masuk</h2>
-    <p class="text-xs text-gray-400 mt-1">Hadapkan wajah ke kamera (Posisi Tengah)</p>
+    <p class="text-xs text-gray-400 mt-1">Hadapkan wajah ke kamera</p>
   </div>
   <div class="flex-1 flex flex-col justify-center items-center space-y-4">
     <div class="video-wrap">
@@ -865,7 +865,7 @@ function processTTSQueue() {
 
 function testTTS() {
   unlockTTS();
-  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi wajah dan lokasi buatan Pak Ramadan Hasibuan, S.Pd.');
+  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi.');
   showToast('🔊 Test suara dijalankan', 'info', 3000);
 }
 
@@ -942,7 +942,7 @@ function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
     }
 
     if (menitAwal) {
-      return namaUser + ' pulang lebih awal, jadi ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
+      return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
              'Jam keluar ' + jamKeluar + ', ' +
              'Anda absen saat ini jam ' + jamAbsen + '.';
     }
