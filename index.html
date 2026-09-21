@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
 @keyframes scanline { 0%{top:0%} 100%{top:100%} }
@@ -198,6 +200,61 @@ input, select { font-size:16px !important; }
   font-size:14px; font-weight:900; background:#f59e0b; color:white;
   margin-top:8px; animation: pulseRing 2s infinite;
 }
+
+/* SCROLLBAR CUSTOM - BIRU INDIGO */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 10px;
+  border: 2px solid #f1f5f9;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4f46e5 #f1f5f9;
+}
+
+/* EXPORT BUTTONS */
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  transition: all .25s;
+  cursor: pointer;
+  border: none;
+}
+.btn-export:hover { transform: translateY(-2px); }
+.btn-export:active { transform: scale(0.95); }
+.btn-export.excel {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16,185,129,.3);
+}
+.btn-export.word {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59,130,246,.3);
+}
+.btn-export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
 </style>
 </head>
 
@@ -280,7 +337,7 @@ input, select { font-size:16px !important; }
 <div id="absScreen" class="fixed inset-0 z-[660] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-4">
     <h2 class="text-2xl font-black" id="absTitle">Absen Masuk</h2>
-    <p class="text-xs text-gray-400 mt-1">Hadapkan wajah ke kamera</p>
+    <p class="text-xs text-gray-400 mt-1">Hadapkan wajah ke kamera (Posisi Tengah)</p>
   </div>
   <div class="flex-1 flex flex-col justify-center items-center space-y-4">
     <div class="video-wrap">
@@ -568,6 +625,28 @@ input, select { font-size:16px !important; }
         <h4 id="statHadir2" class="text-2xl font-black text-emerald-500">0</h4>
       </div>
     </div>
+
+    <!-- PANEL UNDUH LAPORAN -->
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+      <h3 class="font-black text-sm uppercase text-gray-700 flex items-center gap-2">
+        <i class="fas fa-download text-indigo-600"></i> Unduh Laporan Absensi
+      </h3>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Pilih Bulan Laporan</label>
+        <input type="month" id="reportBulan"
+          class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold outline-none text-gray-700">
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="exportExcel()" id="btnExportExcel" class="btn-export excel justify-center">
+          <i class="fas fa-file-excel"></i> EXCEL
+        </button>
+        <button onclick="exportWord()" id="btnExportWord" class="btn-export word justify-center">
+          <i class="fas fa-file-word"></i> WORD
+        </button>
+      </div>
+      <p class="text-[9px] text-gray-400 italic text-center">Laporan berisi: Nama, Hari/Tanggal, Jam Masuk/Keluar, Jabatan, Status, Keterangan, Koordinat, Foto</p>
+    </div>
+
     <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="font-black text-sm uppercase text-gray-400">Filter Riwayat</h3>
@@ -742,7 +821,6 @@ var _mapInitDone = false;
 
 // TTS STATE
 var _ttsUnlocked = false;
-var _ttsBusy = false;
 var _ttsQueue = [];
 var _ttsQueueRunning = false;
 
@@ -788,7 +866,7 @@ var kioskProcessingUser = null;
 var _permitFile = null;
 
 // ============================================================
-// TTS SYSTEM BARU
+// TTS SYSTEM
 // ============================================================
 function unlockTTS() {
   if (_ttsUnlocked) return;
@@ -865,32 +943,28 @@ function processTTSQueue() {
 
 function testTTS() {
   unlockTTS();
-  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi.');
+  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi wajah dan lokasi buatan Pak Ramadan Hasibuan, S.Pd.');
   showToast('🔊 Test suara dijalankan', 'info', 3000);
 }
 
 // ============================================================
-// BUILD TTS ABSENSI - VERSI ROBUST
+// BUILD TTS ABSENSI
 // ============================================================
 function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
-  // Ambil jam:menit dari serverTime (format "HH:mm:ss" → "HH:mm")
   var jamAbsen = '';
   if (serverTime) {
     var st = String(serverTime);
     jamAbsen = st.substring(0, 5);
   }
-  // Kalau serverTime kosong, pakai jam HP
   if (!jamAbsen) {
     var now = new Date();
     jamAbsen = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   }
 
-  // Ambil data dari jamKerja (dengan fallback)
   var jamMasuk = jamKerja.jam_masuk || '08:00';
   var jamKeluar = jamKerja.jam_keluar || '17:00';
   var toleransi = jamKerja.toleransi_telat || '15';
 
-  // Debug log
   console.log('buildAttendanceTTS:', {
     namaUser: namaUser,
     type: type,
@@ -942,7 +1016,7 @@ function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
     }
 
     if (menitAwal) {
-      return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
+      return namaUser + ' pulang lebih awal, jadi ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
              'Jam keluar ' + jamKeluar + ', ' +
              'Anda absen saat ini jam ' + jamAbsen + '.';
     }
@@ -1097,6 +1171,14 @@ window.onload = function() {
   }
   loadFaceModels().then(function(ok) { console.log('Face models preload:', ok); });
   setupPermitFileListeners();
+
+  // Set default bulan laporan = bulan ini
+  var repBulan = document.getElementById('reportBulan');
+  if (repBulan) {
+    var now = new Date();
+    var yyyymm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    repBulan.value = yyyymm;
+  }
 };
 
 function setupApp() {
@@ -1817,7 +1899,7 @@ function startAbsLoop() {
           guide.className = 'face-guide matched';
           status.className = 'face-status ok';
           status.innerText = 'Wajah COCOK (skor: ' + (1 - dist).toFixed(2) + ')';
-          document.getElementById('absInstruction').innerText = 'Wajah dikenali! Tekan Absen Sekarang';
+          document.getElementById('absInstruction').innerText = 'Anda ' + user.nama + ', Silahkan Tekan Absen Sekarang';
           btn.disabled = false;
           btn.classList.remove('opacity-50', 'cursor-not-allowed');
           window._currentAbsDescriptor = Array.from(det.descriptor);
@@ -1864,7 +1946,9 @@ function captureAbsen() {
         closeAbsen();
         refreshData();
       } else {
-        showToast(res && res.message ? res.message : "Gagal absen", 'err', 5000);
+        var errMsg = res && res.message ? res.message : "Gagal absen";
+        showToast(errMsg, 'err', 5000);
+        speakText(errMsg);
       }
     })
     .catch(function(err) {
@@ -2113,7 +2197,7 @@ function showKioskResult(res, face) {
       speakText(suara);
     } else {
       if (res && res.alreadyAbsen) {
-        speakText(nama + ' sudah absen masuk');
+        speakText('Anda ' + nama + ' sudah absen masuk hari ini');
       } else if (res && res.belumMasuk) {
         speakText(nama + ' belum absen masuk');
       } else if (res && res.sudahKeluar) {
@@ -2572,7 +2656,257 @@ function resetLogFilter() {
 }
 
 // ============================================================
-// PERMIT
+// EXPORT EXCEL & WORD
+// ============================================================
+function formatBulanIndo(yyyymm) {
+  if (!yyyymm) return 'Semua Periode';
+  var bulanArr = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var parts = yyyymm.split('-');
+  if (parts.length < 2) return yyyymm;
+  var b = parseInt(parts[1], 10) - 1;
+  return bulanArr[b] + ' ' + parts[0];
+}
+
+function getReportData() {
+  var bulan = document.getElementById('reportBulan').value;
+  if (!bulan) {
+    showToast("Pilih bulan laporan terlebih dahulu!", 'warn');
+    return null;
+  }
+  return bulan;
+}
+
+function setExportButtonsDisabled(disabled) {
+  document.getElementById('btnExportExcel').disabled = disabled;
+  document.getElementById('btnExportWord').disabled = disabled;
+}
+
+function exportExcel() {
+  var bulan = getReportData();
+  if (!bulan) return;
+
+  unlockTTS();
+  setExportButtonsDisabled(true);
+  showToast("⏳ Mengambil data...", 'info', 3000);
+
+  callAPI('getAttendanceReport', { bulan: bulan })
+    .then(function(res) {
+      if (!res || !res.success) {
+        showToast(res ? res.message : "Gagal ambil data", 'err', 4000);
+        setExportButtonsDisabled(false);
+        return;
+      }
+      var data = res.data || [];
+      if (data.length === 0) {
+        showToast("Tidak ada data untuk bulan " + formatBulanIndo(bulan), 'warn', 4000);
+        setExportButtonsDisabled(false);
+        return;
+      }
+      buildExcel(data, bulan);
+      setExportButtonsDisabled(false);
+    })
+    .catch(function(err) {
+      console.error(err);
+      showToast("Gagal terhubung ke server", 'err');
+      setExportButtonsDisabled(false);
+    });
+}
+
+function buildExcel(data, bulan) {
+  try {
+    var wb = XLSX.utils.book_new();
+    var aoa = [];
+
+    // Header informasi
+    aoa.push(['LAPORAN ABSENSI PEGAWAI']);
+    aoa.push(['Periode: ' + formatBulanIndo(bulan)]);
+    aoa.push([]);
+
+    // Header tabel
+    aoa.push([
+      'No', 'Nama', 'Hari/Tanggal', 'Jam Masuk', 'Jam Keluar',
+      'Jabatan', 'Status', 'Keterangan', 'Koordinat (Lat, Lng)', 'Foto Thumbnail'
+    ]);
+
+    for (var i = 0; i < data.length; i++) {
+      var d = data[i];
+      aoa.push([
+        i + 1,
+        d.nama,
+        d.hariTanggal,
+        d.jamMasuk,
+        d.jamKeluar,
+        d.jabatan,
+        d.status,
+        d.keterangan,
+        d.koordinat,
+        '' // Foto: tidak bisa embed base64 image di SheetJS CE, jadi kosong
+      ]);
+    }
+
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Set lebar kolom
+    ws['!cols'] = [
+      { wch: 5 },  // No
+      { wch: 20 }, // Nama
+      { wch: 22 }, // Hari/Tanggal
+      { wch: 12 }, // Jam Masuk
+      { wch: 12 }, // Jam Keluar
+      { wch: 18 }, // Jabatan
+      { wch: 12 }, // Status
+      { wch: 25 }, // Keterangan
+      { wch: 25 }, // Koordinat
+      { wch: 20 }  // Foto
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Absensi');
+
+    var filename = 'Laporan_Absensi_' + bulan + '.xlsx';
+    XLSX.writeFile(wb, filename);
+    showToast("✅ Excel berhasil diunduh!", 'ok', 4000);
+    speakText('Laporan Excel berhasil diunduh');
+  } catch (e) {
+    console.error(e);
+    showToast("Gagal membuat Excel: " + e.message, 'err', 5000);
+  }
+}
+
+function exportWord() {
+  var bulan = getReportData();
+  if (!bulan) return;
+
+  unlockTTS();
+  setExportButtonsDisabled(true);
+  showToast("⏳ Mengambil data...", 'info', 3000);
+
+  callAPI('getAttendanceReport', { bulan: bulan })
+    .then(function(res) {
+      if (!res || !res.success) {
+        showToast(res ? res.message : "Gagal ambil data", 'err', 4000);
+        setExportButtonsDisabled(false);
+        return;
+      }
+      var data = res.data || [];
+      if (data.length === 0) {
+        showToast("Tidak ada data untuk bulan " + formatBulanIndo(bulan), 'warn', 4000);
+        setExportButtonsDisabled(false);
+        return;
+      }
+      buildWord(data, bulan);
+      setExportButtonsDisabled(false);
+    })
+    .catch(function(err) {
+      console.error(err);
+      showToast("Gagal terhubung ke server", 'err');
+      setExportButtonsDisabled(false);
+    });
+}
+
+function buildWord(data, bulan) {
+  try {
+    var doc = new docx.Document({
+      sections: [{
+        properties: {},
+        children: [
+          new docx.Paragraph({
+            alignment: docx.AlignmentType.CENTER,
+            children: [
+              new docx.TextRun({
+                text: "LAPORAN ABSENSI PEGAWAI",
+                bold: true,
+                size: 32
+              })
+            ]
+          }),
+          new docx.Paragraph({
+            alignment: docx.AlignmentType.CENTER,
+            children: [
+              new docx.TextRun({
+                text: "Periode: " + formatBulanIndo(bulan),
+                size: 22
+              })
+            ]
+          }),
+          new docx.Paragraph({ text: "" }),
+          new docx.Table({
+            width: { size: 100, type: docx.WidthType.PERCENTAGE },
+            rows: [
+              // Header row
+              new docx.TableRow({
+                tableHeader: true,
+                children: [
+                  wordCell('No', true, 500),
+                  wordCell('Nama', true, 1500),
+                  wordCell('Hari/Tanggal', true, 1800),
+                  wordCell('Jam Masuk', true, 1000),
+                  wordCell('Jam Keluar', true, 1000),
+                  wordCell('Jabatan', true, 1400),
+                  wordCell('Status', true, 900),
+                  wordCell('Keterangan', true, 1600),
+                  wordCell('Koordinat', true, 1800)
+                ]
+              })
+            ].concat(data.map(function(d, i) {
+              return new docx.TableRow({
+                children: [
+                  wordCell(String(i + 1), false, 500),
+                  wordCell(d.nama, false, 1500),
+                  wordCell(d.hariTanggal, false, 1800),
+                  wordCell(d.jamMasuk, false, 1000),
+                  wordCell(d.jamKeluar, false, 1000),
+                  wordCell(d.jabatan, false, 1400),
+                  wordCell(d.status, false, 900),
+                  wordCell(d.keterangan, false, 1600),
+                  wordCell(d.koordinat, false, 1800)
+                ]
+              });
+            }))
+          })
+        ]
+      }]
+    });
+
+    docx.Packer.toBlob(doc).then(function(blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'Laporan_Absensi_' + bulan + '.docx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("✅ Word berhasil diunduh!", 'ok', 4000);
+      speakText('Laporan Word berhasil diunduh');
+    }).catch(function(err) {
+      console.error(err);
+      showToast("Gagal membuat Word", 'err', 5000);
+    });
+  } catch (e) {
+    console.error(e);
+    showToast("Gagal membuat Word: " + e.message, 'err', 5000);
+  }
+}
+
+function wordCell(text, bold, width) {
+  return new docx.TableCell({
+    width: { size: width, type: docx.WidthType.DXA },
+    children: [
+      new docx.Paragraph({
+        children: [
+          new docx.TextRun({
+            text: String(text == null ? '' : text),
+            bold: !!bold,
+            size: 18
+          })
+        ]
+      })
+    ]
+  });
+}
+
+// ============================================================
+// PERMIT / IZIN
 // ============================================================
 function openPermitModal() {
   unlockTTS();
@@ -2592,10 +2926,19 @@ function submitPermitAction() {
   var pType = document.getElementById('pType').value;
   var pDate = document.getElementById('pDate').value;
   var pReason = document.getElementById('pReason').value.trim();
+  var btn = document.getElementById('btnSubmitPermit
+function submitPermitAction() {
+  var pType = document.getElementById('pType').value;
+  var pDate = document.getElementById('pDate').value;
+  var pReason = document.getElementById('pReason').value.trim();
   var btn = document.getElementById('btnSubmitPermit');
 
-  if (!pDate || !pReason) return showToast("Tanggal & Alasan wajib diisi!", 'warn');
-  if (!_permitFile) return showToast("Wajib lampirkan bukti (Kamera / Galeri)!", 'warn');
+  if (!pDate || !pReason) {
+    return showToast("Tanggal & Alasan wajib diisi!", 'warn');
+  }
+  if (!_permitFile) {
+    return showToast("Wajib lampirkan bukti (Kamera / Galeri)!", 'warn');
+  }
 
   btn.innerHTML = 'Loading...';
   btn.disabled = true;
@@ -2629,7 +2972,8 @@ function submitPermitAction() {
           btn.innerHTML = 'Kirim';
           btn.disabled = false;
           if (res && res.success) {
-            showToast(res.message, 'ok');
+            showToast(res.message || "Izin berhasil dikirim!", 'ok', 4000);
+            speakText('Pengajuan ' + pType + ' berhasil dikirim');
             closePermitModal();
             refreshData();
           } else {
@@ -2651,6 +2995,66 @@ function submitPermitAction() {
   };
   reader.readAsDataURL(_permitFile);
 }
+
+// ============================================================
+// SCROLL CONTROLS (Tombol Naik/Turun)
+// ============================================================
+function scrollPageUp() {
+  window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+}
+function scrollPageDown() {
+  window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+}
+function scrollPageTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function scrollPageBottom() {
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+}
+
+// Auto show/hide tombol scroll berdasarkan posisi halaman
+window.addEventListener('scroll', function() {
+  var btnTop = document.getElementById('scrollTopBtn');
+  var btnBottom = document.getElementById('scrollBottomBtn');
+  if (!btnTop || !btnBottom) return;
+  var y = window.scrollY || window.pageYOffset;
+  var maxY = document.documentElement.scrollHeight - window.innerHeight;
+  if (y > 200) {
+    btnTop.classList.remove('opacity-0', 'pointer-events-none');
+  } else {
+    btnTop.classList.add('opacity-0', 'pointer-events-none');
+  }
+  if (y < maxY - 200) {
+    btnBottom.classList.remove('opacity-0', 'pointer-events-none');
+  } else {
+    btnBottom.classList.add('opacity-0', 'pointer-events-none');
+  }
+}, { passive: true });
+
+// ============================================================
+// INIT TAMBAHAN
+// ============================================================
+window.addEventListener('load', function() {
+  // Sembunyikan tombol scroll saat di login/enroll/abs/kiosk
+  var observer = new MutationObserver(function() {
+    var screens = ['loginScreen', 'enrollScreen', 'absScreen', 'kioskScreen'];
+    var anyOpen = screens.some(function(id) {
+      var el = document.getElementById(id);
+      return el && !el.classList.contains('hidden');
+    });
+    var controls = document.getElementById('scrollControls');
+    if (controls) {
+      if (anyOpen) controls.classList.add('hidden');
+      else controls.classList.remove('hidden');
+    }
+  });
+  ['loginScreen', 'enrollScreen', 'absScreen', 'kioskScreen'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+});
+
+console.log('✅ App loaded - Absensi Face Recognition v9');
 </script>
 </body>
 </html>
