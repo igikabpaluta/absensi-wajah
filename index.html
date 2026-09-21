@@ -483,7 +483,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- PANEL PENGATURAN SUARA (BARU) -->
+    <!-- PANEL PENGATURAN SUARA -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-microphone text-purple-500 text-lg"></i>
@@ -747,7 +747,6 @@ var attType = '';
 var userFaceEnrolled = false;
 var jamKerja = { jam_masuk: '08:00', jam_keluar: '17:00', batas_telat: '08:15', toleransi_telat: '15', welcome_text: 'Halo {nama}, silakan absen' };
 var kioskPassword = '1234';
-var _welcomeSpoken = false;
 
 var adminMap, adminMarker, adminCircle;
 var userMap, userPosMarker, userOfficeCircle, userOfficeMarker;
@@ -755,6 +754,7 @@ var hasInitialGPSFix = false;
 var allLogData = [];
 var _clockInterval = null;
 var _mapInitDone = false;
+var _ttsBusy = false;
 
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
@@ -765,7 +765,6 @@ var FACE_DETECT_THRESHOLD = 0.5;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
-// Enrollment state
 var enrollStream = null;
 var enrollLoopTimer = null;
 var enrollInferenceBusy = false;
@@ -779,12 +778,10 @@ var ENROLL_STABLE_REQUIRED = 5;
 var ENROLL_AUTO_COOLDOWN = 1200;
 var enrollCaptureInProgress = false;
 
-// Absen state
 var absStream = null;
 var absLoopTimer = null;
 var absInferenceBusy = false;
 
-// Kiosk state
 var kioskStream = null;
 var kioskLoopTimer = null;
 var kioskInferenceBusy = false;
@@ -792,14 +789,16 @@ var kioskMode = 'auto';
 var kioskType = 'IN';
 var kioskKnownFaces = [];
 var kioskLastResultAt = 0;
-var KIOSK_RESULT_DURATION = 2500;
-var KIOSK_UNKNOWN_COOLDOWN = 2000;
+var KIOSK_RESULT_DURATION = 4000;
+var KIOSK_UNKNOWN_COOLDOWN = 3000;
 var kioskLastUnknownAt = 0;
 var kioskCurrentDescriptor = null;
 var kioskProcessingUser = null;
 
+var _permitFile = null;
+
 // ============================================================
-// API WRAPPER - FETCH ke Google Apps Script
+// API WRAPPER
 // ============================================================
 function callAPI(action, payload) {
   return fetch(BACKEND_URL, {
@@ -848,44 +847,58 @@ function showToast(msg, type, duration) {
   }, duration);
 }
 
+// ============================================================
+// TTS dengan GUARD anti terpotong
+// ============================================================
 function speakText(text) {
   try {
     if (!('speechSynthesis' in window)) return;
+    if (_ttsBusy) {
+      console.log('TTS masih bicara, skip:', text);
+      return;
+    }
+    _ttsBusy = true;
     window.speechSynthesis.cancel();
     var utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'id-ID';
     utter.rate = 0.95;
     utter.pitch = 1.0;
     utter.volume = 1.0;
+    utter.onend = function() { _ttsBusy = false; };
+    utter.onerror = function() { _ttsBusy = false; };
     window.speechSynthesis.speak(utter);
-  } catch (e) { console.warn('TTS error:', e); }
+  } catch (e) { _ttsBusy = false; console.warn('TTS error:', e); }
 }
 
 /**
- * Buat teks TTS untuk absen berdasarkan keterangan
- * Keterangan format: "Terlambat 14 menit" atau "Pulang Awal 30 menit"
+ * Build TTS absensi berdasarkan keterangan
+ * contoh keterangan: "Terlambat 15 menit" atau "Pulang Awal 30 menit"
+ * serverTime contoh: "08:30:45" → diambil "08:30"
  */
-function buildAttendanceTTS(namaUser, type, keterangan) {
+function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
+  var jamAbsen = '';
+  if (serverTime) {
+    jamAbsen = String(serverTime).substring(0, 5);
+  }
   if (type === 'IN') {
-    if (keterangan && keterangan.indexOf('Terlambat') >= 0) {
-      var match = keterangan.match(/Terlambat\s+(\d+)\s+menit/i);
-      var menit = match ? match[1] : '';
-      if (menit) {
-        return namaUser + ' tercatat hadir, tapi terlambat ' + menit + ' menit';
-      }
-      return namaUser + ' tercatat hadir, tapi terlambat';
+    var matchTelat = keterangan ? keterangan.match(/Terlambat\s+(\d+)\s+menit/i) : null;
+    if (matchTelat) {
+      var menitTelat = matchTelat[1];
+      return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. ' +
+             'Jam masuk ' + (jamKerja.jam_masuk || '08:00') + ', ' +
+             'toleransi ' + (jamKerja.toleransi_telat || '15') + ' menit. ' +
+             'Anda absen saat ini ' + jamAbsen + '.';
     }
-    return namaUser + ' tercatat hadir';
+    return namaUser + ' tercatat hadir.';
   } else {
-    if (keterangan && keterangan.indexOf('Pulang Awal') >= 0) {
-      var match2 = keterangan.match(/Pulang Awal\s+(\d+)\s+menit/i);
-      var menit2 = match2 ? match2[1] : '';
-      if (menit2) {
-        return namaUser + ' tercatat pulang, pulang awal ' + menit2 + ' menit';
-      }
-      return namaUser + ' tercatat pulang, pulang awal';
+    var matchAwal = keterangan ? keterangan.match(/Pulang Awal\s+(\d+)\s+menit/i) : null;
+    if (matchAwal) {
+      var menitAwal = matchAwal[1];
+      return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
+             'Jam keluar ' + (jamKerja.jam_keluar || '17:00') + ', ' +
+             'Anda absen saat ini ' + jamAbsen + '.';
     }
-    return namaUser + ' tercatat pulang';
+    return namaUser + ' tercatat pulang.';
   }
 }
 
@@ -985,6 +998,7 @@ window.onload = function() {
     } catch (e) { localStorage.removeItem('presensi_user_v3'); }
   }
   loadFaceModels().then(function(ok) { console.log('Face models preload:', ok); });
+  setupPermitFileListeners();
 };
 
 function setupApp() {
@@ -1001,7 +1015,7 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.remove('hidden');
     document.getElementById('nav-kiosk').classList.add('flex');
   }
-  // TTS: pakai welcome_text dari jamKerja
+  // TTS welcome_text saat buka ulang
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
   setTimeout(function() {
@@ -1072,13 +1086,10 @@ function handleLogin() {
       if (res && res.success) {
         user = res.user;
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
-        _welcomeSpoken = false;
+        // TTS selamat datang login fresh
+        speakText('Selamat datang, ' + user.nama);
         setupApp();
         checkFaceAndRedirect();
-        // TTS Selamat datang hanya saat login fresh
-        setTimeout(function() {
-          speakText('Selamat datang, ' + user.nama);
-        }, 500);
       } else {
         showToast(res ? res.message : "Terjadi kesalahan server", 'err');
       }
@@ -1093,7 +1104,6 @@ function handleLogout() {
   localStorage.removeItem('presensi_user_v3');
   user = null;
   userFaceEnrolled = false;
-  _welcomeSpoken = false;
   document.getElementById('app').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginPhone').value = '';
@@ -1142,7 +1152,7 @@ function updateFaceBanner() {
 }
 
 // ============================================================
-// JAM KERJA + SOUND SETTINGS
+// JAM KERJA + SOUND
 // ============================================================
 function loadJamKerja() {
   callAPI('getJamKerja', {})
@@ -1290,10 +1300,8 @@ function verifyKioskPasswordAndClose() {
 }
 
 // ============================================================
-// PERMIT FILE HANDLING (KAMERA + GALERI + PREVIEW)
+// PERMIT FILE HANDLING
 // ============================================================
-var _permitFile = null;
-
 function setupPermitFileListeners() {
   var fileInput = document.getElementById('pFile');
   var kameraInput = document.getElementById('pFileKamera');
@@ -1329,13 +1337,8 @@ function clearPermitFile() {
   document.getElementById('pPreview').src = '';
 }
 
-// Setup listener setelah DOM ready
-document.addEventListener('DOMContentLoaded', function() {
-  setupPermitFileListeners();
-});
-
 // ============================================================
-// ENROLLMENT (Manual + Auto + Auto Capture 3x)
+// ENROLLMENT
 // ============================================================
 function setEnrollMode(mode) {
   enrollMode = mode;
@@ -1752,8 +1755,9 @@ function captureAbsen() {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
       if (res && res.success) {
-        // TTS dinamis dengan menit
-        var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '');
+        // TTS pakai serverTime
+        var serverTime = res.serverTime || '';
+        var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', serverTime);
         speakText(suara);
         var toastMsg = res.message || "Absen berhasil!";
         if (res.keterangan) toastMsg += ' — ' + res.keterangan;
@@ -1782,7 +1786,7 @@ function closeAbsen() {
 }
 
 // ============================================================
-// KIOSK MODE - dengan sub-tab MASUK/PULANG
+// KIOSK MODE
 // ============================================================
 function setKioskType(type) {
   kioskType = type;
@@ -1902,6 +1906,7 @@ function startKioskLoop() {
     if (kioskInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
     if (kioskProcessingUser) return;
     if (Date.now() - kioskLastResultAt < KIOSK_RESULT_DURATION) return;
+    if (_ttsBusy) return; // tunggu TTS selesai
 
     kioskInferenceBusy = true;
     faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
@@ -1937,9 +1942,9 @@ function startKioskLoop() {
         } else {
           guide.className = 'kiosk-face-guide detected';
           var now = Date.now();
-          if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN) {
+          if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsBusy) {
             kioskLastUnknownAt = now;
-            showToast('Wajah tidak dikenali', 'warn', 2000);
+            speakText('Wajah tidak dikenali. Silakan coba kembali, posisikan wajah di tengah dan jangan bergerak.');
           }
         }
       })
@@ -1999,11 +2004,11 @@ function showKioskResult(res, face) {
   var isOk = res && res.success;
   var type = (res && res.type) || kioskType;
   var ket = (res && res.keterangan) || '';
+  var serverTime = (res && res.serverTime) || '';
 
   try {
     if (isOk) {
-      // TTS dinamis dengan menit
-      var suara = buildAttendanceTTS(nama, type, ket);
+      var suara = buildAttendanceTTS(nama, type, ket, serverTime);
       speakText(suara);
     } else {
       if (res && res.alreadyAbsen) {
@@ -2277,7 +2282,7 @@ function updateGPSUI() {
 }
 
 // ============================================================
-// MAPS - SATELIT (Esri + CARTO Labels)
+// MAPS - SATELIT
 // ============================================================
 function initUserMap(lat, lng, rad) {
   var mc = document.getElementById('user-map');
@@ -2464,7 +2469,7 @@ function resetLogFilter() {
 }
 
 // ============================================================
-// PERMIT / IZIN (dengan Kamera + Galeri + Preview)
+// PERMIT
 // ============================================================
 function openPermitModal() {
   var tzoffset = (new Date()).getTimezoneOffset() * 60000;
