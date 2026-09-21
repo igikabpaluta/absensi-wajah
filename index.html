@@ -67,7 +67,6 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:#F8FAFC; -webkit-t
 .face-status.stable { background: rgba(245,158,11,0.9); }
 input, select { font-size:16px !important; }
 
-/* TOAST BESAR */
 .toast {
   position:fixed; bottom:-200px; left:16px; right:16px;
   background:#1e293b; color:#fff;
@@ -84,7 +83,6 @@ input, select { font-size:16px !important; }
 .toast.warn { background: linear-gradient(135deg,#f59e0b,#d97706); }
 .toast i { margin-right: 10px; font-size: 24px; vertical-align: -2px; }
 
-/* KIOSK */
 .kiosk-video-wrap {
   position: relative; width:100%; height:100vh; background:#000; overflow:hidden;
 }
@@ -165,12 +163,8 @@ input, select { font-size:16px !important; }
   animation: kioskPop .6s cubic-bezier(.2,1.3,.4,1);
   max-width: 90vw; min-width: 320px;
 }
-.kiosk-result-card.err {
-  background: linear-gradient(160deg,#fee2e2,#fecaca);
-}
-.kiosk-result-card.warn {
-  background: linear-gradient(160deg,#fef3c7,#fde68a);
-}
+.kiosk-result-card.err { background: linear-gradient(160deg,#fee2e2,#fecaca); }
+.kiosk-result-card.warn { background: linear-gradient(160deg,#fef3c7,#fde68a); }
 .kiosk-photo {
   width: 140px; height: 140px; border-radius: 50%;
   object-fit: cover; border: 6px solid #10b981;
@@ -209,7 +203,6 @@ input, select { font-size:16px !important; }
 
 <body class="safe-bottom">
 
-<!-- LOGIN -->
 <div id="loginScreen" class="fixed inset-0 z-[600] bg-white p-8 flex flex-col justify-center items-center">
   <div class="w-full max-sm:max-w-xs space-y-8">
     <div class="text-center">
@@ -238,7 +231,6 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- ENROLL SCREEN -->
 <div id="enrollScreen" class="fixed inset-0 z-[650] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-4">
     <h2 class="text-2xl font-black">Daftar Wajah</h2>
@@ -285,7 +277,6 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- ABSEN SCREEN -->
 <div id="absScreen" class="fixed inset-0 z-[660] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-4">
     <h2 class="text-2xl font-black" id="absTitle">Absen Masuk</h2>
@@ -315,7 +306,6 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- KIOSK SCREEN - dengan sub-tab Masuk/Pulang -->
 <div id="kioskScreen" class="fixed inset-0 z-[670] hidden bg-black">
   <div class="kiosk-video-wrap">
     <video id="kioskVideo" autoplay playsinline muted></video>
@@ -359,7 +349,6 @@ input, select { font-size:16px !important; }
 <canvas id="canvas" class="hidden"></canvas>
 <canvas id="thumbCanvas" class="hidden"></canvas>
 
-<!-- APP -->
 <div id="app" class="hidden">
   <header class="p-6 flex justify-between items-center bg-white border-b sticky top-0 z-50">
     <div>
@@ -457,7 +446,6 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- PANEL JAM KERJA -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-clock text-indigo-600 text-lg"></i>
@@ -483,7 +471,6 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- PANEL PENGATURAN SUARA -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-microphone text-purple-500 text-lg"></i>
@@ -505,10 +492,12 @@ input, select { font-size:16px !important; }
         <button onclick="saveSoundSettings()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
           <i class="fas fa-save mr-2"></i> SIMPAN PENGATURAN SUARA
         </button>
+        <button onclick="testTTS()" class="w-full bg-blue-500 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-sm">
+          <i class="fas fa-volume-up mr-2"></i> TEST SUARA
+        </button>
       </div>
     </div>
 
-    <!-- PANEL PASSWORD KIOSK -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-lock text-red-500 text-lg"></i>
@@ -519,7 +508,6 @@ input, select { font-size:16px !important; }
           <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Password Tutup Kiosk</label>
           <input type="text" id="kiosk-pwd" placeholder="Masukkan password"
             class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
-          <p class="text-[10px] text-gray-400 italic ml-2 mt-1">Password untuk menutup Mode Absen Massal</p>
         </div>
         <button onclick="saveKioskPassword()" class="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
           <i class="fas fa-save mr-2"></i> SIMPAN PASSWORD
@@ -648,7 +636,6 @@ input, select { font-size:16px !important; }
   </nav>
 </div>
 
-<!-- MODAL USER -->
 <div id="userModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <h3 id="modalTitle" class="text-xl font-black text-gray-900">Data Pegawai</h3>
@@ -669,7 +656,6 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- MODAL PERMIT (dengan tombol kamera + galeri + preview) -->
 <div id="permitModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <h3 class="text-xl font-black text-gray-900">Pengajuan Izin</h3>
@@ -714,7 +700,6 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- MODAL PASSWORD KIOSK -->
 <div id="kioskPasswordModal" class="fixed inset-0 z-[800] bg-black/80 backdrop-blur-md hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <div class="text-center">
@@ -754,7 +739,12 @@ var hasInitialGPSFix = false;
 var allLogData = [];
 var _clockInterval = null;
 var _mapInitDone = false;
+
+// TTS STATE
+var _ttsUnlocked = false;
 var _ttsBusy = false;
+var _ttsQueue = [];
+var _ttsQueueRunning = false;
 
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
@@ -789,13 +779,129 @@ var kioskMode = 'auto';
 var kioskType = 'IN';
 var kioskKnownFaces = [];
 var kioskLastResultAt = 0;
-var KIOSK_RESULT_DURATION = 4000;
+var KIOSK_RESULT_DURATION = 6000;
 var KIOSK_UNKNOWN_COOLDOWN = 3000;
 var kioskLastUnknownAt = 0;
 var kioskCurrentDescriptor = null;
 var kioskProcessingUser = null;
 
 var _permitFile = null;
+
+// ============================================================
+// TTS SYSTEM BARU - Unlock + Queue + Anti Terpotong
+// ============================================================
+
+// Unlock TTS pada interaksi user pertama
+function unlockTTS() {
+  if (_ttsUnlocked) return;
+  try {
+    if (!('speechSynthesis' in window)) return;
+    var u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    u.lang = 'id-ID';
+    window.speechSynthesis.speak(u);
+    _ttsUnlocked = true;
+    console.log('TTS unlocked ✅');
+  } catch(e) { console.warn('TTS unlock error:', e); }
+}
+
+// Panggil unlock saat user klik / tap di halaman
+document.addEventListener('click', unlockTTS, { once: false });
+document.addEventListener('touchstart', unlockTTS, { once: false });
+
+// TTS Queue — tidak cancel yang lama, tunggu selesai
+function speakText(text) {
+  if (!text) return;
+  try {
+    if (!('speechSynthesis' in window)) {
+      console.warn('SpeechSynthesis tidak didukung browser');
+      return;
+    }
+    _ttsQueue.push(text);
+    console.log('TTS Queue +:', text, '(total:', _ttsQueue.length + ')');
+    if (!_ttsQueueRunning) {
+      _ttsQueueRunning = true;
+      processTTSQueue();
+    }
+  } catch(e) { console.warn('TTS error:', e); }
+}
+
+function processTTSQueue() {
+  if (_ttsQueue.length === 0) {
+    _ttsQueueRunning = false;
+    return;
+  }
+  var text = _ttsQueue.shift();
+  console.log('TTS Speaking:', text);
+  try {
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'id-ID';
+    utter.rate = 0.92;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
+
+    var finished = false;
+    var finishOnce = function() {
+      if (finished) return;
+      finished = true;
+      setTimeout(processTTSQueue, 300);
+    };
+
+    utter.onend = finishOnce;
+    utter.onerror = function(e) {
+      console.warn('TTS onerror:', e);
+      finishOnce();
+    };
+
+    // Safety timeout — kalau onend tidak fire (bug Chrome), reset setelah 20 detik
+    setTimeout(function() {
+      if (!finished) {
+        console.warn('TTS timeout — paksa lanjut');
+        finishOnce();
+      }
+    }, 20000);
+
+    window.speechSynthesis.speak(utter);
+  } catch(e) {
+    console.warn('TTS speak error:', e);
+    setTimeout(processTTSQueue, 300);
+  }
+}
+
+// Test TTS dari Setting
+function testTTS() {
+  unlockTTS();
+  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi.');
+  showToast('🔊 Test suara dijalankan', 'info', 3000);
+}
+
+// Build TTS absensi
+function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
+  var jamAbsen = '';
+  if (serverTime) {
+    jamAbsen = String(serverTime).substring(0, 5);
+  }
+  if (type === 'IN') {
+    var matchTelat = keterangan ? keterangan.match(/Terlambat\s+(\d+)\s+menit/i) : null;
+    if (matchTelat) {
+      var menitTelat = matchTelat[1];
+      return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. ' +
+             'Jam masuk ' + (jamKerja.jam_masuk || '08:00') + ', ' +
+             'toleransi ' + (jamKerja.toleransi_telat || '15') + ' menit. ' +
+             'Anda absen saat ini ' + jamAbsen + '.';
+    }
+    return namaUser + ' tercatat hadir.';
+  } else {
+    var matchAwal = keterangan ? keterangan.match(/Pulang Awal\s+(\d+)\s+menit/i) : null;
+    if (matchAwal) {
+      var menitAwal = matchAwal[1];
+      return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
+             'Jam keluar ' + (jamKerja.jam_keluar || '17:00') + ', ' +
+             'Anda absen saat ini ' + jamAbsen + '.';
+    }
+    return namaUser + ' tercatat pulang.';
+  }
+}
 
 // ============================================================
 // API WRAPPER
@@ -845,61 +951,6 @@ function showToast(msg, type, duration) {
   t._timer = setTimeout(function() {
     t.classList.remove('show');
   }, duration);
-}
-
-// ============================================================
-// TTS dengan GUARD anti terpotong
-// ============================================================
-function speakText(text) {
-  try {
-    if (!('speechSynthesis' in window)) return;
-    if (_ttsBusy) {
-      console.log('TTS masih bicara, skip:', text);
-      return;
-    }
-    _ttsBusy = true;
-    window.speechSynthesis.cancel();
-    var utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'id-ID';
-    utter.rate = 0.95;
-    utter.pitch = 1.0;
-    utter.volume = 1.0;
-    utter.onend = function() { _ttsBusy = false; };
-    utter.onerror = function() { _ttsBusy = false; };
-    window.speechSynthesis.speak(utter);
-  } catch (e) { _ttsBusy = false; console.warn('TTS error:', e); }
-}
-
-/**
- * Build TTS absensi berdasarkan keterangan
- * contoh keterangan: "Terlambat 15 menit" atau "Pulang Awal 30 menit"
- * serverTime contoh: "08:30:45" → diambil "08:30"
- */
-function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
-  var jamAbsen = '';
-  if (serverTime) {
-    jamAbsen = String(serverTime).substring(0, 5);
-  }
-  if (type === 'IN') {
-    var matchTelat = keterangan ? keterangan.match(/Terlambat\s+(\d+)\s+menit/i) : null;
-    if (matchTelat) {
-      var menitTelat = matchTelat[1];
-      return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. ' +
-             'Jam masuk ' + (jamKerja.jam_masuk || '08:00') + ', ' +
-             'toleransi ' + (jamKerja.toleransi_telat || '15') + ' menit. ' +
-             'Anda absen saat ini ' + jamAbsen + '.';
-    }
-    return namaUser + ' tercatat hadir.';
-  } else {
-    var matchAwal = keterangan ? keterangan.match(/Pulang Awal\s+(\d+)\s+menit/i) : null;
-    if (matchAwal) {
-      var menitAwal = matchAwal[1];
-      return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
-             'Jam keluar ' + (jamKerja.jam_keluar || '17:00') + ', ' +
-             'Anda absen saat ini ' + jamAbsen + '.';
-    }
-    return namaUser + ' tercatat pulang.';
-  }
 }
 
 function startTime() {
@@ -1020,7 +1071,7 @@ function setupApp() {
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
   setTimeout(function() {
     speakText(welcomeMsg);
-  }, 800);
+  }, 1000);
 
   setTimeout(function() {
     refreshData();
@@ -1075,6 +1126,8 @@ function switchTab(id) {
 }
 
 function handleLogin() {
+  // Unlock TTS saat klik login (penting untuk Chrome HP)
+  unlockTTS();
   var phone = document.getElementById('loginPhone').value.trim();
   var pass = document.getElementById('loginPass').value;
   var btn = document.getElementById('btnLogin');
@@ -1152,7 +1205,7 @@ function updateFaceBanner() {
 }
 
 // ============================================================
-// JAM KERJA + SOUND
+// JAM KERJA + SOUND SETTINGS
 // ============================================================
 function loadJamKerja() {
   callAPI('getJamKerja', {})
@@ -1169,6 +1222,7 @@ function loadJamKerja() {
         if (el3) el3.value = jamKerja.batas_telat || '08:15';
         if (el4) el4.value = jamKerja.toleransi_telat || '15';
         if (el5) el5.value = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
+        console.log('JamKerja loaded:', JSON.stringify(jamKerja));
       }
     })
     .catch(function(err) { console.warn('loadJamKerja gagal:', err); });
@@ -1626,6 +1680,7 @@ function closeEnrollment() {
 // ============================================================
 function startAttendance(type) {
   attType = type;
+  unlockTTS();
   if (!userFaceEnrolled) {
     showToast("Wajah belum terdaftar! Daftar dulu.", 'warn');
     setTimeout(openEnrollment, 800);
@@ -1741,6 +1796,7 @@ function captureAbsen() {
     showToast("Wajah belum terverifikasi", 'warn');
     return;
   }
+  unlockTTS();
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
   btn.innerHTML = 'Mengirim...';
@@ -1755,7 +1811,6 @@ function captureAbsen() {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
       if (res && res.success) {
-        // TTS pakai serverTime
         var serverTime = res.serverTime || '';
         var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', serverTime);
         speakText(suara);
@@ -1807,6 +1862,7 @@ function setKioskType(type) {
 
 function openKiosk() {
   if (!user || user.role !== 'admin') return;
+  unlockTTS();
   if (!office.lat || !office.lng) {
     showToast("Lokasi kantor belum diatur!", 'err');
     return;
@@ -1906,7 +1962,7 @@ function startKioskLoop() {
     if (kioskInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
     if (kioskProcessingUser) return;
     if (Date.now() - kioskLastResultAt < KIOSK_RESULT_DURATION) return;
-    if (_ttsBusy) return; // tunggu TTS selesai
+    if (_ttsQueueRunning) return; // tunggu TTS selesai
 
     kioskInferenceBusy = true;
     faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
@@ -1942,7 +1998,7 @@ function startKioskLoop() {
         } else {
           guide.className = 'kiosk-face-guide detected';
           var now = Date.now();
-          if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsBusy) {
+          if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
             kioskLastUnknownAt = now;
             speakText('Wajah tidak dikenali. Silakan coba kembali, posisikan wajah di tengah dan jangan bergerak.');
           }
@@ -1974,6 +2030,7 @@ function manualKioskCapture() {
     kioskProcessAttendance(bestMatch);
   } else {
     showToast("Wajah tidak dikenali", 'err', 3000);
+    speakText('Wajah tidak dikenali. Silakan coba kembali.');
   }
 }
 
@@ -2113,6 +2170,8 @@ function refreshData() {
           var el = document.getElementById('jk-welcome');
           if (el) el.value = jamKerja.welcome_text;
         }
+        var elT = document.getElementById('jk-toleransi');
+        if (elT) elT.value = jamKerja.toleransi_telat || '15';
       }
       if (typeof res.faceEnrolled !== 'undefined') {
         userFaceEnrolled = res.faceEnrolled;
@@ -2472,6 +2531,7 @@ function resetLogFilter() {
 // PERMIT
 // ============================================================
 function openPermitModal() {
+  unlockTTS();
   var tzoffset = (new Date()).getTimezoneOffset() * 60000;
   var localISOTime = (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
   document.getElementById('pDate').value = localISOTime;
