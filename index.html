@@ -945,7 +945,6 @@ var FACE_DETECT_THRESHOLD = 0.5;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
-// LIVENESS STATE
 var LIVENESS_HOLD_MS = 1000;
 var LIVENESS_CHALLENGES = [
   { key: 'FRONT',  label: 'Hadap Depan',    short: 'DEPAN'  },
@@ -953,6 +952,7 @@ var LIVENESS_CHALLENGES = [
   { key: 'RIGHT',  label: 'Miring ke KANAN',short: 'KANAN'  },
   { key: 'SMILE',  label: 'SENYUM Sekarang',short: 'SENYUM'}
 ];
+     
 var livenessActive = false;
 var livenessChallengeIndex = 0;
 var livenessHoldStart = 0;
