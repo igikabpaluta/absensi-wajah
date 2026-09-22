@@ -288,7 +288,7 @@ input, select { font-size:16px !important; }
   <div class="flex justify-center mb-3">
     <button id="btnAutoCapture" onclick="autoCaptureEnroll()"
       class="px-6 py-3 rounded-xl text-sm font-black bg-emerald-600 text-white shadow-lg active:scale-95 transition-all">
-      <i class="fas fa-bolt mr-2"></i> AUTO CAPTURE 3x
+      <i class="fas fa-bolt mr-2"></i> AUTO CAPTURE 6x
     </button>
   </div>
   <div class="flex-1 flex flex-col justify-center items-center space-y-4">
@@ -303,7 +303,7 @@ input, select { font-size:16px !important; }
     </div>
     <div class="text-center space-y-2 max-w-xs">
       <p class="text-sm font-bold" id="enrollInstruction">Bersiap...</p>
-      <p class="text-[10px] text-gray-400">Capture <span id="enrollStep">0</span> dari 3</p>
+      <p class="text-[10px] text-gray-400">Capture <span id="enrollStep">0</span> dari 6</p>
       <p class="text-[10px] text-amber-400" id="enrollAutoHint"></p>
     </div>
     <button id="enrollBtn" onclick="captureEnroll()" disabled
@@ -859,8 +859,8 @@ input, select { font-size:16px !important; }
 // ============================================================
 // ============================================================
 // BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
-// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT, LIVENESS,
-// AUTO-KIRIM ABSEN
+// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT 6 FOTO,
+// LIVENESS + AUTO-KIRIM ABSEN
 // ============================================================
 
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
@@ -892,7 +892,7 @@ var _speakDedupWindow = 2000;
 // FACE STATE
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
-var FACE_THRESHOLD = 0.55;
+var FACE_THRESHOLD = 0.60;
 var FACE_LOOP_INTERVAL = 120;
 var FACE_DETECT_INPUT = 224;
 var FACE_DETECT_THRESHOLD = 0.5;
@@ -900,8 +900,8 @@ var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
 // LIVENESS STATE
-var LIVENESS_HOLD_MS = 1000;       // Tahan 1 detik per challenge
-var LIVENESS_SMILE_HOLD_MS = 1200;  // SENYUM: hold lebih singkat
+var LIVENESS_HOLD_MS = 1000;
+var LIVENESS_SMILE_HOLD_MS = 1500;
 var LIVENESS_CHALLENGES = [
   { key: 'FRONT',  label: 'Hadap Depan',    short: 'DEPAN'  },
   { key: 'LEFT',   label: 'Miring ke KIRI', short: 'KIRI'   },
@@ -1608,7 +1608,7 @@ function resetMyFace() {
 }
 
 // ============================================================
-// ENROLLMENT (Daftar Wajah)
+// ENROLLMENT (6 FOTO)
 // ============================================================
 function setEnrollMode(mode) {
   enrollMode = mode;
@@ -1738,20 +1738,29 @@ function autoCaptureEnroll() {
     return;
   }
   enrollCaptureInProgress = true;
-  showToast("Auto Capture 3x dimulai...", 'info', 2500);
+  showToast("Auto Capture 6x dimulai...", 'info', 2500);
   enrollStep = 0;
   enrollDescriptors = [];
   document.getElementById('enrollStep').innerText = '0';
-  var instructions = ['Hadap depan', 'Miring ke kiri', 'Miring ke kanan'];
+
+  var instructions = [
+    'Hadap depan',
+    'Miring ke kiri',
+    'Miring ke kanan',
+    'Tengadah ke atas',
+    'Menunduk ke bawah',
+    'Senyum lebar'
+  ];
+
   function doCapture(index) {
-    if (index >= 3) {
+    if (index >= 6) {
       enrollCaptureInProgress = false;
       finalizeEnrollment();
       return;
     }
     document.getElementById('enrollInstruction').innerText = instructions[index];
     document.getElementById('enrollStatus').className = 'face-status stable';
-    document.getElementById('enrollStatus').innerText = 'Capture ' + (index + 1) + '/3... jangan bergerak';
+    document.getElementById('enrollStatus').innerText = 'Capture ' + (index + 1) + '/6... jangan bergerak';
     speakText(instructions[index]);
     setTimeout(function() {
       var video = document.getElementById('enrollVideo');
@@ -1769,7 +1778,7 @@ function autoCaptureEnroll() {
           enrollDescriptors.push(Array.from(det.descriptor));
           enrollStep++;
           document.getElementById('enrollStep').innerText = enrollStep;
-          showToast('Capture ' + enrollStep + '/3 berhasil!', 'ok', 1500);
+          showToast('Capture ' + enrollStep + '/6 berhasil!', 'ok', 1500);
           setTimeout(function() { doCapture(index + 1); }, 1000);
         })
         .catch(function(e) {
@@ -1804,10 +1813,17 @@ function captureEnroll() {
       enrollDescriptors.push(Array.from(det.descriptor));
       enrollStep++;
       document.getElementById('enrollStep').innerText = enrollStep;
-      var instructions = ['Hadap depan', 'Miringkan wajah ke kiri sedikit', 'Miringkan wajah ke kanan sedikit'];
-      if (enrollStep < 3) {
+      var instructions = [
+        'Hadap depan',
+        'Miringkan wajah ke kiri',
+        'Miringkan wajah ke kanan',
+        'Tengadah ke atas',
+        'Menunduk ke bawah',
+        'Senyum lebar'
+      ];
+      if (enrollStep < 6) {
         document.getElementById('enrollInstruction').innerText = instructions[enrollStep];
-        showToast('Capture ' + enrollStep + '/3 berhasil!', 'ok', 2500);
+        showToast('Capture ' + enrollStep + '/6 berhasil!', 'ok', 2500);
         btn.disabled = false;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
         btn.innerHTML = '<i class="fas fa-camera mr-2"></i> AMBIL FOTO';
@@ -1825,8 +1841,8 @@ function captureEnroll() {
 }
 
 function finalizeEnrollment() {
-  if (enrollDescriptors.length < 3) {
-    showToast("Capture belum lengkap. Butuh 3x.", 'warn');
+  if (enrollDescriptors.length < 6) {
+    showToast("Capture belum lengkap. Butuh 6x.", 'warn');
     return;
   }
   showToast("Memeriksa wajah...", 'info', 2000);
@@ -1940,7 +1956,7 @@ function getPitchRatio(landmarks) {
 
 function getSmileRatio(landmarks) {
   try {
-    // === METODE DETEKSI SENYUM KETAT ===
+    // === DETEKSI SENYUM SANGAT KETAT ===
     var mouthLeftX = landmarks[48].x;
     var mouthRightX = landmarks[54].x;
     var mouthLeftY = landmarks[48].y;
@@ -1959,22 +1975,22 @@ function getSmileRatio(landmarks) {
     var noseToCorner = Math.abs(cornerY - noseTipY);
     var cornerLift = 1 - (noseToCorner / faceWidth);
 
-    // INDIKATOR B: Mulut terbuka (piksel)
+    // INDIKATOR B: Mulut terbuka
     var mouthOpen = Math.abs(lowerLipY - upperLipY);
 
     // INDIKATOR C: Lebar mulut
     var mouthWidth = Math.abs(mouthRightX - mouthLeftX);
     var widthRatio = mouthWidth / faceWidth;
 
-    // SKOR KUMULATIF
+    // SKOR KUMULATIF — diperketat
     var score = 0;
-    if (cornerLift > 0.70) score += 0.4;
-    if (cornerLift > 0.75) score += 0.2;
-    if (cornerLift > 0.80) score += 0.2;
-    if (mouthOpen > 8) score += 0.15;
-    if (mouthOpen > 12) score += 0.15;
-    if (widthRatio > 0.28) score += 0.10;
-    if (widthRatio > 0.33) score += 0.10;
+    if (cornerLift > 0.75) score += 0.3;
+    if (cornerLift > 0.80) score += 0.3;
+    if (cornerLift > 0.85) score += 0.2;
+    if (mouthOpen > 10) score += 0.15;
+    if (mouthOpen > 15) score += 0.15;
+    if (widthRatio > 0.30) score += 0.10;
+    if (widthRatio > 0.36) score += 0.10;
 
     // Debug (aktifkan dengan window._debugSmile = true di Console)
     if (typeof window !== 'undefined' && window._debugSmile) {
@@ -2005,13 +2021,10 @@ function matchesChallenge(challengeKey, landmarks) {
     var noseToEye = noseY - eyeMidY;
     return p < 0.50 && noseToEye < 8;
   }
-  // SMILE: skor kumulatif, butuh minimal 0.75 (senyum lebar/nyata)
-  if (challengeKey === 'SMILE') return getSmileRatio(landmarks) >= 0.75;
+  // SMILE: skor kumulatif minimal 1.0 (harus senyum lebar)
+  if (challengeKey === 'SMILE') return getSmileRatio(landmarks) >= 1.0;
   return false;
 }
-
-
-     
 
 function updateChallengeUI(index) {
   var stepEl = document.getElementById('challengeStep');
@@ -2179,7 +2192,6 @@ function startAbsLoop() {
             document.getElementById('challengeTimer').innerText = 'Tahan 1 detik...';
           }
           var held = Date.now() - livenessHoldStart;
-          // SENYUM hold lebih singkat
           var holdMs = (challenge.key === 'SMILE') ? LIVENESS_SMILE_HOLD_MS : LIVENESS_HOLD_MS;
           var sisa = Math.max(0, Math.ceil((holdMs - held) / 1000));
           document.getElementById('challengeTimer').innerText = 'Tahan ' + sisa + ' detik lagi';
@@ -2196,7 +2208,6 @@ function startAbsLoop() {
             livenessHoldStart = 0;
 
             if (livenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
-              // 🎯 SEMUA SELESAI → auto kirim
               console.log('✅ Semua challenge selesai, memanggil finishLiveness');
               finishLiveness();
               return;
