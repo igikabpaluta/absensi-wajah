@@ -2189,7 +2189,7 @@ function captureAbsen() {
   unlockTTS();
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
-  btn.innerHTML = 'Prose Mengirim...Tunggu Selesai....';
+  btn.innerHTML = 'Mengirim...';
   callAPI('submitAttendance', {
     type: attType,
     lat: currentLoc.lat,
@@ -2206,7 +2206,11 @@ function captureAbsen() {
         var toastMsg = res.message || "Absen berhasil!";
         if (res.keterangan) toastMsg += ' — ' + res.keterangan;
         showToast(toastMsg, 'ok', 5000, true);
+
+        // === PATCH: kembali ke menu utama ===
         closeAbsen();
+        switchTab('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         refreshData();
       } else {
         showToast(res && res.message ? res.message : "Gagal absen", 'err', 5000);
@@ -2218,6 +2222,10 @@ function captureAbsen() {
       showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
+
+
+
+     
 
 function closeAbsen() {
   if (absLoopTimer) { clearInterval(absLoopTimer); absLoopTimer = null; }
