@@ -1943,15 +1943,37 @@ function getPitchRatio(landmarks) {
 
 function getSmileRatio(landmarks) {
   try {
+    // Pakai 2 rasio untuk stabilitas:
+    // 1) Lebar mulut / lebar wajah
+    // 2) Rasio naiknya sudut mulut (senyum = sudut mulut naik)
     var mouthLeft = landmarks[48].x;
     var mouthRight = landmarks[54].x;
+    var mouthLeftY = landmarks[48].y;
+    var mouthRightY = landmarks[54].y;
+    var mouthCenterY = landmarks[51].y;   // tengah bibir atas
+    var lowerLipY = landmarks[57].y;      // bibir bawah
+
     var faceLeft = landmarks[0].x;
     var faceRight = landmarks[16].x;
     var faceWidth = Math.abs(faceRight - faceLeft);
     if (faceWidth < 1) return 0;
-    return Math.abs(mouthRight - mouthLeft) / faceWidth;
+
+    // Rasio 1: lebar mulut
+    var widthRatio = Math.abs(mouthRight - mouthLeft) / faceWidth;
+
+    // Rasio 2: selisih tinggi mulut dengan ujung mulut
+    // Saat senyum, sudut mulut naik mendekati mata
+    var cornerY = (mouthLeftY + mouthRightY) / 2;
+    var mouthHeight = Math.abs(cornerY - lowerLipY);
+    if (mouthHeight < 1) mouthHeight = 1;
+    var smileLift = Math.abs(mouthCenterY - cornerY) / mouthHeight;
+
+    // Gabungkan: dominan width + bonus lift
+    return widthRatio + (smileLift * 0.15);
   } catch (e) { return 0; }
 }
+
+     
 
 function matchesChallenge(challengeKey, landmarks) {
   if (challengeKey === 'FRONT') {
