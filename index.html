@@ -2201,7 +2201,7 @@ function captureAbsen() {
   unlockTTS();
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
-  btn.innerHTML = 'Mengirim...';
+  btn.innerHTML = 'Proses Mengirim Data Absen, Tunggu Ya..';
   callAPI('submitAttendance', {
     type: attType,
     lat: currentLoc.lat,
