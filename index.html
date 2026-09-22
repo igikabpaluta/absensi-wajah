@@ -2552,7 +2552,7 @@ function finishKioskLiveness() {
   kioskLivenessActive = false;
   document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskInfoText').innerText = 'Verifikasi selesai, memproses absen...';
-  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda sedang dicatat.');
+  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda sedang dicatat, silahkan ganti Penguna lain .');
   kioskProcessAttendance(face);
 }
 
@@ -2572,7 +2572,7 @@ function kioskProcessAttendance(face) {
     })
     .catch(function(err) {
       kioskProcessingUser = null;
-      showKioskResult({ success: false, message: err.message || 'Gagal terhubung server' }, face);
+      showKioskResult({ success: false, message: err.message || 'Mohon Maaf, Gagal, ada Gangguan, Coba kembali ' }, face);
     });
 }
 
