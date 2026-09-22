@@ -1,6 +1,6 @@
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE
-     Bagian 1 (HTML/CSS) + Bagian 2 (JS Core) + Bagian 3 (JS Kiosk/Admin)
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v13
+     Fitur: Per-user Liveness (instruction / no_instruction / global)
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -114,6 +114,29 @@ input, select { font-size:16px !important; }
 }
 .liveness-indicator.ok { background: rgba(16,185,129,0.9); }
 .liveness-indicator.wait { background: rgba(245,158,11,0.9); }
+
+/* Silent mode banner (mode no_instruction) */
+.silent-banner {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-radius: 20px; padding: 16px 20px; color: white;
+  text-align: center; margin-bottom: 12px;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.4);
+  display: none;
+}
+.silent-banner.active { display: block; }
+.silent-banner-title {
+  font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+  text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;
+}
+.silent-banner-instruction {
+  font-size: 22px; font-weight: 900; line-height: 1.2;
+  color: #fbbf24;
+}
+.silent-banner-timer {
+  font-size: 12px; font-weight: 700; margin-top: 8px;
+  color: #94a3b8;
+}
+.silent-banner-timer.warn { color: #ef4444; }
 
 .toast {
   position:fixed; bottom:-200px; left:16px; right:16px;
@@ -243,9 +266,7 @@ input, select { font-size:16px !important; }
 
 <body class="safe-bottom">
 
-<!-- ============================================================
-     LOGIN SCREEN
-     ============================================================ -->
+<!-- LOGIN -->
 <div id="loginScreen" class="fixed inset-0 z-[600] bg-white p-8 flex flex-col justify-center items-center">
   <div class="w-full max-sm:max-w-xs space-y-8">
     <div class="text-center">
@@ -274,9 +295,7 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- ============================================================
-     ENROLL SCREEN
-     ============================================================ -->
+<!-- ENROLL -->
 <div id="enrollScreen" class="fixed inset-0 z-[650] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-4">
     <h2 class="text-2xl font-black">Daftar Wajah</h2>
@@ -323,16 +342,15 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- ============================================================
-     ABSEN SCREEN
-     ============================================================ -->
+<!-- ABSEN -->
 <div id="absScreen" class="fixed inset-0 z-[660] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-3">
     <h2 class="text-2xl font-black" id="absTitle">Absen Masuk</h2>
-    <p class="text-xs text-gray-400 mt-1">Ikuti instruksi untuk verifikasi wajah</p>
+    <p class="text-xs text-gray-400 mt-1" id="absSubtitle">Ikuti instruksi untuk verifikasi wajah</p>
   </div>
 
-  <div class="challenge-box">
+  <!-- Challenge box (mode instruction) -->
+  <div class="challenge-box" id="challengeBox">
     <div class="challenge-title">Langkah <span id="challengeStep">1</span> dari <span id="challengeTotal">5</span></div>
     <div class="challenge-instruction" id="challengeInstruction">Hadap Depan</div>
     <div class="challenge-progress" id="challengeProgress">
@@ -344,6 +362,13 @@ input, select { font-size:16px !important; }
       <div class="challenge-dot"></div>
     </div>
     <div class="challenge-timer" id="challengeTimer">Tahan 1 detik</div>
+  </div>
+
+  <!-- Silent banner (mode no_instruction) -->
+  <div class="silent-banner" id="silentBanner">
+    <div class="silent-banner-title">Verifikasi Otomatis</div>
+    <div class="silent-banner-instruction" id="silentInstruction">Hadap Depan</div>
+    <div class="silent-banner-timer" id="silentTimer">Sisa waktu: 30 detik</div>
   </div>
 
   <div class="flex-1 flex flex-col justify-center items-center space-y-4">
@@ -371,9 +396,7 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- ============================================================
-     KIOSK SCREEN
-     ============================================================ -->
+<!-- KIOSK -->
 <div id="kioskScreen" class="fixed inset-0 z-[670] hidden bg-black">
   <div class="kiosk-video-wrap">
     <video id="kioskVideo" autoplay playsinline muted></video>
@@ -427,9 +450,7 @@ input, select { font-size:16px !important; }
 <canvas id="thumbCanvas" class="hidden"></canvas>
 <canvas id="enhanceCanvas" class="hidden"></canvas>
 
-<!-- ============================================================
-     APP MAIN
-     ============================================================ -->
+<!-- APP -->
 <div id="app" class="hidden">
   <header class="p-6 flex justify-between items-center bg-white border-b sticky top-0 z-50">
     <div>
@@ -441,7 +462,7 @@ input, select { font-size:16px !important; }
     </div>
   </header>
 
-  <!-- ============ TAB HOME ============ -->
+  <!-- TAB HOME -->
   <main id="tab-home" class="tab-content active p-6 space-y-6">
     <div id="faceBanner" class="rounded-2xl p-4 flex items-center gap-3 border-2 border-gray-200 bg-gray-50">
       <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
@@ -499,7 +520,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
-  <!-- ============ TAB SETTING ============ -->
+  <!-- TAB SETTING -->
   <main id="tab-setting" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Setting Kantor</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -513,70 +534,62 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- MODE LIVENESS -->
+    <!-- GLOBAL LIVENESS SETTINGS -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-shield-halved text-indigo-600 text-lg"></i>
-        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Mode Liveness Absensi</h4>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Mode Liveness Global</h4>
       </div>
-      <p class="text-[10px] text-gray-500 mb-4 italic">Setting ini berlaku untuk absen pribadi & absen massal (kiosk)</p>
+      <p class="text-[10px] text-gray-500 mb-4 italic">Setting ini jadi <strong>default</strong> untuk user yang belum di-set per-user. Bisa di-override di tab Pegawai.</p>
 
       <div class="space-y-3">
-        <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all" id="lmLabelFull">
-          <input type="radio" name="livenessMode" value="full" id="lmModeFull" onchange="onLivenessModeChange()" class="mt-1 w-4 h-4 accent-indigo-600">
+        <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
+          <input type="radio" name="globalLivenessMode" value="instruction" id="glModeInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
           <div>
-            <p class="font-black text-sm text-gray-900">Lengkap (5 gerakan)</p>
-            <p class="text-[10px] text-gray-500">Hadap depan, miring kiri, miring kanan, tengadah atas, senyum</p>
+            <p class="font-black text-sm text-gray-900">Custom + Instruksi</p>
+            <p class="text-[10px] text-gray-500">Challenge box tampil, user dipandu gerakan satu-satu</p>
           </div>
         </label>
 
-        <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all" id="lmLabelNone">
-          <input type="radio" name="livenessMode" value="none" id="lmModeNone" onchange="onLivenessModeChange()" class="mt-1 w-4 h-4 accent-indigo-600">
+        <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
+          <input type="radio" name="globalLivenessMode" value="no_instruction" id="glModeNoInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
           <div>
-            <p class="font-black text-sm text-gray-900">Tanpa Instruksi</p>
-            <p class="text-[10px] text-gray-500">Wajah dikenali langsung absen (cepat, tanpa gerakan)</p>
-          </div>
-        </label>
-
-        <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all" id="lmLabelCustom">
-          <input type="radio" name="livenessMode" value="custom" id="lmModeCustom" onchange="onLivenessModeChange()" class="mt-1 w-4 h-4 accent-indigo-600">
-          <div>
-            <p class="font-black text-sm text-gray-900">Custom — pilih gerakan sendiri</p>
-            <p class="text-[10px] text-gray-500">Centang gerakan yang diinginkan di bawah</p>
+            <p class="font-black text-sm text-gray-900">Custom Tanpa Instruksi</p>
+            <p class="text-[10px] text-gray-500">Challenge box disembunyikan, TTS-only pandu, auto-submit</p>
           </div>
         </label>
       </div>
 
-      <div id="lmCustomBox" class="mt-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-2 opacity-50 pointer-events-none">
-        <p class="text-[10px] font-black text-indigo-700 uppercase mb-2">Pilih Gerakan:</p>
+      <div class="mt-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-2">
+        <p class="text-[10px] font-black text-indigo-700 uppercase mb-2">Gerakan Global:</p>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
-          <input type="checkbox" id="lmChkFront" class="w-4 h-4 accent-indigo-600">
+          <input type="checkbox" id="glChkFront" class="w-4 h-4 accent-indigo-600">
           <span class="text-sm font-bold text-gray-700">Hadap Depan</span>
         </label>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
-          <input type="checkbox" id="lmChkLeft" class="w-4 h-4 accent-indigo-600">
+          <input type="checkbox" id="glChkLeft" class="w-4 h-4 accent-indigo-600">
           <span class="text-sm font-bold text-gray-700">Miring Kiri</span>
         </label>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
-          <input type="checkbox" id="lmChkRight" class="w-4 h-4 accent-indigo-600">
+          <input type="checkbox" id="glChkRight" class="w-4 h-4 accent-indigo-600">
           <span class="text-sm font-bold text-gray-700">Miring Kanan</span>
         </label>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
-          <input type="checkbox" id="lmChkUp" class="w-4 h-4 accent-indigo-600">
+          <input type="checkbox" id="glChkUp" class="w-4 h-4 accent-indigo-600">
           <span class="text-sm font-bold text-gray-700">Tengadah Atas</span>
         </label>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
-          <input type="checkbox" id="lmChkDown" class="w-4 h-4 accent-indigo-600">
+          <input type="checkbox" id="glChkDown" class="w-4 h-4 accent-indigo-600">
           <span class="text-sm font-bold text-gray-700">Menunduk Bawah</span>
         </label>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
-          <input type="checkbox" id="lmChkSmile" class="w-4 h-4 accent-indigo-600">
+          <input type="checkbox" id="glChkSmile" class="w-4 h-4 accent-indigo-600">
           <span class="text-sm font-bold text-gray-700">Senyum</span>
         </label>
       </div>
 
-      <button onclick="saveLivenessSettings()" class="w-full mt-4 bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
-        <i class="fas fa-save mr-2"></i> SIMPAN MODE LIVENESS
+      <button onclick="saveGlobalLivenessSettings()" class="w-full mt-4 bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+        <i class="fas fa-save mr-2"></i> SIMPAN MODE GLOBAL
       </button>
     </div>
 
@@ -707,7 +720,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
-  <!-- ============ TAB PEGAWAI ============ -->
+  <!-- TAB PEGAWAI -->
   <main id="tab-pegawai" class="tab-content p-6 space-y-6 pb-24">
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-black text-gray-900">Data Pegawai</h2>
@@ -729,18 +742,19 @@ input, select { font-size:16px !important; }
               <th class="py-3 px-3 text-left font-bold">Jabatan</th>
               <th class="py-3 px-3 text-left font-bold">No HP</th>
               <th class="py-3 px-3 text-center font-bold">Role</th>
+              <th class="py-3 px-3 text-center font-bold">Liveness</th>
               <th class="py-3 px-3 text-center font-bold">Aksi</th>
             </tr>
           </thead>
           <tbody id="adminUserTable">
-            <tr><td colspan="6" class="py-8 text-center text-gray-400 text-xs">Memuat data...</td></tr>
+            <tr><td colspan="7" class="py-8 text-center text-gray-400 text-xs">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </main>
 
-  <!-- ============ TAB LOG ============ -->
+  <!-- TAB LOG -->
   <main id="tab-log" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Log Absensi</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -835,7 +849,6 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
-  <!-- ============ NAV BOTTOM ============ -->
   <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t px-3 py-3 flex justify-around items-center z-[100]">
     <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 text-indigo-600 transition-all">
       <i class="fas fa-house text-lg"></i><span class="text-[8px] font-bold uppercase">Home</span>
@@ -858,11 +871,9 @@ input, select { font-size:16px !important; }
   </nav>
 </div>
 
-<!-- ============================================================
-     MODALS
-     ============================================================ -->
+<!-- MODAL USER (dengan liveness per-user) -->
 <div id="userModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
-  <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
+  <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
     <h3 id="modalTitle" class="text-xl font-black text-gray-900">Data Pegawai</h3>
     <input type="hidden" id="editId">
     <input type="text" id="uNama" placeholder="Nama Lengkap" class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100">
@@ -874,6 +885,66 @@ input, select { font-size:16px !important; }
     </select>
     <input type="text" id="uPass" placeholder="Password (kosongkan jika tidak diubah)"
       class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100">
+
+    <!-- MODE LIVENESS PER-USER -->
+    <div class="pt-3 mt-3 border-t-2 border-dashed border-gray-200">
+      <p class="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-3">
+        <i class="fas fa-shield-halved mr-1"></i> Mode Liveness (Per-User)
+      </p>
+
+      <div class="space-y-2 mb-3">
+        <label class="flex items-start gap-3 p-2.5 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
+          <input type="radio" name="uLivenessMode" value="" id="uLmGlobal" class="mt-1 w-4 h-4 accent-indigo-600">
+          <div>
+            <p class="font-black text-xs text-gray-900">Pakai Global</p>
+            <p class="text-[9px] text-gray-500">Ikut setting global di tab Setting</p>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-2.5 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
+          <input type="radio" name="uLivenessMode" value="instruction" id="uLmInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
+          <div>
+            <p class="font-black text-xs text-gray-900">Custom + Instruksi</p>
+            <p class="text-[9px] text-gray-500">Challenge box tampil, user dipandu</p>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-2.5 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
+          <input type="radio" name="uLivenessMode" value="no_instruction" id="uLmNoInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
+          <div>
+            <p class="font-black text-xs text-gray-900">Custom Tanpa Instruksi</p>
+            <p class="text-[9px] text-gray-500">TTS-only pandu, auto-submit</p>
+          </div>
+        </label>
+      </div>
+
+      <div id="uLmCustomBox" class="p-3 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-1.5 opacity-50 pointer-events-none">
+        <p class="text-[9px] font-black text-indigo-700 uppercase mb-1">Gerakan (kosong = pakai global):</p>
+        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
+          <input type="checkbox" id="uLmChkFront" class="w-4 h-4 accent-indigo-600">
+          <span class="text-xs font-bold text-gray-700">Hadap Depan</span>
+        </label>
+        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
+          <input type="checkbox" id="uLmChkLeft" class="w-4 h-4 accent-indigo-600">
+          <span class="text-xs font-bold text-gray-700">Miring Kiri</span>
+        </label>
+        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
+          <input type="checkbox" id="uLmChkRight" class="w-4 h-4 accent-indigo-600">
+          <span class="text-xs font-bold text-gray-700">Miring Kanan</span>
+        </label>
+        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
+          <input type="checkbox" id="uLmChkUp" class="w-4 h-4 accent-indigo-600">
+          <span class="text-xs font-bold text-gray-700">Tengadah Atas</span>
+        </label>
+        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
+          <input type="checkbox" id="uLmChkDown" class="w-4 h-4 accent-indigo-600">
+          <span class="text-xs font-bold text-gray-700">Menunduk Bawah</span>
+        </label>
+        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
+          <input type="checkbox" id="uLmChkSmile" class="w-4 h-4 accent-indigo-600">
+          <span class="text-xs font-bold text-gray-700">Senyum</span>
+        </label>
+      </div>
+    </div>
+
     <div class="flex gap-3 pt-4">
       <button onclick="closeUserModal()" class="flex-1 py-4 font-bold text-gray-400">Batal</button>
       <button onclick="submitUser()" class="flex-1 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200">Simpan</button>
@@ -949,11 +1020,8 @@ input, select { font-size:16px !important; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 // ============================================================
-// BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
-// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT 6 FOTO,
-// LIVENESS + DETEKSI SENYUM KETAT + MODE LIVENESS SETTINGS
+// VARIABEL GLOBAL
 // ============================================================
-
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
 
 var user = null;
@@ -972,7 +1040,7 @@ var allPermitsData = [];
 var _clockInterval = null;
 var _mapInitDone = false;
 
-// TTS STATE
+// TTS
 var _ttsUnlocked = false;
 var _ttsQueue = [];
 var _ttsQueueRunning = false;
@@ -980,7 +1048,7 @@ var _lastSpokenText = '';
 var _speakLastAt = 0;
 var _speakDedupWindow = 2000;
 
-// FACE STATE
+// FACE
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
 var FACE_THRESHOLD = 0.58;
@@ -990,12 +1058,15 @@ var FACE_DETECT_THRESHOLD = 0.5;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
-// LIVENESS STATE
+// LIVENESS
 var LIVENESS_HOLD_MS = 1000;
 var LIVENESS_SMILE_HOLD_MS = 1500;
+var KIOSK_NO_INSTR_TIMEOUT = 30000;
+var ABS_NO_INSTR_TIMEOUT = 30000;
 
-var livenessSettings = {
-  mode: 'full',
+// Global settings (default untuk user yang belum di-set)
+var globalLivenessSettings = {
+  mode: 'instruction',
   challenges: 'FRONT,LEFT,RIGHT,UP,SMILE'
 };
 
@@ -1008,11 +1079,15 @@ var ALL_CHALLENGES = {
   'SMILE': { key: 'SMILE', label: 'SENYUM Sekarang',  short: 'SENYUM' }
 };
 
-var LIVENESS_CHALLENGES = [];
+var LIVENESS_CHALLENGES = [];       // daftar challenge aktif
+var ACTIVE_LIVENESS_MODE = 'instruction';  // instruction / no_instruction
 
+// State absen
 var livenessChallengeIndex = 0;
 var livenessHoldStart = 0;
 var livenessVerifiedDescriptors = [];
+var absNoInstrTimeoutTimer = null;
+var absNoInstrStartAt = 0;
 
 var enrollStream = null;
 var enrollLoopTimer = null;
@@ -1048,10 +1123,13 @@ var kioskLivenessFace = null;
 var kioskLivenessChallengeIndex = 0;
 var kioskLivenessHoldStart = 0;
 var kioskLivenessVerifiedDescriptors = [];
+var kioskNoInstrTimeoutTimer = null;
+var kioskNoInstrStartAt = 0;
+var kioskActiveMode = 'instruction';
+var kioskActiveChallenges = [];
 
 var _permitFile = null;
 var _todayAttendanceComplete = false;
-
 var _smileFrameCount = 0;
 var _smileFrameRequired = 3;
 
@@ -1066,7 +1144,6 @@ function escapeHtml(str) {
 function escapeJsArg(str) {
   return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-
 function normalizeDateStr(s) {
   s = String(s == null ? '' : s).trim();
   if (s === '') return '';
@@ -1081,7 +1158,6 @@ function normalizeDateStr(s) {
   }
   return s;
 }
-
 function isTimeEmptyFrontend(t) {
   if (t == null || t === '') return true;
   var s = String(t).trim();
@@ -1089,36 +1165,48 @@ function isTimeEmptyFrontend(t) {
 }
 
 // ============================================================
-// LIVENESS SETTINGS
+// BUILD ACTIVE CHALLENGES
 // ============================================================
-function buildActiveChallenges() {
-  var mode = livenessSettings.mode || 'full';
-  var challengesStr = livenessSettings.challenges || '';
-
-  if (mode === 'none') {
-    LIVENESS_CHALLENGES = [];
-    return;
-  }
-  if (mode === 'full') {
-    LIVENESS_CHALLENGES = [
-      ALL_CHALLENGES.FRONT,
-      ALL_CHALLENGES.LEFT,
-      ALL_CHALLENGES.RIGHT,
-      ALL_CHALLENGES.UP,
-      ALL_CHALLENGES.SMILE
-    ];
-    return;
-  }
-  var keys = challengesStr.split(',').map(function(k) { return String(k).trim().toUpperCase(); });
+function buildChallengesFromString(challengesStr) {
+  if (!challengesStr) return [];
+  var keys = String(challengesStr).split(',').map(function(k) { return String(k).trim().toUpperCase(); });
   var result = [];
   keys.forEach(function(k) {
     if (ALL_CHALLENGES[k]) result.push(ALL_CHALLENGES[k]);
   });
-  LIVENESS_CHALLENGES = result;
+  return result;
+}
+
+function buildGlobalChallenges() {
+  if (globalLivenessSettings.mode === 'no_instruction') {
+    // no_instruction tetap punya gerakan
+    return buildChallengesFromString(globalLivenessSettings.challenges);
+  }
+  // instruction mode
+  return buildChallengesFromString(globalLivenessSettings.challenges);
+}
+
+// Ambil setting efektif untuk user (per-user override atau global)
+function getEffectiveLivenessSettings(userObj) {
+  var result = {
+    mode: globalLivenessSettings.mode || 'instruction',
+    challenges: globalLivenessSettings.challenges || 'FRONT,LEFT,RIGHT,UP,SMILE'
+  };
+  if (userObj) {
+    var uMode = String(userObj.livenessMode || '').trim();
+    var uChal = String(userObj.livenessChallenges || '').trim();
+    if (uMode === 'instruction' || uMode === 'no_instruction') {
+      result.mode = uMode;
+    }
+    if (uChal) {
+      result.challenges = uChal;
+    }
+  }
+  return result;
 }
 
 // ============================================================
-// RETRY FETCH
+// RETRY FETCH / API
 // ============================================================
 function fetchWithRetry(url, options, maxRetry) {
   maxRetry = maxRetry || 2;
@@ -1219,9 +1307,6 @@ function testTTS() {
   showToast('🔊 Test suara dijalankan', 'info', 3000, true);
 }
 
-// ============================================================
-// SHOW TOAST
-// ============================================================
 function showToast(msg, type, duration, silent) {
   var t = document.getElementById('toast');
   type = type || 'info';
@@ -1267,9 +1352,6 @@ function makeThumbnail(video) {
   return can.toDataURL('image/jpeg', 0.6);
 }
 
-// ============================================================
-// AUTO-ENHANCE
-// ============================================================
 function enhanceFrameForFaceAPI(videoEl) {
   try {
     var can = document.getElementById('enhanceCanvas');
@@ -1375,7 +1457,7 @@ window.onload = function() {
 };
 
 // ============================================================
-// GATING TOMBOL
+// GATING
 // ============================================================
 function setAbsenButtonsState(enabled, reason) {
   var btnMasuk = document.getElementById('btnAbsenMasuk');
@@ -1419,9 +1501,6 @@ function setIzinButtonState(enabled, reason) {
   }
 }
 
-// ============================================================
-// CEK STATUS ABSEN HARI INI
-// ============================================================
 function checkTodayAttendanceComplete(res) {
   try {
     if (!res || !res.history) {
@@ -1438,7 +1517,6 @@ function checkTodayAttendanceComplete(res) {
       var h = res.history[i];
       var hDate = normalizeDateStr(h[2]);
       if (hDate !== localToday) continue;
-
       var jamMasuk = String(h[3] || '').trim();
       var jamKeluar = String(h[4] || '').trim();
       if (!isTimeEmptyFrontend(jamMasuk) && !isTimeEmptyFrontend(jamKeluar)) {
@@ -1446,7 +1524,6 @@ function checkTodayAttendanceComplete(res) {
         break;
       }
     }
-
     window._todayAttendanceComplete = completeToday;
     if (completeToday) {
       setIzinButtonState(false, 'Anda sudah absen masuk dan keluar hari ini');
@@ -1511,7 +1588,7 @@ function updateFaceBanner() {
 }
 
 // ============================================================
-// LOGIN / LOGOUT / SETUP APP
+// LOGIN / LOGOUT / SETUP
 // ============================================================
 function handleLogin() {
   unlockTTS();
@@ -1627,7 +1704,7 @@ function switchTab(id) {
       initAdminMap(office.lat, office.lng, office.rad);
       loadJamKerja();
       loadKioskPassword();
-      loadLivenessSettings();
+      loadGlobalLivenessSettings();
     } else if (id === 'home') {
       if (userMap) { userMap.invalidateSize(); centerMapOnUser(); }
       else initUserMap(office.lat, office.lng, office.rad);
@@ -1638,82 +1715,65 @@ function switchTab(id) {
 }
 
 // ============================================================
-// LIVENESS SETTINGS — LOAD & SAVE
+// GLOBAL LIVENESS SETTINGS
 // ============================================================
-function loadLivenessSettings() {
+function loadGlobalLivenessSettings() {
   callAPI('getLivenessSettings', {})
     .then(function(res) {
       if (res && res.success) {
-        livenessSettings.mode = res.mode || 'full';
-        livenessSettings.challenges = res.challenges || 'FRONT,LEFT,RIGHT,UP,SMILE';
+        globalLivenessSettings.mode = res.mode || 'instruction';
+        globalLivenessSettings.challenges = res.challenges || 'FRONT,LEFT,RIGHT,UP,SMILE';
       }
-      renderLivenessSettingsUI();
-      buildActiveChallenges();
+      renderGlobalLivenessUI();
     })
     .catch(function(err) {
-      console.warn('loadLivenessSettings gagal:', err);
-      renderLivenessSettingsUI();
-      buildActiveChallenges();
+      console.warn('loadGlobalLivenessSettings gagal:', err);
+      renderGlobalLivenessUI();
     });
 }
 
-function renderLivenessSettingsUI() {
-  var mode = livenessSettings.mode || 'full';
-  var chkStr = livenessSettings.challenges || '';
+function renderGlobalLivenessUI() {
+  var mode = globalLivenessSettings.mode || 'instruction';
+  var chkStr = globalLivenessSettings.challenges || '';
   var keys = chkStr.split(',').map(function(k) { return String(k).trim().toUpperCase(); });
 
-  document.getElementById('lmModeFull').checked = (mode === 'full');
-  document.getElementById('lmModeNone').checked = (mode === 'none');
-  document.getElementById('lmModeCustom').checked = (mode === 'custom');
+  document.getElementById('glModeInstruction').checked = (mode === 'instruction');
+  document.getElementById('glModeNoInstruction').checked = (mode === 'no_instruction');
 
-  document.getElementById('lmChkFront').checked = keys.indexOf('FRONT') >= 0;
-  document.getElementById('lmChkLeft').checked  = keys.indexOf('LEFT') >= 0;
-  document.getElementById('lmChkRight').checked = keys.indexOf('RIGHT') >= 0;
-  document.getElementById('lmChkUp').checked    = keys.indexOf('UP') >= 0;
-  document.getElementById('lmChkDown').checked  = keys.indexOf('DOWN') >= 0;
-  document.getElementById('lmChkSmile').checked = keys.indexOf('SMILE') >= 0;
-
-  onLivenessModeChange();
+  document.getElementById('glChkFront').checked = keys.indexOf('FRONT') >= 0;
+  document.getElementById('glChkLeft').checked  = keys.indexOf('LEFT') >= 0;
+  document.getElementById('glChkRight').checked = keys.indexOf('RIGHT') >= 0;
+  document.getElementById('glChkUp').checked    = keys.indexOf('UP') >= 0;
+  document.getElementById('glChkDown').checked  = keys.indexOf('DOWN') >= 0;
+  document.getElementById('glChkSmile').checked = keys.indexOf('SMILE') >= 0;
 }
 
-function onLivenessModeChange() {
-  var isCustom = document.getElementById('lmModeCustom').checked;
-  var box = document.getElementById('lmCustomBox');
-  if (isCustom) {
-    box.classList.remove('opacity-50', 'pointer-events-none');
-  } else {
-    box.classList.add('opacity-50', 'pointer-events-none');
-  }
-}
-
-function saveLivenessSettings() {
-  var mode = 'full';
-  if (document.getElementById('lmModeFull').checked) mode = 'full';
-  else if (document.getElementById('lmModeNone').checked) mode = 'none';
-  else if (document.getElementById('lmModeCustom').checked) mode = 'custom';
+function saveGlobalLivenessSettings() {
+  var mode = 'instruction';
+  if (document.getElementById('glModeNoInstruction').checked) mode = 'no_instruction';
+  else if (document.getElementById('glModeInstruction').checked) mode = 'instruction';
 
   var arr = [];
-  if (document.getElementById('lmChkFront').checked) arr.push('FRONT');
-  if (document.getElementById('lmChkLeft').checked) arr.push('LEFT');
-  if (document.getElementById('lmChkRight').checked) arr.push('RIGHT');
-  if (document.getElementById('lmChkUp').checked) arr.push('UP');
-  if (document.getElementById('lmChkDown').checked) arr.push('DOWN');
-  if (document.getElementById('lmChkSmile').checked) arr.push('SMILE');
+  if (document.getElementById('glChkFront').checked) arr.push('FRONT');
+  if (document.getElementById('glChkLeft').checked) arr.push('LEFT');
+  if (document.getElementById('glChkRight').checked) arr.push('RIGHT');
+  if (document.getElementById('glChkUp').checked) arr.push('UP');
+  if (document.getElementById('glChkDown').checked) arr.push('DOWN');
+  if (document.getElementById('glChkSmile').checked) arr.push('SMILE');
 
-  if (mode === 'custom' && arr.length === 0) {
-    showToast('Pilih minimal 1 gerakan untuk mode Custom!', 'warn');
+  if (arr.length === 0) {
+    showToast('Pilih minimal 1 gerakan!', 'warn');
     return;
   }
   var challengesStr = arr.join(',');
 
-  showToast('Menyimpan mode liveness...', 'info', 2000);
+  showToast('Menyimpan mode global...', 'info', 2000);
   callAPI('updateLivenessSettings', { mode: mode, challenges: challengesStr })
     .then(function(res) {
       if (res && res.success) {
-        livenessSettings.mode = res.mode || mode;
-        livenessSettings.challenges = res.challenges || challengesStr;
-        buildActiveChallenges();
-        showToast(res.message || 'Pengaturan liveness disimpan!', 'ok');
+        globalLivenessSettings.mode = res.mode || mode;
+        globalLivenessSettings.challenges = res.challenges || challengesStr;
+        showToast(res.message || 'Pengaturan global disimpan!', 'ok');
       } else {
         showToast(res ? res.message : 'Gagal simpan', 'err');
       }
@@ -1808,7 +1868,9 @@ function changeMyPassword() {
   showToast("Menyimpan password...", 'info', 2000);
   callAPI('editUser', {
     id: user.id, nama: user.nama, jabatan: user.jabatan,
-    phone: user.phone, role: user.role, password: p1
+    phone: user.phone, role: user.role, password: p1,
+    livenessMode: user.livenessMode || '',
+    livenessChallenges: user.livenessChallenges || ''
   })
     .then(function(res) {
       if (res && res.success) {
@@ -1916,7 +1978,7 @@ function resetMyFace() {
 }
 
 // ============================================================
-// ENROLLMENT (6 FOTO)
+// ENROLLMENT
 // ============================================================
 function setEnrollMode(mode) {
   enrollMode = mode;
@@ -2227,7 +2289,7 @@ function closeEnrollment() {
 }
 
 // ============================================================
-// LIVENESS DETECTION
+// LIVENESS DETECTION HELPERS
 // ============================================================
 function getYawRatio(landmarks) {
   try {
@@ -2330,6 +2392,9 @@ function matchesChallenge(challengeKey, landmarks) {
   return false;
 }
 
+// ============================================================
+// UI CHALLENGE
+// ============================================================
 function updateChallengeUI(index) {
   var stepEl = document.getElementById('challengeStep');
   var totalEl = document.getElementById('challengeTotal');
@@ -2356,11 +2421,11 @@ function updateKioskChallengeUI(index) {
   var totalEl = document.getElementById('kioskChallengeTotal');
   var instEl = document.getElementById('kioskChallengeInstruction');
   var dots = document.querySelectorAll('#kioskChallengeProgress .challenge-dot');
-  var total = LIVENESS_CHALLENGES.length;
+  var total = kioskActiveChallenges.length;
   if (wrap) wrap.classList.remove('hidden');
   if (stepEl) stepEl.innerText = (index + 1);
   if (totalEl) totalEl.innerText = total;
-  if (instEl && LIVENESS_CHALLENGES[index]) instEl.innerText = LIVENESS_CHALLENGES[index].label;
+  if (instEl && kioskActiveChallenges[index]) instEl.innerText = kioskActiveChallenges[index].label;
 
   if (dots) {
     for (var i = 0; i < dots.length; i++) {
@@ -2373,7 +2438,7 @@ function updateKioskChallengeUI(index) {
 }
 
 // ============================================================
-// ABSEN DENGAN LIVENESS
+// START ATTENDANCE (per-user liveness)
 // ============================================================
 function startAttendance(type) {
   attType = type;
@@ -2393,14 +2458,19 @@ function startAttendance(type) {
     return;
   }
 
-  buildActiveChallenges();
+  // Ambil setting efektif (per-user override atau global)
+  var eff = getEffectiveLivenessSettings(user);
+  ACTIVE_LIVENESS_MODE = eff.mode;
+  LIVENESS_CHALLENGES = buildChallengesFromString(eff.challenges);
 
+  // Jika tidak ada challenge → auto match langsung
   livenessChallengeIndex = 0;
   livenessHoldStart = 0;
   livenessVerifiedDescriptors = [];
   _smileFrameCount = 0;
   window._currentAbsDescriptor = null;
   window._absenProcessing = false;
+  if (absNoInstrTimeoutTimer) { clearTimeout(absNoInstrTimeoutTimer); absNoInstrTimeoutTimer = null; }
 
   document.getElementById('absTitle').innerText = type === 'IN' ? 'Absen Masuk' : 'Absen Keluar';
   document.getElementById('absScreen').classList.remove('hidden');
@@ -2413,8 +2483,19 @@ function startAttendance(type) {
   document.getElementById('absBtn').classList.add('opacity-50', 'cursor-not-allowed');
   var waitLabel = (type === 'IN') ? 'TUNGGU VERIFIKASI MASUK' : 'TUNGGU VERIFIKASI KELUAR';
   document.getElementById('absBtn').innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + waitLabel;
-  updateChallengeUI(0);
-  document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
+
+  // Atur UI sesuai mode
+  if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
+    document.getElementById('challengeBox').style.display = 'none';
+    document.getElementById('silentBanner').classList.add('active');
+    document.getElementById('absSubtitle').innerText = 'Ikuti panduan suara — jangan bergerak saat diminta';
+  } else {
+    document.getElementById('challengeBox').style.display = 'block';
+    document.getElementById('silentBanner').classList.remove('active');
+    document.getElementById('absSubtitle').innerText = 'Ikuti instruksi untuk verifikasi wajah';
+    updateChallengeUI(0);
+    document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
+  }
 
   loadFaceModels().then(function(ok) {
     if (!ok) {
@@ -2456,8 +2537,16 @@ function startAbsCamera() {
       document.getElementById('absInstruction').innerText = 'Menunggu wajah dikenali...';
       speakText('Menunggu wajah dikenali. Absen akan diproses otomatis.');
     } else {
-      document.getElementById('absInstruction').innerText = 'Ikuti instruksi di atas';
-      speakText('Ikuti instruksi gerakan. ' + LIVENESS_CHALLENGES[0].label);
+      if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
+        document.getElementById('absInstruction').innerText = 'Ikuti panduan suara';
+        document.getElementById('silentInstruction').innerText = LIVENESS_CHALLENGES[0].label;
+        speakText(LIVENESS_CHALLENGES[0].label);
+        absNoInstrStartAt = Date.now();
+        startAbsNoInstrTimer();
+      } else {
+        document.getElementById('absInstruction').innerText = 'Ikuti instruksi di atas';
+        speakText('Ikuti instruksi gerakan. ' + LIVENESS_CHALLENGES[0].label);
+      }
     }
     startAbsLoop();
   }).catch(function(e) {
@@ -2466,6 +2555,31 @@ function startAbsCamera() {
     document.getElementById('absStatus').className = 'face-status warn';
     showToast('Izinkan akses kamera', 'err');
   });
+}
+
+function startAbsNoInstrTimer() {
+  if (absNoInstrTimeoutTimer) clearTimeout(absNoInstrTimeoutTimer);
+  var startTime = Date.now();
+  function tick() {
+    var elapsed = Date.now() - startTime;
+    var sisa = Math.max(0, Math.ceil((ABS_NO_INSTR_TIMEOUT - elapsed) / 1000));
+    var timerEl = document.getElementById('silentTimer');
+    if (timerEl) {
+      timerEl.innerText = 'Sisa waktu: ' + sisa + ' detik';
+      if (sisa <= 10) timerEl.classList.add('warn');
+      else timerEl.classList.remove('warn');
+    }
+    if (elapsed >= ABS_NO_INSTR_TIMEOUT) {
+      // Timeout
+      absNoInstrTimeoutTimer = null;
+      showToast('Waktu habis. Verifikasi gagal, silakan coba lagi.', 'err', 5000);
+      speakText('Waktu habis. Silakan coba lagi.');
+      closeAbsen();
+      return;
+    }
+    absNoInstrTimeoutTimer = setTimeout(tick, 500);
+  }
+  tick();
 }
 
 function startAbsLoop() {
@@ -2510,6 +2624,7 @@ function startAbsLoop() {
           return;
         }
 
+        // Mode tanpa challenge → auto submit
         if (LIVENESS_CHALLENGES.length === 0) {
           guide.className = 'face-guide matched';
           status.className = 'face-status ok';
@@ -2554,12 +2669,19 @@ function startAbsLoop() {
         if (ok) {
           if (livenessHoldStart === 0) {
             livenessHoldStart = Date.now();
-            document.getElementById('challengeTimer').innerText = 'Tahan 1 detik...';
+            if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
+              speakText('Tahan!');
+            } else {
+              document.getElementById('challengeTimer').innerText = 'Tahan 1 detik...';
+            }
           }
           var held = Date.now() - livenessHoldStart;
           var holdMs = (challenge.key === 'SMILE') ? LIVENESS_SMILE_HOLD_MS : LIVENESS_HOLD_MS;
           var sisa = Math.max(0, Math.ceil((holdMs - held) / 1000));
-          document.getElementById('challengeTimer').innerText = 'Tahan ' + sisa + ' detik lagi';
+
+          if (ACTIVE_LIVENESS_MODE === 'instruction') {
+            document.getElementById('challengeTimer').innerText = 'Tahan ' + sisa + ' detik lagi';
+          }
 
           guide.className = 'face-guide matched';
           status.className = 'face-status ok';
@@ -2574,18 +2696,34 @@ function startAbsLoop() {
             _smileFrameCount = 0;
 
             if (livenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
+              // Selesai
+              if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
+                speakText('Bagus.');
+              }
               finishLiveness();
               return;
             } else {
-              speakText('Bagus. Lanjut ' + LIVENESS_CHALLENGES[livenessChallengeIndex].label);
-              updateChallengeUI(livenessChallengeIndex);
-              document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
+              var nextLabel = LIVENESS_CHALLENGES[livenessChallengeIndex].label;
+              if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
+                speakText('Bagus, lanjut ' + nextLabel);
+                document.getElementById('silentInstruction').innerText = nextLabel;
+                // reset timeout
+                if (absNoInstrTimeoutTimer) { clearTimeout(absNoInstrTimeoutTimer); absNoInstrTimeoutTimer = null; }
+                absNoInstrStartAt = Date.now();
+                startAbsNoInstrTimer();
+              } else {
+                speakText('Bagus. Lanjut ' + nextLabel);
+                updateChallengeUI(livenessChallengeIndex);
+                document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
+              }
             }
           }
         } else {
           if (livenessHoldStart !== 0) {
             livenessHoldStart = 0;
-            document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
+            if (ACTIVE_LIVENESS_MODE === 'instruction') {
+              document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
+            }
           }
           guide.className = 'face-guide detected';
           status.className = 'face-status info';
@@ -2600,6 +2738,9 @@ function startAbsLoop() {
 }
 
 function finishLiveness() {
+  // Stop timeout
+  if (absNoInstrTimeoutTimer) { clearTimeout(absNoInstrTimeoutTimer); absNoInstrTimeoutTimer = null; }
+
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
   btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -2611,11 +2752,15 @@ function finishLiveness() {
   document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
   document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
   document.getElementById('livenessIndicator').innerText = '● SELESAI';
-  document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
+  if (ACTIVE_LIVENESS_MODE === 'instruction') {
+    document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
+  } else {
+    document.getElementById('silentTimer').innerText = 'Verifikasi selesai';
+  }
 
   var ttsMsg = (attType === 'IN')
-    ? 'Silahkan ditunggu, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
-    : 'Silahkan ditunggu, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
+    ? 'Verifikasi selesai. ' + user.nama + ', absen masuk Anda sedang dikirim.'
+    : 'Verifikasi selesai. ' + user.nama + ', absen pulang Anda sedang dikirim.';
   speakText(ttsMsg);
 
   window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
@@ -2659,7 +2804,6 @@ function captureAbsen() {
   })
     .then(function(res) {
       btn.disabled = false;
-
       var msg = (res && res.message) ? String(res.message) : '';
       var isDone = res && res.success;
       var isAlready = res && (
@@ -2671,7 +2815,6 @@ function captureAbsen() {
         msg.indexOf('sudah melakukan absen') >= 0 ||
         msg.indexOf('belum melakukan absen masuk') >= 0
       );
-
       window._absenProcessing = false;
 
       if (isDone) {
@@ -2680,21 +2823,18 @@ function captureAbsen() {
         var toastMsg = msg || "Absen berhasil!";
         if (res.keterangan) toastMsg += ' — ' + res.keterangan;
         showToast(toastMsg, 'ok', 5000, true);
-
         closeAbsen();
         switchTab('home');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         refreshData();
-      }
-      else if (isAlready) {
+      } else if (isAlready) {
         showToast(msg || 'Anda sudah absen hari ini', 'warn', 5000);
         speakText(msg || 'Anda sudah absen hari ini');
         closeAbsen();
         switchTab('home');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         refreshData();
-      }
-      else {
+      } else {
         showToast(msg || 'Gagal absen', 'err', 5000);
         btn.disabled = false;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -2714,6 +2854,7 @@ function captureAbsen() {
 
 function closeAbsen() {
   if (absLoopTimer) { clearInterval(absLoopTimer); absLoopTimer = null; }
+  if (absNoInstrTimeoutTimer) { clearTimeout(absNoInstrTimeoutTimer); absNoInstrTimeoutTimer = null; }
   if (absStream) {
     absStream.getTracks().forEach(function(t) { t.stop(); });
     absStream = null;
@@ -2726,11 +2867,13 @@ function closeAbsen() {
   _smileFrameCount = 0;
   var btn = document.getElementById('absBtn');
   btn.onclick = function() { captureAbsen(); };
+  document.getElementById('challengeBox').style.display = 'block';
+  document.getElementById('silentBanner').classList.remove('active');
   document.getElementById('absScreen').classList.add('hidden');
 }
 
 // ============================================================
-// BUILD TTS ABSENSI
+// TTS ABSENSI
 // ============================================================
 function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
   var jamAbsen = '';
@@ -2797,11 +2940,6 @@ function clearPermitFile() {
 }
 
 // ============================================================
-// BAGIAN 3 / 3 — KIOSK + LIVENESS, DASHBOARD, LOG,
-// APPROVAL, EXPORT, GPS, MAPS, CRUD PEGAWAI
-// ============================================================
-
-// ============================================================
 // KIOSK MODE
 // ============================================================
 function setKioskType(type) {
@@ -2847,8 +2985,7 @@ function openKiosk() {
   kioskLivenessChallengeIndex = 0;
   kioskLivenessHoldStart = 0;
   kioskLivenessVerifiedDescriptors = [];
-
-  buildActiveChallenges();
+  if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
 
   loadFaceModels().then(function(ok) {
     if (!ok) {
@@ -2961,13 +3098,15 @@ function startKioskLoop() {
           return;
         }
 
-        if (LIVENESS_CHALLENGES.length === 0) {
+        // Ambil challenge yang berlaku untuk user ini
+        var challenges = kioskActiveChallenges;
+        if (!challenges || challenges.length === 0) {
           document.getElementById('kioskInfoText').innerText = 'Memproses absen ' + kioskLivenessFace.nama + '...';
           return;
         }
 
         var landmarks = det.landmarks.positions;
-        var challenge = LIVENESS_CHALLENGES[kioskLivenessChallengeIndex];
+        var challenge = challenges[kioskLivenessChallengeIndex];
         if (!challenge) {
           finishKioskLiveness();
           return;
@@ -2975,31 +3114,77 @@ function startKioskLoop() {
         var ok = matchesChallenge(challenge.key, landmarks);
 
         if (ok) {
-          if (kioskLivenessHoldStart === 0) kioskLivenessHoldStart = Date.now();
+          if (kioskLivenessHoldStart === 0) {
+            kioskLivenessHoldStart = Date.now();
+            if (kioskActiveMode === 'no_instruction') {
+              speakText('Tahan!');
+            }
+          }
           var held = Date.now() - kioskLivenessHoldStart;
           var kHoldMs = (challenge.key === 'SMILE') ? LIVENESS_SMILE_HOLD_MS : LIVENESS_HOLD_MS;
-          document.getElementById('kioskInfoText').innerText = challenge.label + ' — tahan ' + Math.max(0, Math.ceil((kHoldMs - held) / 1000)) + ' detik';
+          if (kioskActiveMode === 'instruction') {
+            document.getElementById('kioskInfoText').innerText = challenge.label + ' — tahan ' + Math.max(0, Math.ceil((kHoldMs - held) / 1000)) + ' detik';
+          } else {
+            document.getElementById('kioskInfoText').innerText = 'Tahan...';
+          }
 
           if (held >= kHoldMs) {
             kioskLivenessVerifiedDescriptors.push(descriptor);
             kioskLivenessChallengeIndex++;
             kioskLivenessHoldStart = 0;
-            if (kioskLivenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
+            if (kioskLivenessChallengeIndex >= challenges.length) {
               finishKioskLiveness();
               return;
             } else {
-              updateKioskChallengeUI(kioskLivenessChallengeIndex);
-              speakText(LIVENESS_CHALLENGES[kioskLivenessChallengeIndex].label);
+              var nextLbl = challenges[kioskLivenessChallengeIndex].label;
+              if (kioskActiveMode === 'instruction') {
+                updateKioskChallengeUI(kioskLivenessChallengeIndex);
+                speakText(nextLbl);
+              } else {
+                speakText('Bagus, lanjut ' + nextLbl);
+                // reset timeout
+                if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
+                kioskNoInstrStartAt = Date.now();
+                startKioskNoInstrTimer();
+              }
             }
           }
         } else {
           if (kioskLivenessHoldStart !== 0) kioskLivenessHoldStart = 0;
-          document.getElementById('kioskInfoText').innerText = challenge.label;
+          if (kioskActiveMode === 'instruction') {
+            document.getElementById('kioskInfoText').innerText = challenge.label;
+          } else {
+            document.getElementById('kioskInfoText').innerText = 'Ikuti panduan suara...';
+          }
         }
       })
       .catch(function() {})
       .then(function() { kioskInferenceBusy = false; });
   }, FACE_LOOP_INTERVAL);
+}
+
+function startKioskNoInstrTimer() {
+  if (kioskNoInstrTimeoutTimer) clearTimeout(kioskNoInstrTimeoutTimer);
+  var startTime = Date.now();
+  function tick() {
+    var elapsed = Date.now() - startTime;
+    var sisa = Math.max(0, Math.ceil((KIOSK_NO_INSTR_TIMEOUT - elapsed) / 1000));
+    document.getElementById('kioskInfoText').innerText = 'Menunggu gerakan... (' + sisa + 's)';
+    if (elapsed >= KIOSK_NO_INSTR_TIMEOUT) {
+      kioskNoInstrTimeoutTimer = null;
+      kioskLivenessActive = false;
+      kioskLivenessFace = null;
+      kioskLivenessChallengeIndex = 0;
+      kioskLivenessHoldStart = 0;
+      document.getElementById('kioskInfoText').innerText = 'Waktu habis, silakan coba lagi';
+      speakText('Waktu habis. Silakan coba lagi.');
+      kioskLastResultAt = Date.now();
+      setTimeout(function() { kioskLastResultAt = 0; }, 3000);
+      return;
+    }
+    kioskNoInstrTimeoutTimer = setTimeout(tick, 500);
+  }
+  tick();
 }
 
 function startKioskLiveness(face) {
@@ -3008,7 +3193,15 @@ function startKioskLiveness(face) {
   kioskLivenessHoldStart = 0;
   kioskLivenessVerifiedDescriptors = [];
 
-  if (LIVENESS_CHALLENGES.length === 0) {
+  // Ambil setting efektif untuk user ini
+  var eff = getEffectiveLivenessSettings({
+    livenessMode: face.livenessMode || '',
+    livenessChallenges: face.livenessChallenges || ''
+  });
+  kioskActiveMode = eff.mode;
+  kioskActiveChallenges = buildChallengesFromString(eff.challenges);
+
+  if (kioskActiveChallenges.length === 0) {
     kioskLivenessActive = false;
     document.getElementById('kioskChallenge').classList.add('hidden');
     document.getElementById('kioskInfoText').innerText = 'Memproses absen ' + face.nama + '...';
@@ -3018,14 +3211,26 @@ function startKioskLiveness(face) {
   }
 
   kioskLivenessActive = true;
-  updateKioskChallengeUI(0);
-  document.getElementById('kioskInfoText').innerText = 'Ikuti instruksi';
-  speakText('Halo ' + face.nama + '. Ikuti instruksi gerakan. ' + LIVENESS_CHALLENGES[0].label);
+
+  if (kioskActiveMode === 'no_instruction') {
+    // Mode tanpa UI challenge — TTS-only
+    document.getElementById('kioskChallenge').classList.add('hidden');
+    document.getElementById('kioskInfoText').innerText = 'Ikuti panduan suara...';
+    speakText('Halo ' + face.nama + '. ' + kioskActiveChallenges[0].label);
+    kioskNoInstrStartAt = Date.now();
+    startKioskNoInstrTimer();
+  } else {
+    // Mode instruksi — tampilkan challenge box
+    updateKioskChallengeUI(0);
+    document.getElementById('kioskInfoText').innerText = 'Ikuti instruksi';
+    speakText('Halo ' + face.nama + '. Ikuti instruksi gerakan. ' + kioskActiveChallenges[0].label);
+  }
 }
 
 function finishKioskLiveness() {
   var face = kioskLivenessFace;
   kioskLivenessActive = false;
+  if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
   document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskInfoText').innerText = 'Verifikasi selesai, memproses absen...';
   speakText('Verifikasi selesai. ' + face.nama + ', absen Anda telah dicatat, silakan berganti pengguna lain.');
@@ -3129,6 +3334,7 @@ function showKioskResult(res, face) {
 
 function closeKiosk() {
   if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
+  if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
   if (kioskStream) {
     kioskStream.getTracks().forEach(function(t) { t.stop(); });
     kioskStream = null;
@@ -3174,11 +3380,10 @@ function refreshData() {
         if (elT) elT.value = jamKerja.toleransi_telat || '15';
       }
       if (res.livenessSettings && res.livenessSettings.success) {
-        livenessSettings.mode = res.livenessSettings.mode || 'full';
-        livenessSettings.challenges = res.livenessSettings.challenges || 'FRONT,LEFT,RIGHT,UP,SMILE';
-        buildActiveChallenges();
+        globalLivenessSettings.mode = res.livenessSettings.mode || 'instruction';
+        globalLivenessSettings.challenges = res.livenessSettings.challenges || 'FRONT,LEFT,RIGHT,UP,SMILE';
         if (document.getElementById('tab-setting').classList.contains('active')) {
-          renderLivenessSettingsUI();
+          renderGlobalLivenessUI();
         }
       }
       if (typeof res.faceEnrolled !== 'undefined') {
@@ -3235,16 +3440,31 @@ function renderAdmin(res) {
 function renderUserRow(u, i) {
   var role = u[4] || 'pegawai';
   var roleBadge = role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-50 text-indigo-600';
-  var roleAttr = escapeJsArg(role), passAttr = '', idAttr = escapeJsArg(u[0]);
+  var roleAttr = escapeJsArg(role), idAttr = escapeJsArg(u[0]);
   var namaAttr = escapeJsArg(u[1]), jabAttr = escapeJsArg(u[2] || ''), phoneAttr = escapeJsArg(u[3]);
+  var livenessMode = String(u[6] || '').trim();
+  var livenessChallenges = String(u[7] || '').trim();
+  var lmAttr = escapeJsArg(livenessMode);
+  var lcAttr = escapeJsArg(livenessChallenges);
+
+  var lmBadge = '';
+  if (livenessMode === 'instruction') {
+    lmBadge = '<span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase bg-blue-100 text-blue-700">INST</span>';
+  } else if (livenessMode === 'no_instruction') {
+    lmBadge = '<span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase bg-purple-100 text-purple-700">SILENT</span>';
+  } else {
+    lmBadge = '<span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase bg-gray-100 text-gray-500">GLOBAL</span>';
+  }
+
   return '<tr class="' + (i % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' border-b border-gray-100">' +
     '<td class="py-3 px-3 font-bold text-gray-400">' + (i + 1) + '</td>' +
     '<td class="py-3 px-3 font-bold text-gray-900">' + escapeHtml(u[1]) + '</td>' +
     '<td class="py-3 px-3 text-gray-600">' + escapeHtml(u[2] || '-') + '</td>' +
     '<td class="py-3 px-3 text-gray-600">' + escapeHtml(u[3]) + '</td>' +
     '<td class="py-3 px-3 text-center"><span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase ' + roleBadge + '">' + escapeHtml(role) + '</span></td>' +
+    '<td class="py-3 px-3 text-center">' + lmBadge + '</td>' +
     '<td class="py-3 px-3 text-center"><div class="flex gap-1 justify-center">' +
-    '<button onclick="openUserModal(\'' + idAttr + '\',\'' + namaAttr + '\',\'' + jabAttr + '\',\'' + phoneAttr + '\',\'' + roleAttr + '\',\'' + passAttr + '\')" class="w-7 h-7 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="fas fa-edit text-[10px]"></i></button>' +
+    '<button onclick="openUserModal(\'' + idAttr + '\',\'' + namaAttr + '\',\'' + jabAttr + '\',\'' + phoneAttr + '\',\'' + roleAttr + '\',\'' + lmAttr + '\',\'' + lcAttr + '\')" class="w-7 h-7 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="fas fa-edit text-[10px]"></i></button>' +
     '<button onclick="deleteUserUI(\'' + idAttr + '\')" class="w-7 h-7 bg-red-50 text-red-600 rounded-lg flex items-center justify-center"><i class="fas fa-trash text-[10px]"></i></button>' +
     '</div></td></tr>';
 }
@@ -3253,7 +3473,7 @@ function loadPegawaiData() {
   callAPI('getUsers', {})
     .then(function(data) {
       if (!data || !data.length) {
-        document.getElementById('adminUserTable').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400 text-xs">Belum ada data</td></tr>';
+        document.getElementById('adminUserTable').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-gray-400 text-xs">Belum ada data</td></tr>';
         document.getElementById('pegawaiCount').innerText = '0';
         return;
       }
@@ -3263,33 +3483,90 @@ function loadPegawaiData() {
       }).join('');
     })
     .catch(function(err) {
-      document.getElementById('adminUserTable').innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
+      document.getElementById('adminUserTable').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
     });
 }
 
-function openUserModal(id, nama, jab, phone, role, pass) {
+// ============================================================
+// USER MODAL (dengan liveness per-user)
+// ============================================================
+function openUserModal(id, nama, jab, phone, role, livenessMode, livenessChallenges) {
   document.getElementById('editId').value = id || '';
   document.getElementById('uNama').value = nama || '';
   document.getElementById('uJab').value = jab || '';
   document.getElementById('uPhone').value = phone || '';
   document.getElementById('uRole').value = role || 'pegawai';
   document.getElementById('uPass').value = '';
+
+  // Set liveness radio
+  var lm = String(livenessMode || '').trim();
+  document.getElementById('uLmGlobal').checked = (lm !== 'instruction' && lm !== 'no_instruction');
+  document.getElementById('uLmInstruction').checked = (lm === 'instruction');
+  document.getElementById('uLmNoInstruction').checked = (lm === 'no_instruction');
+
+  // Set checkbox gerakan
+  var chkStr = String(livenessChallenges || '').trim().toUpperCase();
+  var keys = chkStr.split(',').map(function(k) { return String(k).trim().toUpperCase(); });
+  document.getElementById('uLmChkFront').checked = keys.indexOf('FRONT') >= 0;
+  document.getElementById('uLmChkLeft').checked  = keys.indexOf('LEFT') >= 0;
+  document.getElementById('uLmChkRight').checked = keys.indexOf('RIGHT') >= 0;
+  document.getElementById('uLmChkUp').checked    = keys.indexOf('UP') >= 0;
+  document.getElementById('uLmChkDown').checked  = keys.indexOf('DOWN') >= 0;
+  document.getElementById('uLmChkSmile').checked = keys.indexOf('SMILE') >= 0;
+
+  onUserLivenessModeChange();
   document.getElementById('modalTitle').innerText = id ? "Edit Pegawai" : "Tambah Pegawai";
   document.getElementById('userModal').classList.remove('hidden');
   document.getElementById('userModal').classList.add('flex');
 }
+
+function onUserLivenessModeChange() {
+  var isGlobal = document.getElementById('uLmGlobal').checked;
+  var box = document.getElementById('uLmCustomBox');
+  if (isGlobal) {
+    box.classList.add('opacity-50', 'pointer-events-none');
+  } else {
+    box.classList.remove('opacity-50', 'pointer-events-none');
+  }
+}
+
 function closeUserModal() {
   document.getElementById('userModal').classList.add('hidden');
   document.getElementById('userModal').classList.remove('flex');
 }
+
 function submitUser() {
+  var lm = '';
+  if (document.getElementById('uLmInstruction').checked) lm = 'instruction';
+  else if (document.getElementById('uLmNoInstruction').checked) lm = 'no_instruction';
+  else lm = '';
+
+  var arr = [];
+  if (document.getElementById('uLmChkFront').checked) arr.push('FRONT');
+  if (document.getElementById('uLmChkLeft').checked) arr.push('LEFT');
+  if (document.getElementById('uLmChkRight').checked) arr.push('RIGHT');
+  if (document.getElementById('uLmChkUp').checked) arr.push('UP');
+  if (document.getElementById('uLmChkDown').checked) arr.push('DOWN');
+  if (document.getElementById('uLmChkSmile').checked) arr.push('SMILE');
+  var lc = arr.join(',');
+
+  // Validasi: kalau mode bukan global, harus pilih minimal 1 gerakan
+  if (lm !== '' && arr.length === 0) {
+    showToast('Pilih minimal 1 gerakan untuk mode ini!', 'warn');
+    return;
+  }
+  // Kalau pilih global, kosongkan challenges
+  if (lm === '') lc = '';
+
   var data = {
     id: document.getElementById('editId').value,
     nama: document.getElementById('uNama').value.trim(),
     jabatan: document.getElementById('uJab').value.trim(),
     phone: document.getElementById('uPhone').value.trim(),
     role: document.getElementById('uRole').value,
-    password: document.getElementById('uPass').value
+    password: document.getElementById('uPass').value,
+    livenessMode: lm,
+    livenessChallenges: lc
   };
   if (!data.nama || !data.phone) return showToast("Nama & HP wajib diisi!", 'warn');
   if (!data.id && !data.password) return showToast("Password wajib diisi!", 'warn');
@@ -3298,12 +3575,15 @@ function submitUser() {
   callAPI(action, data)
     .then(function(res) {
       showToast(res && res.message ? res.message : "Selesai", res && res.success ? 'ok' : 'err');
-      closeUserModal();
-      refreshData();
-      if (document.getElementById('tab-pegawai').classList.contains('active')) loadPegawaiData();
+      if (res && res.success) {
+        closeUserModal();
+        refreshData();
+        if (document.getElementById('tab-pegawai').classList.contains('active')) loadPegawaiData();
+      }
     })
     .catch(function(err) { showToast(err.message || "Gagal simpan", 'err'); });
 }
+
 function deleteUserUI(id) {
   if (confirm("Hapus pegawai ini?")) {
     callAPI('deleteUser', { id: id })
@@ -3701,7 +3981,7 @@ function exportRekapWord() {
 }
 
 // ============================================================
-// PERMIT (IZIN)
+// PERMIT
 // ============================================================
 function openPermitModal() {
   if (window._todayAttendanceComplete === true) {
@@ -3783,6 +4063,15 @@ function submitPermitAction() {
   };
   reader.readAsDataURL(_permitFile);
 }
+
+// ============================================================
+// EVENT LISTENERS untuk radio mode liveness di modal user
+// ============================================================
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.name === 'uLivenessMode') {
+    onUserLivenessModeChange();
+  }
+});
 
 // ============================================================
 // AKHIR FILE
