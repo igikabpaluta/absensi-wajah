@@ -461,10 +461,10 @@ input, select { font-size:16px !important; }
             class="bg-indigo-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 border border-white/20 active:scale-95 transition-all shadow-lg opacity-50 cursor-not-allowed">
             <i class="fas fa-lock"></i> Memeriksa...
           </button>
-               <button onclick="openPermitModal()" id="btnIzinSakit"
-                 class="bg-amber-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 border border-white/20 active:scale-95 transition-all shadow-lg">
-                 <i class="fas fa-file-medical"></i> IZIN / SAKIT
-               </button>
+          <button onclick="openPermitModal()" id="btnIzinSakit"
+            class="bg-amber-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 border border-white/20 active:scale-95 transition-all shadow-lg">
+            <i class="fas fa-file-medical"></i> IZIN / SAKIT
+          </button>
         </div>
       </div>
     </div>
@@ -949,6 +949,7 @@ var kioskLivenessHoldStart = 0;
 var kioskLivenessVerifiedDescriptors = [];
 
 var _permitFile = null;
+var _todayAttendanceComplete = false;
 
 // ============================================================
 // UTILS
@@ -1250,6 +1251,70 @@ function setAbsenButtonsState(enabled, reason) {
   }
 }
 
+// ============================================================
+// GATING TOMBOL IZIN/SAKIT
+// ============================================================
+function setIzinButtonState(enabled, reason) {
+  var btn = document.getElementById('btnIzinSakit');
+  if (!btn) return;
+  if (enabled) {
+    btn.disabled = false;
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    btn.innerHTML = '<i class="fas fa-file-medical"></i> IZIN / SAKIT';
+    btn.title = '';
+  } else {
+    btn.disabled = true;
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+    btn.innerHTML = '<i class="fas fa-lock"></i> IZIN TERKUNCI';
+    btn.title = reason || 'Anda sudah absen masuk dan keluar hari ini';
+  }
+}
+
+// ============================================================
+// CEK STATUS ABSEN HARI INI (untuk kunci tombol IZIN)
+// ============================================================
+function checkTodayAttendanceComplete(res) {
+  try {
+    if (!res || !res.history) {
+      window._todayAttendanceComplete = false;
+      setIzinButtonState(true, null);
+      return;
+    }
+    var today = new Date();
+    var tz = today.getTimezoneOffset() * 60000;
+    var localToday = new Date(today.getTime() - tz).toISOString().slice(0, 10);
+
+    var completeToday = false;
+    for (var i = 0; i < res.history.length; i++) {
+      var h = res.history[i];
+      var hDate = String(h[2] || '').trim();
+      var isToday = false;
+      if (hDate === localToday) isToday = true;
+      if (hDate.replace(/\//g, '-') === localToday) isToday = true;
+
+      if (isToday) {
+        var jamMasuk = String(h[3] || '').trim();
+        var jamKeluar = String(h[4] || '').trim();
+        if (jamMasuk && jamKeluar && jamMasuk !== '' && jamKeluar !== '') {
+          completeToday = true;
+          break;
+        }
+      }
+    }
+
+    window._todayAttendanceComplete = completeToday;
+    if (completeToday) {
+      setIzinButtonState(false, 'Anda sudah absen masuk dan keluar hari ini');
+    } else {
+      setIzinButtonState(true, null);
+    }
+  } catch (e) {
+    console.warn('Cek attendance complete gagal:', e);
+    window._todayAttendanceComplete = false;
+    setIzinButtonState(true, null);
+  }
+}
+
 function checkFaceAndRedirect() {
   if (!user) return;
   setAbsenButtonsState(false, 'Memeriksa wajah...');
@@ -1334,6 +1399,7 @@ function handleLogout() {
   localStorage.removeItem('presensi_user_v3');
   user = null;
   userFaceEnrolled = false;
+  window._todayAttendanceComplete = false;
   document.getElementById('app').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginPhone').value = '';
@@ -1361,6 +1427,7 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.add('flex');
   }
   setAbsenButtonsState(false, 'Memeriksa wajah...');
+  setIzinButtonState(true, null);
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
   setTimeout(function() { speakText(welcomeMsg); }, 1000);
@@ -1956,7 +2023,6 @@ function getPitchRatio(landmarks) {
 
 function getSmileRatio(landmarks) {
   try {
-    // === DETEKSI SENYUM SANGAT KETAT ===
     var mouthLeftX = landmarks[48].x;
     var mouthRightX = landmarks[54].x;
     var mouthLeftY = landmarks[48].y;
@@ -1970,19 +2036,15 @@ function getSmileRatio(landmarks) {
     var faceWidth = Math.abs(faceRightX - faceLeftX);
     if (faceWidth < 1) return 0;
 
-    // INDIKATOR A: Sudut mulut naik mendekati hidung
     var cornerY = (mouthLeftY + mouthRightY) / 2;
     var noseToCorner = Math.abs(cornerY - noseTipY);
     var cornerLift = 1 - (noseToCorner / faceWidth);
 
-    // INDIKATOR B: Mulut terbuka
     var mouthOpen = Math.abs(lowerLipY - upperLipY);
 
-    // INDIKATOR C: Lebar mulut
     var mouthWidth = Math.abs(mouthRightX - mouthLeftX);
     var widthRatio = mouthWidth / faceWidth;
 
-    // SKOR KUMULATIF — diperketat
     var score = 0;
     if (cornerLift > 0.75) score += 0.3;
     if (cornerLift > 0.80) score += 0.3;
@@ -1992,7 +2054,6 @@ function getSmileRatio(landmarks) {
     if (widthRatio > 0.30) score += 0.10;
     if (widthRatio > 0.36) score += 0.10;
 
-    // Debug (aktifkan dengan window._debugSmile = true di Console)
     if (typeof window !== 'undefined' && window._debugSmile) {
       console.log('Smile debug:', {
         cornerLift: cornerLift.toFixed(3),
@@ -2021,7 +2082,6 @@ function matchesChallenge(challengeKey, landmarks) {
     var noseToEye = noseY - eyeMidY;
     return p < 0.50 && noseToEye < 8;
   }
-  // SMILE: skor kumulatif minimal 1.0 (harus senyum lebar)
   if (challengeKey === 'SMILE') return getSmileRatio(landmarks) >= 1.0;
   return false;
 }
@@ -2769,6 +2829,8 @@ function refreshData() {
           setAbsenButtonsState(false, 'Wajah belum terdaftar');
         }
       }
+      // === CEK STATUS ABSEN HARI INI UNTUK KUNCI TOMBOL IZIN ===
+      checkTodayAttendanceComplete(res);
       initUserMap(office.lat, office.lng, office.rad);
       var historyDiv = document.getElementById('userHistory');
       if (res.history && res.history.length > 0) {
@@ -3279,9 +3341,16 @@ function exportRekapWord() {
 }
 
 // ============================================================
-// PERMIT (IZIN)
+// PERMIT (IZIN) — DENGAN GATING
 // ============================================================
 function openPermitModal() {
+  // Cek dulu apakah user sudah absen masuk & keluar hari ini
+  if (window._todayAttendanceComplete === true) {
+    var msg = 'Tidak bisa buka IZIN/SAKIT. Anda sudah absen masuk dan keluar hari ini.';
+    showToast(msg, 'warn', 5000);
+    speakText(msg);
+    return;
+  }
   unlockTTS();
   var tzoffset = (new Date()).getTimezoneOffset() * 60000;
   var localISOTime = (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
@@ -3361,4 +3430,4 @@ function submitPermitAction() {
 // ============================================================
 </script>
 </body>
-</html>
+</html>     
