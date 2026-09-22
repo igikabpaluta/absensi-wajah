@@ -2178,21 +2178,6 @@ function startAbsLoop() {
   }, FACE_LOOP_INTERVAL);
 }
 
-function finishLiveness() {
-  var btn = document.getElementById('absBtn');
-  btn.disabled = false;
-  btn.classList.remove('opacity-50', 'cursor-not-allowed');
-  btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
-  document.getElementById('absStatus').className = 'face-status ok';
-  document.getElementById('absStatus').innerText = 'Verifikasi selesai ✔';
-  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Silakan tekan TOMBOL ABSEN SEKARANG';
-  document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
-  document.getElementById('livenessIndicator').innerText = '● SELESAI';
-  document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
-  speakText('Saya kenal Anda, ' + user.nama + '. Silakan TOMBOL ABSEN SEKARANG.');
-  window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
-}
-
 function captureAbsen() {
   if (!window._currentAbsDescriptor) {
     showToast("Verifikasi wajah belum selesai", 'warn');
@@ -2211,7 +2196,10 @@ function captureAbsen() {
   })
     .then(function(res) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
+
+      // Label balik sesuai tipe
+      var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
+      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + doneLabel;
 
       var msg = (res && res.message) ? String(res.message) : '';
 
@@ -2253,11 +2241,14 @@ function captureAbsen() {
     })
     .catch(function(err) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
+      // Label balik sesuai tipe saat error
+      var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
+      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + doneLabel;
       showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
 
+     
 function closeAbsen() {
   if (absLoopTimer) { clearInterval(absLoopTimer); absLoopTimer = null; }
   if (absStream) {
@@ -2272,6 +2263,9 @@ function closeAbsen() {
   document.getElementById('absScreen').classList.add('hidden');
 }
 
+
+
+     
 // ============================================================
 // BUILD TTS ABSENSI
 // ============================================================
