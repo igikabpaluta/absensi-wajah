@@ -1990,7 +1990,8 @@ function matchesChallenge(challengeKey, landmarks) {
     var noseToEye = noseY - eyeMidY;
     // Ambang: kalau jarak hidung ke mata < 12 piksel DAN pitch < 0.55
     // (dianggap mendongak tajam)
-    return p < 0.55 && noseToEye < 15;
+    return p < 0.50 && noseToEye < 8;
+       
   }
 
   if (challengeKey === 'SMILE') return getSmileRatio(landmarks) > 0.36;
