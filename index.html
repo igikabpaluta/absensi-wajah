@@ -2238,16 +2238,47 @@ function captureAbsen() {
     .then(function(res) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
-      if (res && res.success) {
+
+      var msg = (res && res.message) ? String(res.message) : '';
+
+      // Cek apakah ini "kondisi selesai / sudah absen" → balik HOME
+      var isDone = res && res.success;
+      var isAlready = res && (
+        res.alreadyAbsen ||
+        res.sudahKeluar ||
+        msg.toUpperCase().indexOf('SUDAH ABSEN') >= 0 ||
+        msg.toUpperCase().indexOf('SUDAH MELAKUKAN ABSEN') >= 0 ||
+        msg.indexOf('sudah absen') >= 0 ||
+        msg.indexOf('sudah melakukan absen') >= 0 ||
+        msg.indexOf('belum melakukan absen masuk') >= 0
+      );
+
+      if (isDone) {
+        // ===== ABSEN BERHASIL =====
         var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', res.serverTime || '');
         speakText(suara);
-        var toastMsg = res.message || "Absen berhasil!";
+        var toastMsg = msg || "Absen berhasil!";
         if (res.keterangan) toastMsg += ' — ' + res.keterangan;
         showToast(toastMsg, 'ok', 5000, true);
+
         closeAbsen();
+        switchTab('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         refreshData();
-      } else {
-        showToast(res && res.message ? res.message : "Gagal absen", 'err', 5000);
+      }
+      else if (isAlready) {
+        // ===== SUDAH ABSEN (masuk/pulang) → tetap balik HOME =====
+        showToast(msg || 'Anda sudah absen hari ini', 'warn', 5000);
+        speakText(msg || 'Anda sudah absen hari ini');
+
+        closeAbsen();
+        switchTab('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        refreshData();
+      }
+      else {
+        // ===== GAGAL TEKNIS (wajah, radius, server) → tetap di kamera =====
+        showToast(msg || 'Gagal absen', 'err', 5000);
       }
     })
     .catch(function(err) {
@@ -2256,7 +2287,6 @@ function captureAbsen() {
       showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
-
 
 
 
