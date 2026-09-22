@@ -25,6 +25,10 @@
   70% { box-shadow: 0 0 0 30px rgba(16,185,129,0); }
   100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
 }
+@keyframes challengePulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
 body { font-family:'Plus Jakarta Sans',sans-serif; background:#F8FAFC; -webkit-tap-highlight-color:transparent; }
 .safe-bottom { padding-bottom:100px; }
 .tab-content { display:none; }
@@ -69,6 +73,72 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:#F8FAFC; -webkit-t
 .face-status.info { background: rgba(59,130,246,0.9); }
 .face-status.stable { background: rgba(245,158,11,0.9); }
 input, select { font-size:16px !important; }
+
+/* CHALLENGE UI */
+.challenge-box {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 20px;
+  padding: 16px 20px;
+  color: white;
+  text-align: center;
+  margin-bottom: 12px;
+  box-shadow: 0 8px 24px rgba(79,70,229,0.4);
+}
+.challenge-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+.challenge-instruction {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+  animation: challengePulse 1.5s ease-in-out infinite;
+}
+.challenge-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.challenge-dot {
+  width: 28px; height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.25);
+  transition: all .3s;
+}
+.challenge-dot.active {
+  background: #fbbf24;
+  box-shadow: 0 0 12px rgba(251,191,36,0.8);
+}
+.challenge-dot.done {
+  background: #10b981;
+  box-shadow: 0 0 12px rgba(16,185,129,0.8);
+}
+.challenge-timer {
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 8px;
+  opacity: 0.85;
+  letter-spacing: 0.5px;
+}
+.liveness-indicator {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(0,0,0,0.7);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: 1px;
+  z-index: 15;
+}
+.liveness-indicator.ok { background: rgba(16,185,129,0.9); }
+.liveness-indicator.wait { background: rgba(245,158,11,0.9); }
 
 .toast {
   position:fixed; bottom:-200px; left:16px; right:16px;
@@ -153,6 +223,22 @@ input, select { font-size:16px !important; }
   width:10px; height:10px; border-radius:50%; background:#10b981;
   animation:pulseRing 1.5s infinite;
 }
+.kiosk-challenge {
+  position:absolute; top:100px; left:20px; right:20px;
+  z-index:25;
+  display:flex;
+  justify-content:center;
+}
+.kiosk-challenge-inner {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 20px;
+  padding: 14px 24px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(79,70,229,0.6);
+  max-width: 400px;
+}
+.kiosk-challenge-inner .challenge-instruction { font-size: 18px; }
 .kiosk-result {
   position:absolute; inset:0; z-index:50;
   display:flex; align-items:center; justify-content:center;
@@ -213,7 +299,7 @@ input, select { font-size:16px !important; }
         <i class="fas fa-face-smile"></i>
       </div>
       <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">ABSENSI WAJAH</h1>
-      <p class="text-gray-500 mt-2">Face Recognition + GPS</p>
+      <p class="text-gray-500 mt-2">Face Recognition + GPS + Liveness</p>
     </div>
     <div class="space-y-4">
       <div class="relative">
@@ -280,11 +366,28 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
+<!-- ============================================================
+     LAYAR ABSEN DENGAN LIVENESS DETECTION (5 GERAKAN)
+     ============================================================ -->
 <div id="absScreen" class="fixed inset-0 z-[660] bg-slate-900 text-white p-6 flex flex-col hidden">
-  <div class="text-center py-4">
+  <div class="text-center py-3">
     <h2 class="text-2xl font-black" id="absTitle">Absen Masuk</h2>
-    <p class="text-xs text-gray-400 mt-1">Hadapkan wajah ke kamera (Posisi Tengah)</p>
+    <p class="text-xs text-gray-400 mt-1">Ikuti 5 gerakan untuk verifikasi wajah</p>
   </div>
+
+  <div class="challenge-box">
+    <div class="challenge-title">Langkah <span id="challengeStep">1</span> dari 5</div>
+    <div class="challenge-instruction" id="challengeInstruction">Hadap Depan</div>
+    <div class="challenge-progress" id="challengeProgress">
+      <div class="challenge-dot active"></div>
+      <div class="challenge-dot"></div>
+      <div class="challenge-dot"></div>
+      <div class="challenge-dot"></div>
+      <div class="challenge-dot"></div>
+    </div>
+    <div class="challenge-timer" id="challengeTimer">Tahan 2 detik</div>
+  </div>
+
   <div class="flex-1 flex flex-col justify-center items-center space-y-4">
     <div class="video-wrap">
       <video id="absVideo" autoplay playsinline muted></video>
@@ -294,6 +397,7 @@ input, select { font-size:16px !important; }
         </div>
       </div>
       <div class="face-status info" id="absStatus">Memuat model...</div>
+      <div class="liveness-indicator wait" id="livenessIndicator">● LIVE</div>
     </div>
     <div class="text-center space-y-2 max-w-xs">
       <p class="text-sm font-bold" id="absInstruction">Bersiap...</p>
@@ -301,10 +405,10 @@ input, select { font-size:16px !important; }
     </div>
     <button id="absBtn" onclick="captureAbsen()" disabled
       class="bg-emerald-600 text-white font-black py-4 px-8 rounded-2xl shadow-lg active:scale-95 transition-all opacity-50 cursor-not-allowed">
-      <i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG
+      <i class="fas fa-check-circle mr-2"></i> TUNGGU VERIFIKASI
     </button>
   </div>
-  <div class="py-4">
+  <div class="py-3">
     <button onclick="closeAbsen()" class="w-full py-3 text-sm text-gray-400 font-bold">Batal</button>
   </div>
 </div>
@@ -326,24 +430,33 @@ input, select { font-size:16px !important; }
       </div>
       <div class="kiosk-statusbar">
         <div class="kiosk-status on" id="kioskModeStatus">
-          <span class="dot"></span> <span id="kioskModeText">AUTO</span>
+          <span class="dot"></span> <span id="kioskModeText">LIVENESS</span>
         </div>
         <button onclick="openKioskPasswordModal()" class="kiosk-status" style="pointer-events:auto; cursor:pointer; background:rgba(239,68,68,0.85); border-color:#ef4444;">
           <i class="fas fa-lock"></i> TUTUP
         </button>
       </div>
     </div>
-    <div class="kiosk-bottom">
-      <button id="kioskToggleMode" onclick="toggleKioskMode()"
-        class="px-8 py-4 rounded-2xl font-black text-lg bg-indigo-600 text-white shadow-2xl active:scale-95 transition-all"
-        style="pointer-events:auto; cursor:pointer;">
-        <i class="fas fa-arrows-rotate mr-2"></i> GANTI KE MANUAL
-      </button>
-      <button id="kioskManualBtn" onclick="manualKioskCapture()"
-        class="px-8 py-4 rounded-2xl font-black text-lg bg-emerald-600 text-white shadow-2xl active:scale-95 transition-all hidden"
-        style="pointer-events:auto; cursor:pointer;">
-        <i class="fas fa-camera mr-2"></i> ABSEN SEKARANG
-      </button>
+
+    <!-- KIOSK CHALLENGE (muncul saat proses liveness) -->
+    <div class="kiosk-challenge hidden" id="kioskChallenge">
+      <div class="kiosk-challenge-inner">
+        <div class="challenge-title">Langkah <span id="kioskChallengeStep">1</span> dari 5</div>
+        <div class="challenge-instruction" id="kioskChallengeInstruction">Hadap Depan</div>
+        <div class="challenge-progress" id="kioskChallengeProgress">
+          <div class="challenge-dot active"></div>
+          <div class="challenge-dot"></div>
+          <div class="challenge-dot"></div>
+          <div class="challenge-dot"></div>
+          <div class="challenge-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kiosk-bottom" id="kioskBottomBar">
+      <div class="kiosk-status on" style="pointer-events:none;">
+        <span class="dot"></span> <span id="kioskInfoText">Menunggu wajah terdeteksi...</span>
+      </div>
     </div>
     <div id="kioskResult" class="kiosk-result hidden"></div>
   </div>
@@ -385,12 +498,12 @@ input, select { font-size:16px !important; }
       <p id="curDate" class="text-xs font-bold opacity-80 uppercase mb-1">...</p>
       <h1 id="curTime" class="text-5xl font-black mb-8 tabular-nums">00:00</h1>
       <div class="grid grid-cols-1 gap-3 relative z-10">
-        <button onclick="startAttendance('IN')"
+        <button onclick="startAttendance('IN')" id="btnAbsenMasuk"
           class="bg-white text-indigo-600 font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
           <i class="fas fa-face-smile"></i> ABSEN MASUK
         </button>
         <div class="grid grid-cols-2 gap-3">
-          <button onclick="startAttendance('OUT')"
+          <button onclick="startAttendance('OUT')" id="btnAbsenKeluar"
             class="bg-indigo-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 border border-white/20 active:scale-95 transition-all shadow-lg">
             <i class="fas fa-sign-out-alt"></i> ABSEN KELUAR
           </button>
@@ -793,7 +906,7 @@ input, select { font-size:16px !important; }
 // ============================================================
 // ============================================================
 // BAGIAN 2 / 3 — VARIABEL GLOBAL, TTS, API WRAPPER, LOGIN,
-// JAM KERJA, GANTI PASSWORD, ENROLLMENT, ABSEN MANUAL
+// JAM KERJA, GANTI PASSWORD, ENROLLMENT, LIVENESS ABSEN
 // ============================================================
 
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
@@ -826,13 +939,29 @@ var _speakDedupWindow = 2000;
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
 var FACE_THRESHOLD = 0.55;
-var FACE_THRESHOLD_STRICT = 0.45;
 var FACE_LOOP_INTERVAL = 150;
 var FACE_DETECT_INPUT = 160;
 var FACE_DETECT_THRESHOLD = 0.5;
-var FACE_MATCH_FRAMES_REQUIRED = 3;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+// LIVENESS STATE
+var LIVENESS_HOLD_MS = 2000;          // Tahan 2 detik per gerakan
+var LIVENESS_TIMEOUT_MS = 15000;      // Timeout 15 detik per gerakan
+var LIVENESS_CHALLENGES = [
+  { key: 'FRONT',  label: 'Hadap Depan',    short: 'DEPAN'  },
+  { key: 'LEFT',   label: 'Miring ke KIRI', short: 'KIRI'   },
+  { key: 'RIGHT',  label: 'Miring ke KANAN',short: 'KANAN'  },
+  { key: 'UP',     label: 'Tengadah ke ATAS',short: 'ATAS'  },
+  { key: 'SMILE',  label: 'SENYUM Sekarang',short: 'SENYUM'}
+];
+var livenessActive = false;
+var livenessChallengeIndex = 0;
+var livenessHoldStart = 0;
+var livenessChallengeStart = 0;
+var livenessTimerId = null;
+var livenessVerifiedDescriptors = [];
+var livenessAllMatched = true;
 
 var enrollStream = null;
 var enrollLoopTimer = null;
@@ -850,8 +979,6 @@ var enrollCaptureInProgress = false;
 var absStream = null;
 var absLoopTimer = null;
 var absInferenceBusy = false;
-var absMatchFrames = 0;
-var absMatchAnnounced = false;
 
 var kioskStream = null;
 var kioskLoopTimer = null;
@@ -865,6 +992,14 @@ var KIOSK_UNKNOWN_COOLDOWN = 3000;
 var kioskLastUnknownAt = 0;
 var kioskCurrentDescriptor = null;
 var kioskProcessingUser = null;
+
+// KIOSK LIVENESS
+var kioskLivenessActive = false;
+var kioskLivenessFace = null;
+var kioskLivenessChallengeIndex = 0;
+var kioskLivenessHoldStart = 0;
+var kioskLivenessChallengeStart = 0;
+var kioskLivenessVerifiedDescriptors = [];
 
 var _permitFile = null;
 
@@ -965,14 +1100,14 @@ function processTTSQueue() {
   try {
     var utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'id-ID';
-    utter.rate = 0.92;
+    utter.rate = 0.95;
     utter.pitch = 1.0;
     utter.volume = 1.0;
     var finished = false;
     var finishOnce = function() {
       if (finished) return;
       finished = true;
-      setTimeout(processTTSQueue, 300);
+      setTimeout(processTTSQueue, 250);
     };
     utter.onend = finishOnce;
     utter.onerror = function() { finishOnce(); };
@@ -981,7 +1116,7 @@ function processTTSQueue() {
     }, 20000);
     window.speechSynthesis.speak(utter);
   } catch(e) {
-    setTimeout(processTTSQueue, 300);
+    setTimeout(processTTSQueue, 250);
   }
 }
 
@@ -1273,23 +1408,59 @@ function switchTab(id) {
   }, 20);
 }
 
+// ============================================================
+// CEK WAJAH TERDAFTAR + GATING TOMBOL ABSEN (BARU v11)
+// ============================================================
 function checkFaceAndRedirect() {
   if (!user) return;
+  // Nonaktifkan tombol absen dulu
+  setAbsenButtonsState(false, 'Memeriksa wajah...');
   callAPI('checkFaceEnrolled', { userId: user.id })
     .then(function(res) {
       if (res && res.enrolled) {
         userFaceEnrolled = true;
         updateFaceBanner();
+        setAbsenButtonsState(true, null);
+        speakText('Wajah Anda terdaftar. Silakan pilih absen masuk atau keluar.');
       } else {
         userFaceEnrolled = false;
         updateFaceBanner();
-        setTimeout(function() { openEnrollment(); }, 800);
+        setAbsenButtonsState(false, 'Wajah belum terdaftar');
+        speakText('Wajah Anda belum terdaftar. Silakan daftar wajah terlebih dahulu.');
+        setTimeout(function() { openEnrollment(); }, 1000);
       }
     })
     .catch(function(err) {
       userFaceEnrolled = false;
       updateFaceBanner();
+      setAbsenButtonsState(false, 'Gagal cek wajah');
     });
+}
+
+function setAbsenButtonsState(enabled, reason) {
+  var btnMasuk = document.getElementById('btnAbsenMasuk');
+  var btnKeluar = document.getElementById('btnAbsenKeluar');
+  if (!btnMasuk || !btnKeluar) return;
+  if (enabled) {
+    btnMasuk.disabled = false;
+    btnKeluar.disabled = false;
+    btnMasuk.classList.remove('opacity-50', 'cursor-not-allowed');
+    btnKeluar.classList.remove('opacity-50', 'cursor-not-allowed');
+    btnMasuk.innerHTML = '<i class="fas fa-face-smile"></i> ABSEN MASUK';
+    btnKeluar.innerHTML = '<i class="fas fa-sign-out-alt"></i> ABSEN KELUAR';
+    btnMasuk.title = '';
+    btnKeluar.title = '';
+  } else {
+    btnMasuk.disabled = true;
+    btnKeluar.disabled = true;
+    btnMasuk.classList.add('opacity-50', 'cursor-not-allowed');
+    btnKeluar.classList.add('opacity-50', 'cursor-not-allowed');
+    var label = reason ? ('<i class="fas fa-lock"></i> ' + reason) : '<i class="fas fa-lock"></i> TERKUNCI';
+    btnMasuk.innerHTML = label;
+    btnKeluar.innerHTML = label;
+    btnMasuk.title = reason || '';
+    btnKeluar.title = reason || '';
+  }
 }
 
 function updateFaceBanner() {
@@ -1497,6 +1668,7 @@ function resetMyFace() {
       if (res && res.success) {
         userFaceEnrolled = false;
         updateFaceBanner();
+        setAbsenButtonsState(false, 'Wajah belum terdaftar');
         showToast("Wajah berhasil direset. Silakan daftar ulang.", 'ok', 4000);
         setTimeout(function() { openEnrollment(); }, 1200);
       } else {
@@ -1507,7 +1679,7 @@ function resetMyFace() {
 }
 
 // ============================================================
-// ENROLLMENT
+// ENROLLMENT (Daftar Wajah)
 // ============================================================
 function setEnrollMode(mode) {
   enrollMode = mode;
@@ -1733,7 +1905,6 @@ function finalizeEnrollment() {
   var avgDescriptor = averageDescriptors(enrollDescriptors);
   var thumb = makeThumbnail(video);
 
-  // PRE-CHECK DUPLICATE via API
   callAPI('checkFaceDuplicateApi', { descriptor: avgDescriptor, excludeUserId: user.id })
     .then(function(dup) {
       if (dup && dup.duplicate && dup.matchedUser) {
@@ -1747,7 +1918,6 @@ function finalizeEnrollment() {
       saveEnrollment(avgDescriptor, thumb);
     })
     .catch(function(err) {
-      // Kalau pre-check gagal, lanjut simpan (backend masih cek ulang)
       console.warn('Pre-check duplicate gagal:', err);
       saveEnrollment(avgDescriptor, thumb);
     });
@@ -1771,6 +1941,7 @@ function saveEnrollment(descriptor, thumbnail) {
         userFaceEnrolled = true;
         closeEnrollment();
         updateFaceBanner();
+        setAbsenButtonsState(true, null);
       } else {
         showToast(res ? res.message : "Gagal menyimpan wajah", 'err', 5000);
         enrollStep = 0;
@@ -1789,6 +1960,7 @@ function cancelEnroll() {
   closeEnrollment();
   if (!userFaceEnrolled) {
     showToast("Wajah belum terdaftar. Absen tidak akan bisa.", 'warn');
+    setAbsenButtonsState(false, 'Wajah belum terdaftar');
   }
 }
 
@@ -1803,18 +1975,124 @@ function closeEnrollment() {
 }
 
 // ============================================================
-// ABSEN (IN / OUT) MANUAL
+// LIVENESS DETECTION — RUmus deteksi gerakan
+// ============================================================
+
+// Hitung yaw (kiri-kanan): rasio posisi hidung terhadap mata
+// Negatif = wajah miring ke kiri layar user (user lihat kiri)
+// Positif = wajah miring ke kanan layar user
+function getYawRatio(landmarks) {
+  try {
+    var leftEyeX = landmarks[36].x;
+    var rightEyeX = landmarks[45].x;
+    var noseX = landmarks[30].x;
+    var eyeDist = rightEyeX - leftEyeX;
+    if (Math.abs(eyeDist) < 1) return 0;
+    // midX ke noseX, dibagi jarak mata
+    var midX = (leftEyeX + rightEyeX) / 2;
+    return (noseX - midX) / eyeDist;
+  } catch (e) { return 0; }
+}
+
+// Hitung pitch (atas-bawah): rasio jarak mata-hidung vs hidung-dagu
+// Normal: 0.50-0.70, tengadah ke atas: < 0.40
+function getPitchRatio(landmarks) {
+  try {
+    var eyeY = (landmarks[36].y + landmarks[45].y) / 2;
+    var noseY = landmarks[30].y;
+    var chinY = landmarks[8].y;
+    var upper = noseY - eyeY;
+    var lower = chinY - noseY;
+    if (lower < 1) return 0;
+    return upper / lower;
+  } catch (e) { return 0.6; }
+}
+
+// Hitung rasio senyum: lebar mulut / lebar wajah
+// Normal: 0.30-0.40, senyum: > 0.45
+function getSmileRatio(landmarks) {
+  try {
+    var mouthLeft = landmarks[48].x;
+    var mouthRight = landmarks[54].x;
+    var faceLeft = landmarks[0].x;
+    var faceRight = landmarks[16].x;
+    var faceWidth = Math.abs(faceRight - faceLeft);
+    if (faceWidth < 1) return 0;
+    return Math.abs(mouthRight - mouthLeft) / faceWidth;
+  } catch (e) { return 0; }
+}
+
+// Cek apakah wajah saat ini memenuhi kriteria challenge tertentu
+function matchesChallenge(challengeKey, landmarks) {
+  if (challengeKey === 'FRONT') {
+    var yaw = getYawRatio(landmarks);
+    var pitch = getPitchRatio(landmarks);
+    return Math.abs(yaw) < 0.15 && pitch > 0.45 && pitch < 0.80;
+  }
+  if (challengeKey === 'LEFT') {
+    return getYawRatio(landmarks) > 0.20;
+  }
+  if (challengeKey === 'RIGHT') {
+    return getYawRatio(landmarks) < -0.20;
+  }
+  if (challengeKey === 'UP') {
+    return getPitchRatio(landmarks) < 0.40;
+  }
+  if (challengeKey === 'SMILE') {
+    return getSmileRatio(landmarks) > 0.45;
+  }
+  return false;
+}
+
+// Update UI challenge (untuk absen pribadi)
+function updateChallengeUI(index) {
+  var stepEl = document.getElementById('challengeStep');
+  var instEl = document.getElementById('challengeInstruction');
+  var dots = document.querySelectorAll('#challengeProgress .challenge-dot');
+  if (stepEl) stepEl.innerText = (index + 1);
+  if (instEl) instEl.innerText = LIVENESS_CHALLENGES[index].label;
+  if (dots && dots.length === 5) {
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].className = 'challenge-dot';
+      if (i < index) dots[i].classList.add('done');
+      if (i === index) dots[i].classList.add('active');
+    }
+  }
+}
+
+// Update UI challenge (untuk kiosk)
+function updateKioskChallengeUI(index) {
+  var wrap = document.getElementById('kioskChallenge');
+  var stepEl = document.getElementById('kioskChallengeStep');
+  var instEl = document.getElementById('kioskChallengeInstruction');
+  var dots = document.querySelectorAll('#kioskChallengeProgress .challenge-dot');
+  if (wrap) wrap.classList.remove('hidden');
+  if (stepEl) stepEl.innerText = (index + 1);
+  if (instEl) instEl.innerText = LIVENESS_CHALLENGES[index].label;
+  if (dots && dots.length === 5) {
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].className = 'challenge-dot';
+      if (i < index) dots[i].classList.add('done');
+      if (i === index) dots[i].classList.add('active');
+    }
+  }
+}
+
+// ============================================================
+// ABSEN (IN / OUT) — DENGAN LIVENESS 5 GERAKAN
 // ============================================================
 function startAttendance(type) {
   attType = type;
   unlockTTS();
-  absMatchFrames = 0;
-  absMatchAnnounced = false;
+
+  // GATING: cek wajah dulu
   if (!userFaceEnrolled) {
     showToast("Wajah belum terdaftar! Daftar dulu.", 'warn');
+    speakText("Wajah Anda belum terdaftar. Silakan daftar wajah terlebih dahulu.");
     setTimeout(openEnrollment, 800);
     return;
   }
+
   if (!office.lat || !office.lng) return showToast("Lokasi kantor belum diatur!", 'err');
   if (currentLoc.lat === 0 && currentLoc.lng === 0) return showToast("Menunggu GPS...", 'warn');
   var dist = calculateDist(currentLoc.lat, currentLoc.lng, office.lat, office.lng);
@@ -1822,6 +2100,15 @@ function startAttendance(type) {
     showToast("Gagal: Anda di luar radius kantor (" + Math.round(dist) + "m)", 'err');
     return;
   }
+
+  // Reset state liveness
+  livenessActive = false;
+  livenessChallengeIndex = 0;
+  livenessHoldStart = 0;
+  livenessChallengeStart = 0;
+  livenessVerifiedDescriptors = [];
+  livenessAllMatched = true;
+
   document.getElementById('absTitle').innerText = type === 'IN' ? 'Absen Masuk' : 'Absen Keluar';
   document.getElementById('absScreen').classList.remove('hidden');
   document.getElementById('absDistance').innerText = 'Jarak: ' + Math.round(dist) + ' m';
@@ -1831,10 +2118,15 @@ function startAttendance(type) {
   document.getElementById('absInstruction').innerText = 'Bersiap...';
   document.getElementById('absBtn').disabled = true;
   document.getElementById('absBtn').classList.add('opacity-50', 'cursor-not-allowed');
+  document.getElementById('absBtn').innerHTML = '<i class="fas fa-check-circle mr-2"></i> TUNGGU VERIFIKASI';
+  updateChallengeUI(0);
+  document.getElementById('challengeTimer').innerText = 'Tahan 2 detik';
+
   loadFaceModels().then(function(ok) {
     if (!ok) {
       document.getElementById('absStatus').innerText = 'Gagal memuat model AI';
       document.getElementById('absStatus').className = 'face-status warn';
+      showToast('Gagal memuat model AI', 'err');
       return;
     }
     callAPI('getFaceDescriptor', { userId: user.id })
@@ -1863,9 +2155,10 @@ function startAbsCamera() {
     var v = document.getElementById('absVideo');
     v.srcObject = absStream;
     v.play();
-    document.getElementById('absStatus').innerText = 'Cocokkan wajah Anda...';
+    document.getElementById('absStatus').innerText = 'Siap memulai tantangan';
     document.getElementById('absStatus').className = 'face-status info';
-    document.getElementById('absInstruction').innerText = 'Hadapkan wajah ke kamera';
+    document.getElementById('absInstruction').innerText = 'Ikuti instruksi di atas';
+    speakText('Ikuti instruksi gerakan. Hadap depan.');
     startAbsLoop();
   }).catch(function(e) {
     console.error(e);
@@ -1888,39 +2181,84 @@ function startAbsLoop() {
       .then(function(det) {
         var guide = document.getElementById('absGuide');
         var status = document.getElementById('absStatus');
-        var btn = document.getElementById('absBtn');
+        var indicator = document.getElementById('livenessIndicator');
+
         if (!det) {
           guide.className = 'face-guide';
           status.className = 'face-status info';
           status.innerText = 'Wajah tidak terdeteksi';
-          btn.disabled = true;
-          btn.classList.add('opacity-50', 'cursor-not-allowed');
-          absMatchFrames = 0;
+          indicator.className = 'liveness-indicator wait';
+          indicator.innerText = '● CARI WAJAH';
+          livenessHoldStart = 0;
           return;
         }
-        var dist = faceapi.euclideanDistance(Array.from(det.descriptor), window._savedDescriptor);
-        if (dist < FACE_THRESHOLD) {
-          absMatchFrames++;
-          guide.className = 'face-guide matched';
-          status.className = 'face-status ok';
-          status.innerText = 'Wajah COCOK (skor: ' + (1 - dist).toFixed(2) + ')';
-          document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Silakan tekan Absen Sekarang';
-          btn.disabled = false;
-          btn.classList.remove('opacity-50', 'cursor-not-allowed');
-          window._currentAbsDescriptor = Array.from(det.descriptor);
-          // TTS sekali saja per sesi
-          if (!absMatchAnnounced && absMatchFrames >= FACE_MATCH_FRAMES_REQUIRED) {
-            absMatchAnnounced = true;
-            speakText('Saya kenal Anda, ' + user.nama + '. Silakan tekan absen sekarang.');
-          }
-        } else {
-          absMatchFrames = 0;
+
+        var landmarks = det.landmarks.positions;
+        var descriptor = Array.from(det.descriptor);
+        var challenge = LIVENESS_CHALLENGES[livenessChallengeIndex];
+
+        // Cek apakah wajah cocok dengan data tersimpan
+        var dist = faceapi.euclideanDistance(descriptor, window._savedDescriptor);
+        var faceMatch = dist < FACE_THRESHOLD;
+
+        if (!faceMatch) {
           guide.className = 'face-guide detected';
           status.className = 'face-status warn';
           status.innerText = 'Wajah tidak cocok (skor: ' + (1 - dist).toFixed(2) + ')';
-          document.getElementById('absInstruction').innerText = 'Wajah tidak dikenali';
-          btn.disabled = true;
-          btn.classList.add('opacity-50', 'cursor-not-allowed');
+          indicator.className = 'liveness-indicator wait';
+          indicator.innerText = '● TIDAK COCOK';
+          livenessHoldStart = 0;
+          return;
+        }
+
+        // Wajah cocok, cek challenge
+        var ok = matchesChallenge(challenge.key, landmarks);
+
+        if (ok) {
+          if (livenessHoldStart === 0) {
+            livenessHoldStart = Date.now();
+            document.getElementById('challengeTimer').innerText = 'Tahan 2 detik...';
+          }
+          var held = Date.now() - livenessHoldStart;
+          var sisa = Math.max(0, Math.ceil((LIVENESS_HOLD_MS - held) / 1000));
+          document.getElementById('challengeTimer').innerText = 'Tahan ' + sisa + ' detik lagi';
+
+          guide.className = 'face-guide matched';
+          status.className = 'face-status ok';
+          status.innerText = 'Bagus! Tahan...';
+          indicator.className = 'liveness-indicator ok';
+          indicator.innerText = '● ' + challenge.short + ' ✔';
+
+          if (held >= LIVENESS_HOLD_MS) {
+            // Challenge berhasil
+            livenessVerifiedDescriptors.push(descriptor);
+            var descCheck = faceapi.euclideanDistance(descriptor, window._savedDescriptor);
+            if (descCheck >= FACE_THRESHOLD) livenessAllMatched = false;
+
+            speakText('Bagus. ' + (livenessChallengeIndex < 4 ? 'Lanjut ' + LIVENESS_CHALLENGES[livenessChallengeIndex + 1].label : 'Verifikasi selesai'));
+            livenessChallengeIndex++;
+            livenessHoldStart = 0;
+            livenessChallengeStart = Date.now();
+
+            if (livenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
+              // SEMUA CHALLENGE BERHASIL
+              finishLiveness();
+              return;
+            } else {
+              updateChallengeUI(livenessChallengeIndex);
+              document.getElementById('challengeTimer').innerText = 'Tahan 2 detik';
+            }
+          }
+        } else {
+          if (livenessHoldStart !== 0) {
+            livenessHoldStart = 0;
+            document.getElementById('challengeTimer').innerText = 'Tahan 2 detik';
+          }
+          guide.className = 'face-guide detected';
+          status.className = 'face-status info';
+          status.innerText = challenge.label;
+          indicator.className = 'liveness-indicator wait';
+          indicator.innerText = '● ' + challenge.short;
         }
       })
       .catch(function() {})
@@ -1928,15 +2266,31 @@ function startAbsLoop() {
   }, FACE_LOOP_INTERVAL);
 }
 
+function finishLiveness() {
+  // Aktifkan tombol absen
+  var btn = document.getElementById('absBtn');
+  btn.disabled = false;
+  btn.classList.remove('opacity-50', 'cursor-not-allowed');
+  btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
+  document.getElementById('absStatus').className = 'face-status ok';
+  document.getElementById('absStatus').innerText = 'Verifikasi selesai ✔';
+  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Silakan tekan Absen Sekarang';
+  document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
+  document.getElementById('livenessIndicator').innerText = '● SELESAI';
+  document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
+  speakText('Saya kenal Anda, ' + user.nama + '. Silakan tekan absen sekarang.');
+  window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
+}
+
 function captureAbsen() {
   if (!window._currentAbsDescriptor) {
-    showToast("Wajah belum terverifikasi", 'warn');
+    showToast("Verifikasi wajah belum selesai", 'warn');
     return;
   }
   unlockTTS();
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
-  btn.innerHTML = 'Proses Mengirim...Tunggu...';
+  btn.innerHTML = 'Mengirim...';
   callAPI('submitAttendance', {
     type: attType,
     lat: currentLoc.lat,
@@ -1952,7 +2306,7 @@ function captureAbsen() {
         speakText(suara);
         var toastMsg = res.message || "Absen berhasil!";
         if (res.keterangan) toastMsg += ' — ' + res.keterangan;
-        showToast(toastMsg, 'ok', 5000, true); // silent karena sudah TTS di atas
+        showToast(toastMsg, 'ok', 5000, true);
         closeAbsen();
         refreshData();
       } else {
@@ -1973,8 +2327,11 @@ function closeAbsen() {
     absStream = null;
   }
   window._currentAbsDescriptor = null;
-  absMatchAnnounced = false;
-  absMatchFrames = 0;
+  livenessActive = false;
+  livenessHoldStart = 0;
+  livenessChallengeIndex = 0;
+  livenessVerifiedDescriptors = [];
+  livenessAllMatched = true;
   document.getElementById('absScreen').classList.add('hidden');
 }
 
@@ -2049,12 +2406,12 @@ function clearPermitFile() {
 // AKHIR BAGIAN 2 — LANJUT BAGIAN 3 DI BAWAH INI
 // ============================================================
 // ============================================================
-// BAGIAN 3 / 3 — KIOSK, DASHBOARD, LOG, APPROVAL IZIN,
+// BAGIAN 3 / 3 — KIOSK + LIVENESS, DASHBOARD, LOG, APPROVAL,
 // EXPORT CSV/EXCEL/WORD, GPS, MAPS, CRUD PEGAWAI, PENUTUP
 // ============================================================
 
 // ============================================================
-// KIOSK MODE
+// KIOSK MODE (dengan liveness 5 gerakan)
 // ============================================================
 function setKioskType(type) {
   kioskType = type;
@@ -2090,11 +2447,16 @@ function openKiosk() {
     return;
   }
   document.getElementById('kioskScreen').classList.remove('hidden');
-  kioskMode = 'auto';
-  kioskType = 'IN';
-  setKioskType('IN');
-  updateKioskModeUI();
+  document.getElementById('kioskChallenge').classList.add('hidden');
+  document.getElementById('kioskInfoText').innerText = 'Menunggu wajah terdeteksi...';
   document.getElementById('kioskResult').className = 'kiosk-result hidden';
+
+  // Reset state liveness kiosk
+  kioskLivenessActive = false;
+  kioskLivenessFace = null;
+  kioskLivenessChallengeIndex = 0;
+  kioskLivenessHoldStart = 0;
+  kioskLivenessVerifiedDescriptors = [];
 
   loadFaceModels().then(function(ok) {
     if (!ok) {
@@ -2124,32 +2486,6 @@ function openKiosk() {
   });
 }
 
-function updateKioskModeUI() {
-  var status = document.getElementById('kioskModeStatus');
-  var text = document.getElementById('kioskModeText');
-  var toggle = document.getElementById('kioskToggleMode');
-  var manualBtn = document.getElementById('kioskManualBtn');
-  if (kioskMode === 'auto') {
-    status.className = 'kiosk-status on';
-    text.innerText = 'AUTO';
-    toggle.innerHTML = '<i class="fas fa-arrows-rotate mr-2"></i> GANTI KE MANUAL';
-    toggle.className = 'px-8 py-4 rounded-2xl font-black text-lg bg-indigo-600 text-white shadow-2xl active:scale-95 transition-all';
-    manualBtn.classList.add('hidden');
-  } else {
-    status.className = 'kiosk-status off';
-    text.innerText = 'MANUAL';
-    toggle.innerHTML = '<i class="fas fa-arrows-rotate mr-2"></i> GANTI KE AUTO';
-    toggle.className = 'px-8 py-4 rounded-2xl font-black text-lg bg-amber-600 text-white shadow-2xl active:scale-95 transition-all';
-    manualBtn.classList.remove('hidden');
-  }
-}
-
-function toggleKioskMode() {
-  kioskMode = kioskMode === 'auto' ? 'manual' : 'auto';
-  updateKioskModeUI();
-  showToast('Mode: ' + kioskMode.toUpperCase(), 'info', 2000);
-}
-
 function startKioskCamera() {
   navigator.mediaDevices.getUserMedia({
     video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
@@ -2159,6 +2495,7 @@ function startKioskCamera() {
     var v = document.getElementById('kioskVideo');
     v.srcObject = kioskStream;
     v.play();
+    speakText('Silakan hadapkan wajah Anda ke kamera.');
     startKioskLoop();
   }).catch(function(e) {
     console.error(e);
@@ -2186,10 +2523,18 @@ function startKioskLoop() {
         if (!det) {
           guide.className = 'kiosk-face-guide';
           kioskCurrentDescriptor = null;
+          // Kalau sedang liveness, reset hold
+          if (kioskLivenessActive) {
+            kioskLivenessHoldStart = 0;
+            document.getElementById('kioskInfoText').innerText = 'Wajah tidak terdeteksi';
+          }
           return;
         }
+
         var descriptor = Array.from(det.descriptor);
         kioskCurrentDescriptor = descriptor;
+
+        // Cari match terbaik
         var bestMatch = null;
         var bestDist = FACE_THRESHOLD;
         for (var i = 0; i < kioskKnownFaces.length; i++) {
@@ -2201,18 +2546,65 @@ function startKioskLoop() {
             bestMatch = f;
           }
         }
-        if (bestMatch) {
-          guide.className = 'kiosk-face-guide matched';
-          if (kioskMode === 'auto') {
-            kioskProcessAttendance(bestMatch);
-          }
-        } else {
+
+        if (!bestMatch) {
           guide.className = 'kiosk-face-guide detected';
           var now = Date.now();
-          if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
+          if (!kioskLivenessActive && now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
             kioskLastUnknownAt = now;
-            speakText('Wajah tidak dikenali. Silakan coba kembali, posisikan wajah di tengah dan jangan bergerak.');
+            speakText('Wajah tidak dikenali. Silakan coba kembali.');
           }
+          // Kalau sedang liveness, wajah harus tetap milik user yang sama
+          if (kioskLivenessActive) {
+            kioskLivenessHoldStart = 0;
+            document.getElementById('kioskInfoText').innerText = 'Wajah bukan pemilik sesi';
+          }
+          return;
+        }
+
+        // Wajah cocok
+        guide.className = 'kiosk-face-guide matched';
+
+        // Kalau belum mulai liveness, mulai sekarang
+        if (!kioskLivenessActive) {
+          startKioskLiveness(bestMatch);
+          return;
+        }
+
+        // Liveness sedang berjalan — cek apakah masih user yang sama
+        if (String(bestMatch.userId) !== String(kioskLivenessFace.userId)) {
+          kioskLivenessHoldStart = 0;
+          document.getElementById('kioskInfoText').innerText = 'Wajah berbeda, tunggu...';
+          return;
+        }
+
+        // Cek challenge
+        var landmarks = det.landmarks.positions;
+        var challenge = LIVENESS_CHALLENGES[kioskLivenessChallengeIndex];
+        var ok = matchesChallenge(challenge.key, landmarks);
+
+        if (ok) {
+          if (kioskLivenessHoldStart === 0) {
+            kioskLivenessHoldStart = Date.now();
+          }
+          var held = Date.now() - kioskLivenessHoldStart;
+          document.getElementById('kioskInfoText').innerText = challenge.label + ' — tahan ' + Math.max(0, Math.ceil((LIVENESS_HOLD_MS - held) / 1000)) + ' detik';
+
+          if (held >= LIVENESS_HOLD_MS) {
+            kioskLivenessVerifiedDescriptors.push(descriptor);
+            kioskLivenessChallengeIndex++;
+            kioskLivenessHoldStart = 0;
+            if (kioskLivenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
+              finishKioskLiveness();
+              return;
+            } else {
+              updateKioskChallengeUI(kioskLivenessChallengeIndex);
+              speakText(LIVENESS_CHALLENGES[kioskLivenessChallengeIndex].label);
+            }
+          }
+        } else {
+          if (kioskLivenessHoldStart !== 0) kioskLivenessHoldStart = 0;
+          document.getElementById('kioskInfoText').innerText = challenge.label;
         }
       })
       .catch(function() {})
@@ -2220,29 +2612,24 @@ function startKioskLoop() {
   }, FACE_LOOP_INTERVAL);
 }
 
-function manualKioskCapture() {
-  if (!kioskCurrentDescriptor) {
-    showToast("Wajah belum terdeteksi", 'warn');
-    return;
-  }
-  var descriptor = kioskCurrentDescriptor;
-  var bestMatch = null;
-  var bestDist = FACE_THRESHOLD;
-  for (var i = 0; i < kioskKnownFaces.length; i++) {
-    var f = kioskKnownFaces[i];
-    if (!f.descriptor || f.descriptor.length !== 128) continue;
-    var d = faceapi.euclideanDistance(descriptor, f.descriptor);
-    if (d < bestDist) {
-      bestDist = d;
-      bestMatch = f;
-    }
-  }
-  if (bestMatch) {
-    kioskProcessAttendance(bestMatch);
-  } else {
-    showToast("Wajah tidak dikenali", 'err', 3000);
-    speakText('Wajah tidak dikenali. Silakan coba kembali.');
-  }
+function startKioskLiveness(face) {
+  kioskLivenessActive = true;
+  kioskLivenessFace = face;
+  kioskLivenessChallengeIndex = 0;
+  kioskLivenessHoldStart = 0;
+  kioskLivenessVerifiedDescriptors = [];
+  updateKioskChallengeUI(0);
+  document.getElementById('kioskInfoText').innerText = 'Ikuti instruksi';
+  speakText('Halo ' + face.nama + '. Ikuti instruksi gerakan. Hadap depan.');
+}
+
+function finishKioskLiveness() {
+  var face = kioskLivenessFace;
+  kioskLivenessActive = false;
+  document.getElementById('kioskChallenge').classList.add('hidden');
+  document.getElementById('kioskInfoText').innerText = 'Verifikasi selesai, memproses absen...';
+  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda sedang dicatat.');
+  kioskProcessAttendance(face);
 }
 
 function kioskProcessAttendance(face) {
@@ -2330,6 +2717,14 @@ function showKioskResult(res, face) {
     el.className = 'kiosk-result hidden';
     el.innerHTML = '';
     kioskLastResultAt = 0;
+    // Reset liveness state supaya orang berikutnya bisa langsung
+    kioskLivenessActive = false;
+    kioskLivenessFace = null;
+    kioskLivenessChallengeIndex = 0;
+    kioskLivenessHoldStart = 0;
+    kioskLivenessVerifiedDescriptors = [];
+    document.getElementById('kioskChallenge').classList.add('hidden');
+    document.getElementById('kioskInfoText').innerText = 'Menunggu wajah terdeteksi...';
   }, KIOSK_RESULT_DURATION);
 }
 
@@ -2341,6 +2736,12 @@ function closeKiosk() {
   }
   kioskProcessingUser = null;
   kioskCurrentDescriptor = null;
+  kioskLivenessActive = false;
+  kioskLivenessFace = null;
+  kioskLivenessChallengeIndex = 0;
+  kioskLivenessHoldStart = 0;
+  kioskLivenessVerifiedDescriptors = [];
+  document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskResult').className = 'kiosk-result hidden';
   document.getElementById('kioskScreen').classList.add('hidden');
   switchTab('home');
@@ -2376,6 +2777,12 @@ function refreshData() {
       if (typeof res.faceEnrolled !== 'undefined') {
         userFaceEnrolled = res.faceEnrolled;
         updateFaceBanner();
+        // Update state tombol absen sesuai status
+        if (userFaceEnrolled) {
+          setAbsenButtonsState(true, null);
+        } else {
+          setAbsenButtonsState(false, 'Wajah belum terdaftar');
+        }
       }
       initUserMap(office.lat, office.lng, office.rad);
       var historyDiv = document.getElementById('userHistory');
@@ -2728,7 +3135,7 @@ function resetLogFilter() {
 }
 
 // ============================================================
-// APPROVAL IZIN (admin)
+// APPROVAL IZIN
 // ============================================================
 function loadPermitApproval() {
   callAPI('getDashboardData', { userId: user.id, role: user.role })
@@ -2784,7 +3191,7 @@ function approvePermit(id, status) {
 }
 
 // ============================================================
-// EXPORT LOG CSV (client-side)
+// EXPORT LOG CSV
 // ============================================================
 function exportLogCSV() {
   if (!allLogData || !allLogData.length) {
@@ -2829,7 +3236,7 @@ function exportLogCSV() {
 }
 
 // ============================================================
-// REKAP BULANAN EXCEL (client-side)
+// REKAP BULANAN EXCEL
 // ============================================================
 function exportRekapExcel() {
   var bulan = document.getElementById('rekapBulan').value;
@@ -2877,7 +3284,7 @@ function exportRekapExcel() {
 }
 
 // ============================================================
-// REKAP BULANAN WORD (client-side)
+// REKAP BULANAN WORD
 // ============================================================
 function exportRekapWord() {
   var bulan = document.getElementById('rekapBulan').value;
@@ -3014,4 +3421,3 @@ function submitPermitAction() {
 </script>
 </body>
 </html>
-
