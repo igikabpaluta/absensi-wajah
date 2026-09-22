@@ -859,7 +859,8 @@ input, select { font-size:16px !important; }
 // ============================================================
 // ============================================================
 // BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
-// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT, LIVENESS
+// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT, LIVENESS,
+// AUTO-KIRIM ABSEN
 // ============================================================
 
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
@@ -899,8 +900,8 @@ var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
 // LIVENESS STATE
-var LIVENESS_HOLD_MS = 1000;
-var LIVENESS_TIMEOUT_MS = 15000;
+var LIVENESS_HOLD_MS = 1000;       // Tahan 1 detik per challenge
+var LIVENESS_SMILE_HOLD_MS = 800;  // SENYUM: hold lebih singkat
 var LIVENESS_CHALLENGES = [
   { key: 'FRONT',  label: 'Hadap Depan',    short: 'DEPAN'  },
   { key: 'LEFT',   label: 'Miring ke KIRI', short: 'KIRI'   },
@@ -908,7 +909,6 @@ var LIVENESS_CHALLENGES = [
   { key: 'UP',     label: 'Tengadah ke ATAS',short: 'ATAS'  },
   { key: 'SMILE',  label: 'SENYUM Sekarang',short: 'SENYUM'}
 ];
-var livenessActive = false;
 var livenessChallengeIndex = 0;
 var livenessHoldStart = 0;
 var livenessVerifiedDescriptors = [];
@@ -933,7 +933,6 @@ var absInferenceBusy = false;
 var kioskStream = null;
 var kioskLoopTimer = null;
 var kioskInferenceBusy = false;
-var kioskMode = 'auto';
 var kioskType = 'IN';
 var kioskKnownFaces = [];
 var kioskLastResultAt = 0;
@@ -1361,9 +1360,7 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.remove('hidden');
     document.getElementById('nav-kiosk').classList.add('flex');
   }
-
   setAbsenButtonsState(false, 'Memeriksa wajah...');
-
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
   setTimeout(function() { speakText(welcomeMsg); }, 1000);
@@ -1943,41 +1940,25 @@ function getPitchRatio(landmarks) {
 
 function getSmileRatio(landmarks) {
   try {
-    // 3 rasio untuk akurasi lebih baik
-    // 1) Lebar mulut / lebar wajah (klasik)
-    // 2) Smile lift (sudut mulut naik)
-    // 3) Bukaan mulut (bibir atas-bawah) — senyum lebar buka bibir
-
     var mouthLeftX = landmarks[48].x;
     var mouthRightX = landmarks[54].x;
     var mouthLeftY = landmarks[48].y;
     var mouthRightY = landmarks[54].y;
-    var upperLipY = landmarks[51].y;   // tengah bibir atas
-    var lowerLipY = landmarks[57].y;   // tengah bibir bawah
-
+    var upperLipY = landmarks[51].y;
+    var lowerLipY = landmarks[57].y;
     var faceLeftX = landmarks[0].x;
     var faceRightX = landmarks[16].x;
     var faceWidth = Math.abs(faceRightX - faceLeftX);
     if (faceWidth < 1) return 0;
-
-    // Rasio 1: lebar mulut (weight 1.0)
     var widthRatio = Math.abs(mouthRightX - mouthLeftX) / faceWidth;
-
-    // Rasio 2: smile lift (weight 0.10)
     var cornerY = (mouthLeftY + mouthRightY) / 2;
     var mouthHeight = Math.abs(cornerY - lowerLipY);
     if (mouthHeight < 1) mouthHeight = 1;
     var smileLift = Math.abs(upperLipY - cornerY) / mouthHeight;
-
-    // Rasio 3: bukaan mulut (weight 0.20) — senyum lebar buka bibir lebih dari 3px
     var mouthOpen = Math.abs(lowerLipY - upperLipY) / faceWidth;
-
-    // Gabungkan dengan bobot berbeda
     return widthRatio + (smileLift * 0.10) + (mouthOpen * 0.20);
   } catch (e) { return 0; }
 }
-
-     
 
 function matchesChallenge(challengeKey, landmarks) {
   if (challengeKey === 'FRONT') {
@@ -2031,7 +2012,7 @@ function updateKioskChallengeUI(index) {
 }
 
 // ============================================================
-// ABSEN DENGAN LIVENESS 5 GERAKAN
+// ABSEN DENGAN LIVENESS 5 GERAKAN + AUTO-KIRIM
 // ============================================================
 function startAttendance(type) {
   attType = type;
@@ -2043,7 +2024,6 @@ function startAttendance(type) {
     setTimeout(openEnrollment, 800);
     return;
   }
-
   if (!office.lat || !office.lng) return showToast("Lokasi kantor belum diatur!", 'err');
   if (currentLoc.lat === 0 && currentLoc.lng === 0) return showToast("Menunggu GPS...", 'warn');
   var dist = calculateDist(currentLoc.lat, currentLoc.lng, office.lat, office.lng);
@@ -2052,7 +2032,6 @@ function startAttendance(type) {
     return;
   }
 
-  livenessActive = false;
   livenessChallengeIndex = 0;
   livenessHoldStart = 0;
   livenessVerifiedDescriptors = [];
@@ -2066,7 +2045,8 @@ function startAttendance(type) {
   document.getElementById('absInstruction').innerText = 'Bersiap...';
   document.getElementById('absBtn').disabled = true;
   document.getElementById('absBtn').classList.add('opacity-50', 'cursor-not-allowed');
-  document.getElementById('absBtn').innerHTML = '<i class="fas fa-check-circle mr-2"></i> TUNGGU VERIFIKASI';
+  var waitLabel = (type === 'IN') ? 'TUNGGU VERIFIKASI MASUK' : 'TUNGGU VERIFIKASI KELUAR';
+  document.getElementById('absBtn').innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + waitLabel;
   updateChallengeUI(0);
   document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
 
@@ -2165,7 +2145,9 @@ function startAbsLoop() {
             document.getElementById('challengeTimer').innerText = 'Tahan 1 detik...';
           }
           var held = Date.now() - livenessHoldStart;
-          var sisa = Math.max(0, Math.ceil((LIVENESS_HOLD_MS - held) / 1000));
+          // SENYUM hold lebih singkat
+          var holdMs = (challenge.key === 'SMILE') ? LIVENESS_SMILE_HOLD_MS : LIVENESS_HOLD_MS;
+          var sisa = Math.max(0, Math.ceil((holdMs - held) / 1000));
           document.getElementById('challengeTimer').innerText = 'Tahan ' + sisa + ' detik lagi';
 
           guide.className = 'face-guide matched';
@@ -2174,15 +2156,18 @@ function startAbsLoop() {
           indicator.className = 'liveness-indicator ok';
           indicator.innerText = '● ' + challenge.short + ' ✔';
 
-          if (held >= LIVENESS_HOLD_MS) {
+          if (held >= holdMs) {
             livenessVerifiedDescriptors.push(descriptor);
-            speakText('Bagus. ' + (livenessChallengeIndex < 4 ? 'Lanjut ' + LIVENESS_CHALLENGES[livenessChallengeIndex + 1].label : 'Verifikasi selesai'));
             livenessChallengeIndex++;
             livenessHoldStart = 0;
+
             if (livenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
+              // 🎯 SEMUA SELESAI → auto kirim
+              console.log('✅ Semua challenge selesai, memanggil finishLiveness');
               finishLiveness();
               return;
             } else {
+              speakText('Bagus. Lanjut ' + LIVENESS_CHALLENGES[livenessChallengeIndex].label);
               updateChallengeUI(livenessChallengeIndex);
               document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
             }
@@ -2204,6 +2189,32 @@ function startAbsLoop() {
   }, FACE_LOOP_INTERVAL);
 }
 
+function finishLiveness() {
+  var btn = document.getElementById('absBtn');
+  btn.disabled = true;
+  btn.classList.add('opacity-50', 'cursor-not-allowed');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mengirim...';
+
+  document.getElementById('absStatus').className = 'face-status ok';
+  document.getElementById('absStatus').innerText = 'Verifikasi selesai ✔';
+  var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
+  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
+  document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
+  document.getElementById('livenessIndicator').innerText = '● SELESAI';
+  document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
+
+  var ttsMsg = (attType === 'IN')
+    ? 'Saya kenal Anda, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
+    : 'Saya kenal Anda, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
+  speakText(ttsMsg);
+
+  window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
+
+  setTimeout(function() {
+    captureAbsen();
+  }, 1000);
+}
+
 function captureAbsen() {
   if (!window._currentAbsDescriptor) {
     showToast("Verifikasi wajah belum selesai", 'warn');
@@ -2223,12 +2234,7 @@ function captureAbsen() {
     .then(function(res) {
       btn.disabled = false;
 
-      // Label balik sesuai tipe
-      var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
-      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + doneLabel;
-
       var msg = (res && res.message) ? String(res.message) : '';
-
       var isDone = res && res.success;
       var isAlready = res && (
         res.alreadyAbsen ||
@@ -2255,7 +2261,6 @@ function captureAbsen() {
       else if (isAlready) {
         showToast(msg || 'Anda sudah absen hari ini', 'warn', 5000);
         speakText(msg || 'Anda sudah absen hari ini');
-
         closeAbsen();
         switchTab('home');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2267,14 +2272,10 @@ function captureAbsen() {
     })
     .catch(function(err) {
       btn.disabled = false;
-      // Label balik sesuai tipe saat error
-      var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
-      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + doneLabel;
       showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
 
-     
 function closeAbsen() {
   if (absLoopTimer) { clearInterval(absLoopTimer); absLoopTimer = null; }
   if (absStream) {
@@ -2282,16 +2283,12 @@ function closeAbsen() {
     absStream = null;
   }
   window._currentAbsDescriptor = null;
-  livenessActive = false;
   livenessHoldStart = 0;
   livenessChallengeIndex = 0;
   livenessVerifiedDescriptors = [];
   document.getElementById('absScreen').classList.add('hidden');
 }
 
-
-
-     
 // ============================================================
 // BUILD TTS ABSENSI
 // ============================================================
@@ -2532,9 +2529,10 @@ function startKioskLoop() {
         if (ok) {
           if (kioskLivenessHoldStart === 0) kioskLivenessHoldStart = Date.now();
           var held = Date.now() - kioskLivenessHoldStart;
-          document.getElementById('kioskInfoText').innerText = challenge.label + ' — tahan ' + Math.max(0, Math.ceil((LIVENESS_HOLD_MS - held) / 1000)) + ' detik';
+          var kHoldMs = (challenge.key === 'SMILE') ? LIVENESS_SMILE_HOLD_MS : LIVENESS_HOLD_MS;
+          document.getElementById('kioskInfoText').innerText = challenge.label + ' — tahan ' + Math.max(0, Math.ceil((kHoldMs - held) / 1000)) + ' detik';
 
-          if (held >= LIVENESS_HOLD_MS) {
+          if (held >= kHoldMs) {
             kioskLivenessVerifiedDescriptors.push(descriptor);
             kioskLivenessChallengeIndex++;
             kioskLivenessHoldStart = 0;
@@ -2564,7 +2562,7 @@ function startKioskLiveness(face) {
   kioskLivenessVerifiedDescriptors = [];
   updateKioskChallengeUI(0);
   document.getElementById('kioskInfoText').innerText = 'Ikuti instruksi';
-  speakText('Halo ' + face.nama + '. Ikuti instruksi saya , silahkan gerak kan. Hadap depan, harap mendekat ke kamera .');
+  speakText('Halo ' + face.nama + '. Ikuti instruksi saya, silakan bergerak. Hadap depan, harap mendekat ke kamera.');
 }
 
 function finishKioskLiveness() {
@@ -2572,7 +2570,7 @@ function finishKioskLiveness() {
   kioskLivenessActive = false;
   document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskInfoText').innerText = 'Verifikasi selesai, memproses absen...';
-  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda sedang dicatat, silahkan ganti Penguna lain .');
+  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda sedang dicatat, silakan ganti pengguna lain.');
   kioskProcessAttendance(face);
 }
 
@@ -2592,7 +2590,7 @@ function kioskProcessAttendance(face) {
     })
     .catch(function(err) {
       kioskProcessingUser = null;
-      showKioskResult({ success: false, message: err.message || 'Mohon Maaf, Gagal, ada Gangguan, Coba kembali ' }, face);
+      showKioskResult({ success: false, message: err.message || 'Mohon maaf, gagal. Ada gangguan, coba kembali.' }, face);
     });
 }
 
