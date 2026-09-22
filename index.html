@@ -2497,7 +2497,7 @@ function startAbsLoop() {
           // Auto kirim
           if (!window._currentAbsDescriptor) {
             window._currentAbsDescriptor = descriptor;
-            speakText('Saya kenal Anda, ' + user.nama + '. Absen Anda sedang dikirim.');
+            speakText('Silahkan Tunggu, ' + user.nama + '. Absen Anda sedang dikirim.');
             setTimeout(function() { captureAbsen(); }, 800);
           }
           return;
@@ -2589,14 +2589,14 @@ function finishLiveness() {
   document.getElementById('absStatus').className = 'face-status ok';
   document.getElementById('absStatus').innerText = 'Verifikasi selesai ✔';
   var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
-  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
+  document.getElementById('absInstruction').innerText = 'Silahkan tunggu, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
   document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
   document.getElementById('livenessIndicator').innerText = '● SELESAI';
   document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
 
   var ttsMsg = (attType === 'IN')
-    ? 'Saya kenal Anda, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
-    : 'Saya kenal Anda, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
+    ? 'Silahkan Tunggu, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
+    : 'Silahkan Tunggu, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
   speakText(ttsMsg);
 
   window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
@@ -2972,7 +2972,7 @@ function startKioskLiveness(face) {
     kioskLivenessActive = false;
     document.getElementById('kioskChallenge').classList.add('hidden');
     document.getElementById('kioskInfoText').innerText = 'Memproses absen ' + face.nama + '...';
-    speakText('Halo ' + face.nama + '. Absen Anda sedang dicatat.');
+    speakText('Halo ' + face.nama + '. Absen Anda telah dicatat.');
     kioskProcessAttendance(face);
     return;
   }
@@ -2988,7 +2988,7 @@ function finishKioskLiveness() {
   kioskLivenessActive = false;
   document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskInfoText').innerText = 'Verifikasi selesai, memproses absen...';
-  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda sedang dicatat, silakan ganti pengguna lain.');
+  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda telah dicatat, silakan berganti pengguna lain.');
   kioskProcessAttendance(face);
 }
 
