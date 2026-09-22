@@ -2595,8 +2595,8 @@ function finishLiveness() {
   document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
 
   var ttsMsg = (attType === 'IN')
-    ? 'Saya kenal Anda, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
-    : 'Saya kenal Anda, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
+    ? 'Silahkan ditunggu, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
+    : 'Silahkan ditunggu, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
   speakText(ttsMsg);
 
   window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
