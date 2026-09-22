@@ -1,5 +1,6 @@
 <!-- ============================================================
-     BAGIAN 1 / 3 — HEAD, CSS, HTML BODY
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE
+     Bagian 1 (HTML/CSS) + Bagian 2 (JS Core) + Bagian 3 (JS Kiosk/Admin)
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -242,6 +243,9 @@ input, select { font-size:16px !important; }
 
 <body class="safe-bottom">
 
+<!-- ============================================================
+     LOGIN SCREEN
+     ============================================================ -->
 <div id="loginScreen" class="fixed inset-0 z-[600] bg-white p-8 flex flex-col justify-center items-center">
   <div class="w-full max-sm:max-w-xs space-y-8">
     <div class="text-center">
@@ -270,6 +274,9 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
+<!-- ============================================================
+     ENROLL SCREEN
+     ============================================================ -->
 <div id="enrollScreen" class="fixed inset-0 z-[650] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-4">
     <h2 class="text-2xl font-black">Daftar Wajah</h2>
@@ -316,6 +323,9 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
+<!-- ============================================================
+     ABSEN SCREEN
+     ============================================================ -->
 <div id="absScreen" class="fixed inset-0 z-[660] bg-slate-900 text-white p-6 flex flex-col hidden">
   <div class="text-center py-3">
     <h2 class="text-2xl font-black" id="absTitle">Absen Masuk</h2>
@@ -361,6 +371,9 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
+<!-- ============================================================
+     KIOSK SCREEN
+     ============================================================ -->
 <div id="kioskScreen" class="fixed inset-0 z-[670] hidden bg-black">
   <div class="kiosk-video-wrap">
     <video id="kioskVideo" autoplay playsinline muted></video>
@@ -414,6 +427,9 @@ input, select { font-size:16px !important; }
 <canvas id="thumbCanvas" class="hidden"></canvas>
 <canvas id="enhanceCanvas" class="hidden"></canvas>
 
+<!-- ============================================================
+     APP MAIN
+     ============================================================ -->
 <div id="app" class="hidden">
   <header class="p-6 flex justify-between items-center bg-white border-b sticky top-0 z-50">
     <div>
@@ -425,6 +441,7 @@ input, select { font-size:16px !important; }
     </div>
   </header>
 
+  <!-- ============ TAB HOME ============ -->
   <main id="tab-home" class="tab-content active p-6 space-y-6">
     <div id="faceBanner" class="rounded-2xl p-4 flex items-center gap-3 border-2 border-gray-200 bg-gray-50">
       <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
@@ -482,6 +499,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
+  <!-- ============ TAB SETTING ============ -->
   <main id="tab-setting" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Setting Kantor</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -495,7 +513,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- ============ MODE LIVENESS ABSENSI (BARU) ============ -->
+    <!-- MODE LIVENESS -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-shield-halved text-indigo-600 text-lg"></i>
@@ -529,7 +547,6 @@ input, select { font-size:16px !important; }
         </label>
       </div>
 
-      <!-- Checkbox Gerakan Custom -->
       <div id="lmCustomBox" class="mt-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-2 opacity-50 pointer-events-none">
         <p class="text-[10px] font-black text-indigo-700 uppercase mb-2">Pilih Gerakan:</p>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
@@ -562,7 +579,6 @@ input, select { font-size:16px !important; }
         <i class="fas fa-save mr-2"></i> SIMPAN MODE LIVENESS
       </button>
     </div>
-    <!-- ============ END MODE LIVENESS ============ -->
 
     <div class="bg-slate-900 p-6 rounded-[2.5rem] text-white shadow-xl">
       <div class="flex justify-between items-center mb-4 px-2">
@@ -691,6 +707,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
+  <!-- ============ TAB PEGAWAI ============ -->
   <main id="tab-pegawai" class="tab-content p-6 space-y-6 pb-24">
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-black text-gray-900">Data Pegawai</h2>
@@ -723,6 +740,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
+  <!-- ============ TAB LOG ============ -->
   <main id="tab-log" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Log Absensi</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -817,6 +835,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
+  <!-- ============ NAV BOTTOM ============ -->
   <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t px-3 py-3 flex justify-around items-center z-[100]">
     <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 text-indigo-600 transition-all">
       <i class="fas fa-house text-lg"></i><span class="text-[8px] font-bold uppercase">Home</span>
@@ -839,6 +858,9 @@ input, select { font-size:16px !important; }
   </nav>
 </div>
 
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
 <div id="userModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <h3 id="modalTitle" class="text-xl font-black text-gray-900">Data Pegawai</h3>
@@ -927,9 +949,6 @@ input, select { font-size:16px !important; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 // ============================================================
-// AKHIR BAGIAN 1 — LANJUT BAGIAN 2 DI BAWAH INI
-// ============================================================
-     // ============================================================
 // BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
 // JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT 6 FOTO,
 // LIVENESS + DETEKSI SENYUM KETAT + MODE LIVENESS SETTINGS
@@ -964,7 +983,7 @@ var _speakDedupWindow = 2000;
 // FACE STATE
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
-var FACE_THRESHOLD = 0.60;
+var FACE_THRESHOLD = 0.58;
 var FACE_LOOP_INTERVAL = 120;
 var FACE_DETECT_INPUT = 224;
 var FACE_DETECT_THRESHOLD = 0.5;
@@ -975,13 +994,11 @@ var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohac
 var LIVENESS_HOLD_MS = 1000;
 var LIVENESS_SMILE_HOLD_MS = 1500;
 
-// Mode liveness aktif (dari admin setting)
 var livenessSettings = {
-  mode: 'full',                                          // full / none / custom
-  challenges: 'FRONT,LEFT,RIGHT,UP,SMILE'                // koma-separated
+  mode: 'full',
+  challenges: 'FRONT,LEFT,RIGHT,UP,SMILE'
 };
 
-// Kamus semua gerakan yang tersedia
 var ALL_CHALLENGES = {
   'FRONT': { key: 'FRONT', label: 'Hadap Depan',      short: 'DEPAN'  },
   'LEFT':  { key: 'LEFT',  label: 'Miring ke KIRI',   short: 'KIRI'   },
@@ -991,7 +1008,6 @@ var ALL_CHALLENGES = {
   'SMILE': { key: 'SMILE', label: 'SENYUM Sekarang',  short: 'SENYUM' }
 };
 
-// Daftar challenge yang akan dipakai (dihitung dari setting)
 var LIVENESS_CHALLENGES = [];
 
 var livenessChallengeIndex = 0;
@@ -1022,7 +1038,7 @@ var kioskType = 'IN';
 var kioskKnownFaces = [];
 var kioskLastResultAt = 0;
 var KIOSK_RESULT_DURATION = 6000;
-var KIOSK_UNKNOWN_COOLDOWN = 3000;
+var KIOSK_UNKNOWN_COOLDOWN = 5000;
 var kioskLastUnknownAt = 0;
 var kioskCurrentDescriptor = null;
 var kioskProcessingUser = null;
@@ -1036,7 +1052,6 @@ var kioskLivenessVerifiedDescriptors = [];
 var _permitFile = null;
 var _todayAttendanceComplete = false;
 
-// State untuk deteksi senyum ketat
 var _smileFrameCount = 0;
 var _smileFrameRequired = 3;
 
@@ -1052,8 +1067,29 @@ function escapeJsArg(str) {
   return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function normalizeDateStr(s) {
+  s = String(s == null ? '' : s).trim();
+  if (s === '') return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+  var m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (m) {
+    var d = ('0' + m[1]).slice(-2);
+    var mo = ('0' + m[2]).slice(-2);
+    var y = m[3];
+    if (y.length === 2) y = '20' + y;
+    return y + '-' + mo + '-' + d;
+  }
+  return s;
+}
+
+function isTimeEmptyFrontend(t) {
+  if (t == null || t === '') return true;
+  var s = String(t).trim();
+  return (s === '' || s === '-' || s === '0' || s === '00:00' || s === '00:00:00');
+}
+
 // ============================================================
-// LIVENESS SETTINGS — Hitung challenge aktif
+// LIVENESS SETTINGS
 // ============================================================
 function buildActiveChallenges() {
   var mode = livenessSettings.mode || 'full';
@@ -1073,7 +1109,6 @@ function buildActiveChallenges() {
     ];
     return;
   }
-  // Custom mode
   var keys = challengesStr.split(',').map(function(k) { return String(k).trim().toUpperCase(); });
   var result = [];
   keys.forEach(function(k) {
@@ -1171,7 +1206,7 @@ function processTTSQueue() {
     };
     utter.onend = finishOnce;
     utter.onerror = function() { finishOnce(); };
-    setTimeout(function() { if (!finished) finishOnce(); }, 20000);
+    setTimeout(function() { if (!finished) finishOnce(); }, 12000);
     window.speechSynthesis.speak(utter);
   } catch(e) {
     setTimeout(processTTSQueue, 250);
@@ -1185,7 +1220,7 @@ function testTTS() {
 }
 
 // ============================================================
-// SHOW TOAST + AUTO TTS
+// SHOW TOAST
 // ============================================================
 function showToast(msg, type, duration, silent) {
   var t = document.getElementById('toast');
@@ -1233,7 +1268,7 @@ function makeThumbnail(video) {
 }
 
 // ============================================================
-// AUTO-ENHANCE CAHAYA REDUP
+// AUTO-ENHANCE
 // ============================================================
 function enhanceFrameForFaceAPI(videoEl) {
   try {
@@ -1245,22 +1280,20 @@ function enhanceFrameForFaceAPI(videoEl) {
     can.height = h;
     var ctx = can.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(videoEl, 0, 0, w, h);
-    var sample = ctx.getImageData(0, 0, w, h);
-    var data = sample.data;
-    var sum = 0, step = 4 * 40, count = 0;
-    for (var i = 0; i < data.length; i += step) {
+    var imgData = ctx.getImageData(0, 0, w, h);
+    var data = imgData.data;
+    var sum = 0, count = 0;
+    for (var i = 0; i < data.length; i += 160) {
       sum += (data[i] + data[i+1] + data[i+2]) / 3;
       count++;
     }
-    var avg = sum / count;
+    var avg = count > 0 ? sum / count : 128;
     if (avg < 90) {
       var boost = Math.min(2.0, 1 + (90 - avg) / 90);
-      var imgData = ctx.getImageData(0, 0, w, h);
-      var d = imgData.data;
-      for (var j = 0; j < d.length; j += 4) {
-        d[j]   = Math.min(255, d[j]   * boost);
-        d[j+1] = Math.min(255, d[j+1] * boost);
-        d[j+2] = Math.min(255, d[j+2] * boost);
+      for (var j = 0; j < data.length; j += 4) {
+        data[j]   = Math.min(255, data[j]   * boost);
+        data[j+1] = Math.min(255, data[j+1] * boost);
+        data[j+2] = Math.min(255, data[j+2] * boost);
       }
       ctx.putImageData(imgData, 0, 0);
       return can;
@@ -1342,7 +1375,7 @@ window.onload = function() {
 };
 
 // ============================================================
-// GATING TOMBOL ABSEN
+// GATING TOMBOL
 // ============================================================
 function setAbsenButtonsState(enabled, reason) {
   var btnMasuk = document.getElementById('btnAbsenMasuk');
@@ -1370,9 +1403,6 @@ function setAbsenButtonsState(enabled, reason) {
   }
 }
 
-// ============================================================
-// GATING TOMBOL IZIN/SAKIT
-// ============================================================
 function setIzinButtonState(enabled, reason) {
   var btn = document.getElementById('btnIzinSakit');
   if (!btn) return;
@@ -1406,18 +1436,14 @@ function checkTodayAttendanceComplete(res) {
     var completeToday = false;
     for (var i = 0; i < res.history.length; i++) {
       var h = res.history[i];
-      var hDate = String(h[2] || '').trim();
-      var isToday = false;
-      if (hDate === localToday) isToday = true;
-      if (hDate.replace(/\//g, '-') === localToday) isToday = true;
+      var hDate = normalizeDateStr(h[2]);
+      if (hDate !== localToday) continue;
 
-      if (isToday) {
-        var jamMasuk = String(h[3] || '').trim();
-        var jamKeluar = String(h[4] || '').trim();
-        if (jamMasuk && jamKeluar && jamMasuk !== '' && jamKeluar !== '') {
-          completeToday = true;
-          break;
-        }
+      var jamMasuk = String(h[3] || '').trim();
+      var jamKeluar = String(h[4] || '').trim();
+      if (!isTimeEmptyFrontend(jamMasuk) && !isTimeEmptyFrontend(jamKeluar)) {
+        completeToday = true;
+        break;
       }
     }
 
@@ -1500,7 +1526,6 @@ function handleLogin() {
       if (res && res.success) {
         user = res.user;
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
-        speakText('Selamat datang, ' + user.nama);
         setupApp();
         setAbsenButtonsState(false, 'Memeriksa wajah...');
         checkFaceAndRedirect();
@@ -1519,6 +1544,16 @@ function handleLogout() {
   user = null;
   userFaceEnrolled = false;
   window._todayAttendanceComplete = false;
+
+  _mapInitDone = false;
+  if (userMap) { try { userMap.remove(); } catch(e){} userMap = null; }
+  if (adminMap) { try { adminMap.remove(); } catch(e){} adminMap = null; }
+  userPosMarker = null;
+  userOfficeCircle = null;
+  userOfficeMarker = null;
+  adminMarker = null;
+  adminCircle = null;
+
   document.getElementById('app').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginPhone').value = '';
@@ -1627,12 +1662,10 @@ function renderLivenessSettingsUI() {
   var chkStr = livenessSettings.challenges || '';
   var keys = chkStr.split(',').map(function(k) { return String(k).trim().toUpperCase(); });
 
-  // Radio
   document.getElementById('lmModeFull').checked = (mode === 'full');
   document.getElementById('lmModeNone').checked = (mode === 'none');
   document.getElementById('lmModeCustom').checked = (mode === 'custom');
 
-  // Checkbox
   document.getElementById('lmChkFront').checked = keys.indexOf('FRONT') >= 0;
   document.getElementById('lmChkLeft').checked  = keys.indexOf('LEFT') >= 0;
   document.getElementById('lmChkRight').checked = keys.indexOf('RIGHT') >= 0;
@@ -1974,7 +2007,7 @@ function startEnrollLoop() {
               var dx = Math.abs(box.x - enrollLastStableBox.x);
               var dy = Math.abs(box.y - enrollLastStableBox.y);
               var dw = Math.abs(box.width - enrollLastStableBox.width);
-              var threshold = box.width * 0.10;
+              var threshold = box.width * 0.15;
               if (dx < threshold && dy < threshold && dw < threshold) enrollStableFrames++;
               else enrollStableFrames = 0;
             }
@@ -2153,7 +2186,7 @@ function averageDescriptors(descriptors) {
 }
 
 function saveEnrollment(descriptor, thumbnail) {
-  callAPI('saveFaceDescriptor', { userId: user.id, descriptor: descriptor, thumbnail: thumbnail })
+  callAPI('saveFaceDescriptor', { userId: user.id, descriptor: descriptor, thumbnail: thumbnail, forceUpdate: true })
     .then(function(res) {
       if (res && res.success) {
         showToast("Wajah berhasil didaftarkan!", 'ok', 4000);
@@ -2194,7 +2227,7 @@ function closeEnrollment() {
 }
 
 // ============================================================
-// LIVENESS DETECTION — RUMUS
+// LIVENESS DETECTION
 // ============================================================
 function getYawRatio(landmarks) {
   try {
@@ -2270,16 +2303,6 @@ function getSmileRatio(landmarks) {
     if (widthRatio > 0.32) score += 0.2;
     if (widthRatio > 0.38) score += 0.2;
 
-    if (typeof window !== 'undefined' && window._debugSmile) {
-      console.log('Smile debug:', {
-        openRatio: openRatio.toFixed(4),
-        liftRatio: liftRatio.toFixed(4),
-        widthRatio: widthRatio.toFixed(3),
-        mouthPosValid: mouthPositionValid,
-        score: score.toFixed(2)
-      });
-    }
-
     return score;
   } catch (e) { return 0; }
 }
@@ -2350,7 +2373,7 @@ function updateKioskChallengeUI(index) {
 }
 
 // ============================================================
-// ABSEN DENGAN LIVENESS (mengikuti setting admin)
+// ABSEN DENGAN LIVENESS
 // ============================================================
 function startAttendance(type) {
   attType = type;
@@ -2376,6 +2399,8 @@ function startAttendance(type) {
   livenessHoldStart = 0;
   livenessVerifiedDescriptors = [];
   _smileFrameCount = 0;
+  window._currentAbsDescriptor = null;
+  window._absenProcessing = false;
 
   document.getElementById('absTitle').innerText = type === 'IN' ? 'Absen Masuk' : 'Absen Keluar';
   document.getElementById('absScreen').classList.remove('hidden');
@@ -2428,7 +2453,6 @@ function startAbsCamera() {
     document.getElementById('absStatus').className = 'face-status info';
 
     if (LIVENESS_CHALLENGES.length === 0) {
-      // Mode tanpa instruksi → langsung auto-submit setelah wajah match
       document.getElementById('absInstruction').innerText = 'Menunggu wajah dikenali...';
       speakText('Menunggu wajah dikenali. Absen akan diproses otomatis.');
     } else {
@@ -2486,7 +2510,6 @@ function startAbsLoop() {
           return;
         }
 
-        // === MODE TANPA INSTRUKSI ===
         if (LIVENESS_CHALLENGES.length === 0) {
           guide.className = 'face-guide matched';
           status.className = 'face-status ok';
@@ -2494,7 +2517,6 @@ function startAbsLoop() {
           indicator.className = 'liveness-indicator ok';
           indicator.innerText = '● COCOK';
           document.getElementById('absInstruction').innerText = 'Wajah dikenali! Memproses absen...';
-          // Auto kirim
           if (!window._currentAbsDescriptor) {
             window._currentAbsDescriptor = descriptor;
             speakText('Silahkan Tunggu, ' + user.nama + '. Absen Anda sedang dikirim.');
@@ -2503,10 +2525,8 @@ function startAbsLoop() {
           return;
         }
 
-        // === MODE DENGAN INSTRUKSI ===
         var challenge = LIVENESS_CHALLENGES[livenessChallengeIndex];
         if (!challenge) {
-          // semua selesai (safety)
           finishLiveness();
           return;
         }
@@ -2554,7 +2574,6 @@ function startAbsLoop() {
             _smileFrameCount = 0;
 
             if (livenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
-              console.log('✅ Semua challenge selesai, memanggil finishLiveness');
               finishLiveness();
               return;
             } else {
@@ -2601,17 +2620,18 @@ function finishLiveness() {
 
   window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
 
-  // Guard: kalau descriptor null, jangan panggil captureAbsen
   if (!window._currentAbsDescriptor) {
     showToast('Verifikasi wajah gagal, silakan ulangi', 'err', 5000);
+    btn.disabled = false;
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    btn.innerHTML = '<i class="fas fa-redo mr-2"></i> ULANGI';
+    btn.onclick = function() { closeAbsen(); startAttendance(attType); };
     return;
   }
 
-  // Simpan flag proses
   window._absenProcessing = true;
 
   setTimeout(function() {
-    // Kalau sudah selesai / layar sudah ditutup, jangan panggil lagi
     if (!window._absenProcessing) return;
     if (!window._currentAbsDescriptor) return;
     if (document.getElementById('absScreen').classList.contains('hidden')) return;
@@ -2620,15 +2640,9 @@ function finishLiveness() {
 }
 
 function captureAbsen() {
-  // Guard: kalau descriptor sudah null (absen sudah selesai), diam saja — jangan muncul notif
   if (!window._currentAbsDescriptor) {
-    // Cek apakah absen memang sudah selesai (layar sudah ditutup)
-    if (document.getElementById('absScreen').classList.contains('hidden')) {
-      // Sudah selesai → diam (tidak usah notif)
-      return;
-    }
-    // Layar masih terbuka tapi descriptor null → ini benar-benar error
-    showToast("Verifikasi wajah belum selesai", 'warn', 3000, true);  // silent: TTS mati
+    if (document.getElementById('absScreen').classList.contains('hidden')) return;
+    showToast("Verifikasi wajah belum selesai", 'warn', 3000, true);
     return;
   }
 
@@ -2658,7 +2672,6 @@ function captureAbsen() {
         msg.indexOf('belum melakukan absen masuk') >= 0
       );
 
-      // Tandai proses selesai — supaya timer finishLiveness tidak panggil lagi
       window._absenProcessing = false;
 
       if (isDone) {
@@ -2683,11 +2696,18 @@ function captureAbsen() {
       }
       else {
         showToast(msg || 'Gagal absen', 'err', 5000);
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-redo mr-2"></i> COBA LAGI';
+        btn.onclick = captureAbsen;
       }
     })
     .catch(function(err) {
-      btn.disabled = false;
       window._absenProcessing = false;
+      btn.disabled = false;
+      btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      btn.innerHTML = '<i class="fas fa-redo mr-2"></i> COBA LAGI';
+      btn.onclick = captureAbsen;
       showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
@@ -2699,17 +2719,16 @@ function closeAbsen() {
     absStream = null;
   }
   window._currentAbsDescriptor = null;
-  window._absenProcessing = false;   // ← tandai proses selesai
+  window._absenProcessing = false;
   livenessHoldStart = 0;
   livenessChallengeIndex = 0;
   livenessVerifiedDescriptors = [];
   _smileFrameCount = 0;
+  var btn = document.getElementById('absBtn');
+  btn.onclick = function() { captureAbsen(); };
   document.getElementById('absScreen').classList.add('hidden');
 }
 
-
-
-     
 // ============================================================
 // BUILD TTS ABSENSI
 // ============================================================
@@ -2778,12 +2797,8 @@ function clearPermitFile() {
 }
 
 // ============================================================
-// AKHIR BAGIAN 2 — LANJUT BAGIAN 3 DI BAWAH INI
-// ============================================================
-     // ============================================================
-// BAGIAN 3 / 3 — KIOSK + LIVENESS (ikuti setting admin),
-// DASHBOARD, LOG, APPROVAL, EXPORT CSV/EXCEL/WORD,
-// GPS, MAPS, CRUD PEGAWAI, PENUTUP
+// BAGIAN 3 / 3 — KIOSK + LIVENESS, DASHBOARD, LOG,
+// APPROVAL, EXPORT, GPS, MAPS, CRUD PEGAWAI
 // ============================================================
 
 // ============================================================
@@ -2833,7 +2848,6 @@ function openKiosk() {
   kioskLivenessHoldStart = 0;
   kioskLivenessVerifiedDescriptors = [];
 
-  // Build challenges dari setting admin
   buildActiveChallenges();
 
   loadFaceModels().then(function(ok) {
@@ -2947,13 +2961,11 @@ function startKioskLoop() {
           return;
         }
 
-        // === MODE TANPA INSTRUKSI ===
         if (LIVENESS_CHALLENGES.length === 0) {
           document.getElementById('kioskInfoText').innerText = 'Memproses absen ' + kioskLivenessFace.nama + '...';
           return;
         }
 
-        // === MODE DENGAN INSTRUKSI ===
         var landmarks = det.landmarks.positions;
         var challenge = LIVENESS_CHALLENGES[kioskLivenessChallengeIndex];
         if (!challenge) {
@@ -2996,7 +3008,6 @@ function startKioskLiveness(face) {
   kioskLivenessHoldStart = 0;
   kioskLivenessVerifiedDescriptors = [];
 
-  // MODE TANPA INSTRUKSI → langsung proses absen
   if (LIVENESS_CHALLENGES.length === 0) {
     kioskLivenessActive = false;
     document.getElementById('kioskChallenge').classList.add('hidden');
@@ -3162,12 +3173,10 @@ function refreshData() {
         var elT = document.getElementById('jk-toleransi');
         if (elT) elT.value = jamKerja.toleransi_telat || '15';
       }
-      // Update liveness settings dari server
       if (res.livenessSettings && res.livenessSettings.success) {
         livenessSettings.mode = res.livenessSettings.mode || 'full';
         livenessSettings.challenges = res.livenessSettings.challenges || 'FRONT,LEFT,RIGHT,UP,SMILE';
         buildActiveChallenges();
-        // Kalau tab setting terbuka, update UI radio + checkbox
         if (document.getElementById('tab-setting').classList.contains('active')) {
           renderLivenessSettingsUI();
         }
@@ -3226,7 +3235,7 @@ function renderAdmin(res) {
 function renderUserRow(u, i) {
   var role = u[4] || 'pegawai';
   var roleBadge = role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-50 text-indigo-600';
-  var roleAttr = escapeJsArg(role), passAttr = escapeJsArg(u[5] || ''), idAttr = escapeJsArg(u[0]);
+  var roleAttr = escapeJsArg(role), passAttr = '', idAttr = escapeJsArg(u[0]);
   var namaAttr = escapeJsArg(u[1]), jabAttr = escapeJsArg(u[2] || ''), phoneAttr = escapeJsArg(u[3]);
   return '<tr class="' + (i % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' border-b border-gray-100">' +
     '<td class="py-3 px-3 font-bold text-gray-400">' + (i + 1) + '</td>' +
@@ -3264,7 +3273,7 @@ function openUserModal(id, nama, jab, phone, role, pass) {
   document.getElementById('uJab').value = jab || '';
   document.getElementById('uPhone').value = phone || '';
   document.getElementById('uRole').value = role || 'pegawai';
-  document.getElementById('uPass').value = id ? '' : (pass || '');
+  document.getElementById('uPass').value = '';
   document.getElementById('modalTitle').innerText = id ? "Edit Pegawai" : "Tambah Pegawai";
   document.getElementById('userModal').classList.remove('hidden');
   document.getElementById('userModal').classList.add('flex');
@@ -3518,10 +3527,10 @@ function applyLogFilter() {
   var fb = document.getElementById('filterBulan').value;
   var ft = document.getElementById('filterTanggal').value;
   var filtered = allLogData.filter(function(a) {
-    var tgl = a[2];
+    var tgl = normalizeDateStr(a[2]);
     if (!tgl) return false;
-    if (ft) return String(tgl) === ft;
-    if (fb) return String(tgl).startsWith(fb);
+    if (ft) return tgl === ft;
+    if (fb) return tgl.indexOf(fb) === 0;
     return true;
   });
   renderLogTable(filtered);
@@ -3587,7 +3596,7 @@ function approvePermit(id, status) {
 }
 
 // ============================================================
-// EXPORT LOG CSV
+// EXPORT CSV
 // ============================================================
 function exportLogCSV() {
   if (!allLogData || !allLogData.length) {
@@ -3599,7 +3608,7 @@ function exportLogCSV() {
   rows.push(['Nama', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan', 'Latitude', 'Longitude']);
   allLogData.forEach(function(a) {
     var nama = a[a.length - 1] || 'Anonim';
-    rows.push([nama, a[2] || '', a[3] || '', a[4] || '', a[9] || 'Hadir', a[12] || '', a[5] || '', a[6] || '']);
+    rows.push([nama, normalizeDateStr(a[2]), a[3] || '', a[4] || '', a[9] || 'Hadir', a[12] || '', a[5] || '', a[6] || '']);
   });
   var csv = rows.map(function(r) {
     return r.map(function(c) {
@@ -3623,7 +3632,7 @@ function exportLogCSV() {
 }
 
 // ============================================================
-// REKAP BULANAN EXCEL
+// REKAP EXCEL
 // ============================================================
 function exportRekapExcel() {
   var bulan = document.getElementById('rekapBulan').value;
@@ -3656,7 +3665,7 @@ function exportRekapExcel() {
 }
 
 // ============================================================
-// REKAP BULANAN WORD
+// REKAP WORD
 // ============================================================
 function exportRekapWord() {
   var bulan = document.getElementById('rekapBulan').value;
@@ -3692,7 +3701,7 @@ function exportRekapWord() {
 }
 
 // ============================================================
-// PERMIT (IZIN) — DENGAN GATING
+// PERMIT (IZIN)
 // ============================================================
 function openPermitModal() {
   if (window._todayAttendanceComplete === true) {
@@ -3776,7 +3785,7 @@ function submitPermitAction() {
 }
 
 // ============================================================
-// PENUTUP — AKHIR BAGIAN 3 / 3
+// AKHIR FILE
 // ============================================================
 </script>
 </body>
