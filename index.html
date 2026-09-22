@@ -1310,6 +1310,9 @@ function handleLogin() {
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
         speakText('Selamat datang, ' + user.nama);
         setupApp();
+        // KUNCI TOMBOL ABSEN DULU sebelum cek wajah
+        setAbsenButtonsState(false, 'Memeriksa wajah...');
+        // Baru cek wajah
         checkFaceAndRedirect();
       } else {
         showToast(res ? res.message : "Terjadi kesalahan server", 'err');
@@ -1321,6 +1324,7 @@ function handleLogin() {
     });
 }
 
+     
 function handleLogout() {
   localStorage.removeItem('presensi_user_v3');
   user = null;
