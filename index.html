@@ -860,7 +860,7 @@ input, select { font-size:16px !important; }
 // ============================================================
 // BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
 // JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT 6 FOTO,
-// LIVENESS + AUTO-KIRIM ABSEN
+// LIVENESS + DETEKSI SENYUM KETAT + AUTO-KIRIM ABSEN
 // ============================================================
 
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
@@ -950,6 +950,10 @@ var kioskLivenessVerifiedDescriptors = [];
 
 var _permitFile = null;
 var _todayAttendanceComplete = false;
+
+// State untuk deteksi senyum ketat
+var _smileFrameCount = 0;
+var _smileFrameRequired = 3;   // WAJIB 3 frame berturut-turut senyum terdeteksi
 
 // ============================================================
 // UTILS
@@ -2021,44 +2025,68 @@ function getPitchRatio(landmarks) {
   } catch (e) { return 0.6; }
 }
 
+// ============================================================
+// DETEKSI SENYUM KETAT — Rumus baru
+// ============================================================
 function getSmileRatio(landmarks) {
   try {
-    var mouthLeftX = landmarks[48].x;
-    var mouthRightX = landmarks[54].x;
-    var mouthLeftY = landmarks[48].y;
-    var mouthRightY = landmarks[54].y;
-    var upperLipY = landmarks[51].y;
-    var lowerLipY = landmarks[57].y;
-    var noseTipY = landmarks[33].y;
+    var mouthLeft = landmarks[48];
+    var mouthRight = landmarks[54];
+    var upperLipInner = landmarks[62];
+    var lowerLipInner = landmarks[66];
+    var upperLipTop = landmarks[51];
+    var lowerLipBottom = landmarks[57];
+    var noseTip = landmarks[33];
+    var chin = landmarks[8];
 
-    var faceLeftX = landmarks[0].x;
-    var faceRightX = landmarks[16].x;
-    var faceWidth = Math.abs(faceRightX - faceLeftX);
+    var faceLeft = landmarks[0].x;
+    var faceRight = landmarks[16].x;
+    var faceWidth = Math.abs(faceRight - faceLeft);
     if (faceWidth < 1) return 0;
 
-    var cornerY = (mouthLeftY + mouthRightY) / 2;
-    var noseToCorner = Math.abs(cornerY - noseTipY);
-    var cornerLift = 1 - (noseToCorner / faceWidth);
+    // INDIKATOR 1: Gigi terlihat (jarak bibir dalam atas-bawah)
+    var mouthOpenInner = Math.abs(lowerLipInner.y - upperLipInner.y);
+    var openRatio = mouthOpenInner / faceWidth;
 
-    var mouthOpen = Math.abs(lowerLipY - upperLipY);
+    // INDIKATOR 2: Sudut mulut naik di atas tengah mulut
+    var mouthCenterY = (upperLipTop.y + lowerLipBottom.y) / 2;
+    var cornerY = (mouthLeft.y + mouthRight.y) / 2;
+    var liftPixels = mouthCenterY - cornerY;  // positif = sudut naik
+    var liftRatio = liftPixels / faceWidth;
 
-    var mouthWidth = Math.abs(mouthRightX - mouthLeftX);
+    // INDIKATOR 3: Lebar mulut
+    var mouthWidth = Math.abs(mouthRight.x - mouthLeft.x);
     var widthRatio = mouthWidth / faceWidth;
 
-    var score = 0;
-    if (cornerLift > 0.75) score += 0.3;
-    if (cornerLift > 0.80) score += 0.3;
-    if (cornerLift > 0.85) score += 0.2;
-    if (mouthOpen > 10) score += 0.15;
-    if (mouthOpen > 15) score += 0.15;
-    if (widthRatio > 0.30) score += 0.10;
-    if (widthRatio > 0.36) score += 0.10;
+    // VERIFIKASI POSISI: mulut harus di antara hidung dan dagu
+    var mouthToNose = Math.abs(mouthCenterY - noseTip.y);
+    var noseToChin = Math.abs(chin.y - noseTip.y);
+    var mouthPositionValid = (mouthToNose > 0 && mouthToNose < noseToChin * 0.9);
+    if (!mouthPositionValid) return 0;
 
+    // SKOR KUMULATIF (butuh beberapa indikator sekaligus)
+    var score = 0;
+
+    // WAJIB: gigi terlihat
+    if (openRatio > 0.04) score += 0.3;
+    if (openRatio > 0.06) score += 0.2;
+    if (openRatio > 0.09) score += 0.2;
+
+    // WAJIB: sudut mulut naik
+    if (liftRatio > 0.010) score += 0.3;
+    if (liftRatio > 0.025) score += 0.2;
+
+    // BONUS: mulut lebar
+    if (widthRatio > 0.32) score += 0.2;
+    if (widthRatio > 0.38) score += 0.2;
+
+    // Debug
     if (typeof window !== 'undefined' && window._debugSmile) {
       console.log('Smile debug:', {
-        cornerLift: cornerLift.toFixed(3),
-        mouthOpen: mouthOpen.toFixed(1),
+        openRatio: openRatio.toFixed(4),
+        liftRatio: liftRatio.toFixed(4),
         widthRatio: widthRatio.toFixed(3),
+        mouthPosValid: mouthPositionValid,
         score: score.toFixed(2)
       });
     }
@@ -2082,6 +2110,7 @@ function matchesChallenge(challengeKey, landmarks) {
     var noseToEye = noseY - eyeMidY;
     return p < 0.50 && noseToEye < 8;
   }
+  // SMILE: skor kumulatif minimal 1.0
   if (challengeKey === 'SMILE') return getSmileRatio(landmarks) >= 1.0;
   return false;
 }
@@ -2119,7 +2148,7 @@ function updateKioskChallengeUI(index) {
 }
 
 // ============================================================
-// ABSEN DENGAN LIVENESS 5 GERAKAN + AUTO-KIRIM
+// ABSEN DENGAN LIVENESS 5 GERAKAN + DETEKSI SENYUM KETAT 3 FRAME + AUTO-KIRIM
 // ============================================================
 function startAttendance(type) {
   attType = type;
@@ -2142,6 +2171,7 @@ function startAttendance(type) {
   livenessChallengeIndex = 0;
   livenessHoldStart = 0;
   livenessVerifiedDescriptors = [];
+  _smileFrameCount = 0;
 
   document.getElementById('absTitle').innerText = type === 'IN' ? 'Absen Masuk' : 'Absen Keluar';
   document.getElementById('absScreen').classList.remove('hidden');
@@ -2225,6 +2255,7 @@ function startAbsLoop() {
           indicator.className = 'liveness-indicator wait';
           indicator.innerText = '● CARI WAJAH';
           livenessHoldStart = 0;
+          _smileFrameCount = 0;
           return;
         }
 
@@ -2241,10 +2272,30 @@ function startAbsLoop() {
           indicator.className = 'liveness-indicator wait';
           indicator.innerText = '● TIDAK COCOK';
           livenessHoldStart = 0;
+          _smileFrameCount = 0;
           return;
         }
 
         var ok = matchesChallenge(challenge.key, landmarks);
+
+        // === VERIFIKASI MULTI-FRAME UNTUK SENYUM (3 frame berturut-turut) ===
+        if (challenge.key === 'SMILE') {
+          if (ok) {
+            _smileFrameCount++;
+            if (_smileFrameCount < _smileFrameRequired) {
+              guide.className = 'face-guide detected';
+              status.className = 'face-status info';
+              status.innerText = 'Senyum terdeteksi... TAHAN!';
+              indicator.className = 'liveness-indicator wait';
+              indicator.innerText = '● SENYUM ' + _smileFrameCount + '/' + _smileFrameRequired;
+              return;
+            }
+          } else {
+            _smileFrameCount = 0;
+          }
+        } else {
+          _smileFrameCount = 0;
+        }
 
         if (ok) {
           if (livenessHoldStart === 0) {
@@ -2266,6 +2317,7 @@ function startAbsLoop() {
             livenessVerifiedDescriptors.push(descriptor);
             livenessChallengeIndex++;
             livenessHoldStart = 0;
+            _smileFrameCount = 0;
 
             if (livenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
               console.log('✅ Semua challenge selesai, memanggil finishLiveness');
@@ -2391,6 +2443,7 @@ function closeAbsen() {
   livenessHoldStart = 0;
   livenessChallengeIndex = 0;
   livenessVerifiedDescriptors = [];
+  _smileFrameCount = 0;
   document.getElementById('absScreen').classList.add('hidden');
 }
 
@@ -3430,4 +3483,4 @@ function submitPermitAction() {
 // ============================================================
 </script>
 </body>
-</html>     
+</html>
