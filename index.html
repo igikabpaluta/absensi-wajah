@@ -1,6 +1,6 @@
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v13
-     Fitur: Per-user Liveness (instruction / no_instruction / global)
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v14
+     Bagian 1/3: HEAD, CSS, HTML BODY
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -115,7 +115,6 @@ input, select { font-size:16px !important; }
 .liveness-indicator.ok { background: rgba(16,185,129,0.9); }
 .liveness-indicator.wait { background: rgba(245,158,11,0.9); }
 
-/* Silent mode banner (mode no_instruction) */
 .silent-banner {
   background: linear-gradient(135deg, #0f172a, #1e293b);
   border-radius: 20px; padding: 16px 20px; color: white;
@@ -349,7 +348,6 @@ input, select { font-size:16px !important; }
     <p class="text-xs text-gray-400 mt-1" id="absSubtitle">Ikuti instruksi untuk verifikasi wajah</p>
   </div>
 
-  <!-- Challenge box (mode instruction) -->
   <div class="challenge-box" id="challengeBox">
     <div class="challenge-title">Langkah <span id="challengeStep">1</span> dari <span id="challengeTotal">5</span></div>
     <div class="challenge-instruction" id="challengeInstruction">Hadap Depan</div>
@@ -364,7 +362,6 @@ input, select { font-size:16px !important; }
     <div class="challenge-timer" id="challengeTimer">Tahan 1 detik</div>
   </div>
 
-  <!-- Silent banner (mode no_instruction) -->
   <div class="silent-banner" id="silentBanner">
     <div class="silent-banner-title">Verifikasi Otomatis</div>
     <div class="silent-banner-instruction" id="silentInstruction">Hadap Depan</div>
@@ -534,7 +531,6 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- GLOBAL LIVENESS SETTINGS -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-shield-halved text-indigo-600 text-lg"></i>
@@ -871,7 +867,7 @@ input, select { font-size:16px !important; }
   </nav>
 </div>
 
-<!-- MODAL USER (dengan liveness per-user) -->
+<!-- MODAL USER -->
 <div id="userModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
     <h3 id="modalTitle" class="text-xl font-black text-gray-900">Data Pegawai</h3>
@@ -886,7 +882,6 @@ input, select { font-size:16px !important; }
     <input type="text" id="uPass" placeholder="Password (kosongkan jika tidak diubah)"
       class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100">
 
-    <!-- MODE LIVENESS PER-USER -->
     <div class="pt-3 mt-3 border-t-2 border-dashed border-gray-200">
       <p class="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-3">
         <i class="fas fa-shield-halved mr-1"></i> Mode Liveness (Per-User)
@@ -1020,8 +1015,14 @@ input, select { font-size:16px !important; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 // ============================================================
-// VARIABEL GLOBAL
+// AKHIR BAGIAN 1 — LANJUT BAGIAN 2 DI BAWAH INI
 // ============================================================
+// ============================================================
+// BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
+// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT 6 FOTO,
+// LIVENESS + DETEKSI SENYUM + PER-USER LIVENESS
+// ============================================================
+
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
 
 var user = null;
@@ -1064,7 +1065,6 @@ var LIVENESS_SMILE_HOLD_MS = 1500;
 var KIOSK_NO_INSTR_TIMEOUT = 30000;
 var ABS_NO_INSTR_TIMEOUT = 30000;
 
-// Global settings (default untuk user yang belum di-set)
 var globalLivenessSettings = {
   mode: 'instruction',
   challenges: 'FRONT,LEFT,RIGHT,UP,SMILE'
@@ -1079,10 +1079,9 @@ var ALL_CHALLENGES = {
   'SMILE': { key: 'SMILE', label: 'SENYUM Sekarang',  short: 'SENYUM' }
 };
 
-var LIVENESS_CHALLENGES = [];       // daftar challenge aktif
-var ACTIVE_LIVENESS_MODE = 'instruction';  // instruction / no_instruction
+var LIVENESS_CHALLENGES = [];
+var ACTIVE_LIVENESS_MODE = 'instruction';
 
-// State absen
 var livenessChallengeIndex = 0;
 var livenessHoldStart = 0;
 var livenessVerifiedDescriptors = [];
@@ -1101,6 +1100,7 @@ var enrollLastAutoCaptureAt = 0;
 var ENROLL_STABLE_REQUIRED = 5;
 var ENROLL_AUTO_COOLDOWN = 1200;
 var enrollCaptureInProgress = false;
+var enrollFrontPhoto = null;   // ← FOTO HADAP DEPAN (v14)
 
 var absStream = null;
 var absLoopTimer = null;
@@ -1165,7 +1165,7 @@ function isTimeEmptyFrontend(t) {
 }
 
 // ============================================================
-// BUILD ACTIVE CHALLENGES
+// BUILD CHALLENGES
 // ============================================================
 function buildChallengesFromString(challengesStr) {
   if (!challengesStr) return [];
@@ -1177,16 +1177,6 @@ function buildChallengesFromString(challengesStr) {
   return result;
 }
 
-function buildGlobalChallenges() {
-  if (globalLivenessSettings.mode === 'no_instruction') {
-    // no_instruction tetap punya gerakan
-    return buildChallengesFromString(globalLivenessSettings.challenges);
-  }
-  // instruction mode
-  return buildChallengesFromString(globalLivenessSettings.challenges);
-}
-
-// Ambil setting efektif untuk user (per-user override atau global)
 function getEffectiveLivenessSettings(userObj) {
   var result = {
     mode: globalLivenessSettings.mode || 'instruction',
@@ -1303,7 +1293,7 @@ function processTTSQueue() {
 
 function testTTS() {
   unlockTTS();
-  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi wajah dan lokasi dibuat oleh Bapak Ramadan Hasibuan,S.Pd.');
+  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi wajah dan lokasi.');
   showToast('🔊 Test suara dijalankan', 'info', 3000, true);
 }
 
@@ -1350,6 +1340,25 @@ function makeThumbnail(video) {
   var sy = (video.videoHeight - size) / 2;
   ctx.drawImage(video, sx, sy, size, size, 0, 0, 100, 100);
   return can.toDataURL('image/jpeg', 0.6);
+}
+
+/**
+ * v14: Buat thumbnail HD (400x400) untuk foto hadap depan ke Drive.
+ */
+function makeThumbnailHD(video) {
+  try {
+    var can = document.createElement('canvas');
+    can.width = 400;
+    can.height = 400;
+    var ctx = can.getContext('2d');
+    var size = Math.min(video.videoWidth, video.videoHeight);
+    var sx = (video.videoWidth - size) / 2;
+    var sy = (video.videoHeight - size) / 2;
+    ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
+    return can.toDataURL('image/jpeg', 0.85);
+  } catch (e) {
+    return null;
+  }
 }
 
 function enhanceFrameForFaceAPI(videoEl) {
@@ -1553,12 +1562,12 @@ function checkFaceAndRedirect() {
         userFaceEnrolled = true;
         updateFaceBanner();
         setAbsenButtonsState(true, null);
-        speakText('Wajah Anda terdaftar. Silakan pilih absen masuk atau pulang.');
+        speakText('Wajah Anda terdaftar. Silakan pilih absen masuk atau keluar.');
       } else {
         userFaceEnrolled = false;
         updateFaceBanner();
         setAbsenButtonsState(false, 'Wajah belum terdaftar');
-        speakText('Wajah Anda belum terdaftar. Silakan daftar wajah terlebih dahulu.Silahkan Hubungi Admin.');
+        speakText('Wajah Anda belum terdaftar. Silakan daftar wajah terlebih dahulu.');
         setTimeout(function() { openEnrollment(); }, 1000);
       }
     })
@@ -2006,6 +2015,7 @@ function openEnrollment() {
   enrollLastStableBox = null;
   enrollLastAutoCaptureAt = 0;
   enrollCaptureInProgress = false;
+  enrollFrontPhoto = null;
   document.getElementById('enrollStep').innerText = '0';
   document.getElementById('enrollGuide').className = 'face-guide';
   document.getElementById('enrollStatus').className = 'face-status info';
@@ -2111,6 +2121,7 @@ function autoCaptureEnroll() {
   showToast("Auto Capture 6x dimulai...", 'info', 2500);
   enrollStep = 0;
   enrollDescriptors = [];
+  enrollFrontPhoto = null;
   document.getElementById('enrollStep').innerText = '0';
 
   var instructions = [
@@ -2146,6 +2157,10 @@ function autoCaptureEnroll() {
             return;
           }
           enrollDescriptors.push(Array.from(det.descriptor));
+          // v14: Simpan foto hadap depan (capture ke-1 / index 0)
+          if (index === 0) {
+            enrollFrontPhoto = makeThumbnailHD(video);
+          }
           enrollStep++;
           document.getElementById('enrollStep').innerText = enrollStep;
           showToast('Capture ' + enrollStep + '/6 berhasil!', 'ok', 1500);
@@ -2181,6 +2196,10 @@ function captureEnroll() {
         return;
       }
       enrollDescriptors.push(Array.from(det.descriptor));
+      // v14: Simpan foto hadap depan (capture step-0)
+      if (enrollStep === 0) {
+        enrollFrontPhoto = makeThumbnailHD(video);
+      }
       enrollStep++;
       document.getElementById('enrollStep').innerText = enrollStep;
       var instructions = [
@@ -2248,7 +2267,14 @@ function averageDescriptors(descriptors) {
 }
 
 function saveEnrollment(descriptor, thumbnail) {
-  callAPI('saveFaceDescriptor', { userId: user.id, descriptor: descriptor, thumbnail: thumbnail, forceUpdate: true })
+  // v14: kirim photoBase64 juga
+  callAPI('saveFaceDescriptor', {
+    userId: user.id,
+    descriptor: descriptor,
+    thumbnail: thumbnail,
+    forceUpdate: true,
+    photoBase64: enrollFrontPhoto || ''
+  })
     .then(function(res) {
       if (res && res.success) {
         showToast("Wajah berhasil didaftarkan!", 'ok', 4000);
@@ -2285,6 +2311,7 @@ function closeEnrollment() {
     enrollStream = null;
   }
   enrollCaptureInProgress = false;
+  enrollFrontPhoto = null;   // reset
   document.getElementById('enrollScreen').classList.add('hidden');
 }
 
@@ -2438,7 +2465,7 @@ function updateKioskChallengeUI(index) {
 }
 
 // ============================================================
-// START ATTENDANCE (per-user liveness)
+// START ATTENDANCE
 // ============================================================
 function startAttendance(type) {
   attType = type;
@@ -2458,12 +2485,10 @@ function startAttendance(type) {
     return;
   }
 
-  // Ambil setting efektif (per-user override atau global)
   var eff = getEffectiveLivenessSettings(user);
   ACTIVE_LIVENESS_MODE = eff.mode;
   LIVENESS_CHALLENGES = buildChallengesFromString(eff.challenges);
 
-  // Jika tidak ada challenge → auto match langsung
   livenessChallengeIndex = 0;
   livenessHoldStart = 0;
   livenessVerifiedDescriptors = [];
@@ -2484,7 +2509,6 @@ function startAttendance(type) {
   var waitLabel = (type === 'IN') ? 'TUNGGU VERIFIKASI MASUK' : 'TUNGGU VERIFIKASI KELUAR';
   document.getElementById('absBtn').innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + waitLabel;
 
-  // Atur UI sesuai mode
   if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
     document.getElementById('challengeBox').style.display = 'none';
     document.getElementById('silentBanner').classList.add('active');
@@ -2570,7 +2594,6 @@ function startAbsNoInstrTimer() {
       else timerEl.classList.remove('warn');
     }
     if (elapsed >= ABS_NO_INSTR_TIMEOUT) {
-      // Timeout
       absNoInstrTimeoutTimer = null;
       showToast('Waktu habis. Verifikasi gagal, silakan coba lagi.', 'err', 5000);
       speakText('Waktu habis. Silakan coba lagi.');
@@ -2624,7 +2647,6 @@ function startAbsLoop() {
           return;
         }
 
-        // Mode tanpa challenge → auto submit
         if (LIVENESS_CHALLENGES.length === 0) {
           guide.className = 'face-guide matched';
           status.className = 'face-status ok';
@@ -2696,10 +2718,7 @@ function startAbsLoop() {
             _smileFrameCount = 0;
 
             if (livenessChallengeIndex >= LIVENESS_CHALLENGES.length) {
-              // Selesai
-              if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
-                speakText('Bagus.');
-              }
+              if (ACTIVE_LIVENESS_MODE === 'no_instruction') speakText('Bagus.');
               finishLiveness();
               return;
             } else {
@@ -2707,7 +2726,6 @@ function startAbsLoop() {
               if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
                 speakText('Bagus, lanjut ' + nextLabel);
                 document.getElementById('silentInstruction').innerText = nextLabel;
-                // reset timeout
                 if (absNoInstrTimeoutTimer) { clearTimeout(absNoInstrTimeoutTimer); absNoInstrTimeoutTimer = null; }
                 absNoInstrStartAt = Date.now();
                 startAbsNoInstrTimer();
@@ -2738,7 +2756,6 @@ function startAbsLoop() {
 }
 
 function finishLiveness() {
-  // Stop timeout
   if (absNoInstrTimeoutTimer) { clearTimeout(absNoInstrTimeoutTimer); absNoInstrTimeoutTimer = null; }
 
   var btn = document.getElementById('absBtn');
@@ -2940,6 +2957,14 @@ function clearPermitFile() {
 }
 
 // ============================================================
+// AKHIR BAGIAN 2 — LANJUT BAGIAN 3 DI BAWAH INI
+// ============================================================
+// ============================================================
+// BAGIAN 3 / 3 — KIOSK, DASHBOARD, LOG, APPROVAL,
+// EXPORT, GPS, MAPS, CRUD PEGAWAI
+// ============================================================
+
+// ============================================================
 // KIOSK MODE
 // ============================================================
 function setKioskType(type) {
@@ -3098,7 +3123,6 @@ function startKioskLoop() {
           return;
         }
 
-        // Ambil challenge yang berlaku untuk user ini
         var challenges = kioskActiveChallenges;
         if (!challenges || challenges.length === 0) {
           document.getElementById('kioskInfoText').innerText = 'Memproses absen ' + kioskLivenessFace.nama + '...';
@@ -3142,7 +3166,6 @@ function startKioskLoop() {
                 speakText(nextLbl);
               } else {
                 speakText('Bagus, lanjut ' + nextLbl);
-                // reset timeout
                 if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
                 kioskNoInstrStartAt = Date.now();
                 startKioskNoInstrTimer();
@@ -3193,7 +3216,6 @@ function startKioskLiveness(face) {
   kioskLivenessHoldStart = 0;
   kioskLivenessVerifiedDescriptors = [];
 
-  // Ambil setting efektif untuk user ini
   var eff = getEffectiveLivenessSettings({
     livenessMode: face.livenessMode || '',
     livenessChallenges: face.livenessChallenges || ''
@@ -3213,14 +3235,12 @@ function startKioskLiveness(face) {
   kioskLivenessActive = true;
 
   if (kioskActiveMode === 'no_instruction') {
-    // Mode tanpa UI challenge — TTS-only
     document.getElementById('kioskChallenge').classList.add('hidden');
     document.getElementById('kioskInfoText').innerText = 'Ikuti panduan suara...';
     speakText('Halo ' + face.nama + '. ' + kioskActiveChallenges[0].label);
     kioskNoInstrStartAt = Date.now();
     startKioskNoInstrTimer();
   } else {
-    // Mode instruksi — tampilkan challenge box
     updateKioskChallengeUI(0);
     document.getElementById('kioskInfoText').innerText = 'Ikuti instruksi';
     speakText('Halo ' + face.nama + '. Ikuti instruksi gerakan. ' + kioskActiveChallenges[0].label);
@@ -3273,7 +3293,7 @@ function showKioskResult(res, face) {
     } else {
       if (res && res.alreadyAbsen) speakText(nama + ' sudah absen masuk');
       else if (res && res.belumMasuk) speakText(nama + ' belum absen masuk');
-      else if (res && res.sudahKeluar) speakText(nama + ' sudah absen pulang');
+      else if (res && res.sudahKeluar) speakText(nama + ' sudah absen keluar');
       else if (res && res.alreadyRecent) speakText(nama + ' baru saja absen');
       else if (res && res.message) speakText(res.message);
     }
@@ -3488,7 +3508,7 @@ function loadPegawaiData() {
 }
 
 // ============================================================
-// USER MODAL (dengan liveness per-user)
+// USER MODAL
 // ============================================================
 function openUserModal(id, nama, jab, phone, role, livenessMode, livenessChallenges) {
   document.getElementById('editId').value = id || '';
@@ -3498,13 +3518,11 @@ function openUserModal(id, nama, jab, phone, role, livenessMode, livenessChallen
   document.getElementById('uRole').value = role || 'pegawai';
   document.getElementById('uPass').value = '';
 
-  // Set liveness radio
   var lm = String(livenessMode || '').trim();
   document.getElementById('uLmGlobal').checked = (lm !== 'instruction' && lm !== 'no_instruction');
   document.getElementById('uLmInstruction').checked = (lm === 'instruction');
   document.getElementById('uLmNoInstruction').checked = (lm === 'no_instruction');
 
-  // Set checkbox gerakan
   var chkStr = String(livenessChallenges || '').trim().toUpperCase();
   var keys = chkStr.split(',').map(function(k) { return String(k).trim().toUpperCase(); });
   document.getElementById('uLmChkFront').checked = keys.indexOf('FRONT') >= 0;
@@ -3550,12 +3568,10 @@ function submitUser() {
   if (document.getElementById('uLmChkSmile').checked) arr.push('SMILE');
   var lc = arr.join(',');
 
-  // Validasi: kalau mode bukan global, harus pilih minimal 1 gerakan
   if (lm !== '' && arr.length === 0) {
     showToast('Pilih minimal 1 gerakan untuk mode ini!', 'warn');
     return;
   }
-  // Kalau pilih global, kosongkan challenges
   if (lm === '') lc = '';
 
   var data = {
@@ -4065,7 +4081,7 @@ function submitPermitAction() {
 }
 
 // ============================================================
-// EVENT LISTENERS untuk radio mode liveness di modal user
+// EVENT LISTENER untuk radio mode liveness di modal user
 // ============================================================
 document.addEventListener('change', function(e) {
   if (e.target && e.target.name === 'uLivenessMode') {
@@ -4074,7 +4090,7 @@ document.addEventListener('change', function(e) {
 });
 
 // ============================================================
-// AKHIR FILE
+// AKHIR BAGIAN 3 / AKHIR FILE
 // ============================================================
 </script>
 </body>
