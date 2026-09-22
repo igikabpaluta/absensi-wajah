@@ -2211,11 +2211,11 @@ function finishLiveness() {
   btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
   document.getElementById('absStatus').className = 'face-status ok';
   document.getElementById('absStatus').innerText = 'Verifikasi selesai ✔';
-  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Silakan tekan Absen Sekarang';
+  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Silakan tekan TOMBOL ABSEN SEKARANG';
   document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
   document.getElementById('livenessIndicator').innerText = '● SELESAI';
   document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
-  speakText('Saya kenal Anda, ' + user.nama + '. Silakan tekan absen sekarang.');
+  speakText('Saya kenal Anda, ' + user.nama + '. Silakan TOMBOL ABSEN SEKARANG.');
   window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
 }
 
