@@ -946,13 +946,11 @@ var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
 // LIVENESS STATE
-var LIVENESS_HOLD_MS = 2000;          // Tahan 2 detik per gerakan
-var LIVENESS_TIMEOUT_MS = 15000;      // Timeout 15 detik per gerakan
+var LIVENESS_HOLD_MS = 1000;
 var LIVENESS_CHALLENGES = [
   { key: 'FRONT',  label: 'Hadap Depan',    short: 'DEPAN'  },
   { key: 'LEFT',   label: 'Miring ke KIRI', short: 'KIRI'   },
   { key: 'RIGHT',  label: 'Miring ke KANAN',short: 'KANAN'  },
-  { key: 'UP',     label: 'Tengadah ke ATAS',short: 'ATAS'  },
   { key: 'SMILE',  label: 'SENYUM Sekarang',short: 'SENYUM'}
 ];
 var livenessActive = false;
