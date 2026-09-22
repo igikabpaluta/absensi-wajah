@@ -1355,6 +1355,41 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.remove('hidden');
     document.getElementById('nav-kiosk').classList.add('flex');
   }
+
+  // KUNCI tombol absen SEGERA setelah app muncul
+  setAbsenButtonsState(false, 'Memeriksa wajah...');
+
+  var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
+  welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
+  setTimeout(function() { speakText(welcomeMsg); }, 1000);
+  setTimeout(function() {
+    refreshData();
+    loadJamKerja();
+    window.dispatchEvent(new Event('resize'));
+  }, 50);
+  callAPI('getOfficeLocation', {})
+    .then(function(loc) {
+      if (loc && loc.lat && loc.lng && !loc.error) {
+        office = { lat: loc.lat, lng: loc.lng, rad: loc.rad || 100 };
+        localStorage.setItem('presensi_office_v3', JSON.stringify(office));
+        if (userMap) {
+          try {
+            userOfficeCircle.setLatLng([office.lat, office.lng]).setRadius(office.rad);
+            userOfficeMarker.setLatLng([office.lat, office.lng]);
+            fitMapView();
+          } catch (e) {}
+        }
+        updateGPSUI();
+      }
+    })
+    .catch(function(err) { console.warn('getOfficeLocation gagal:', err); });
+}
+
+
+
+
+
+     
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
   setTimeout(function() { speakText(welcomeMsg); }, 1000);
