@@ -1,3 +1,6 @@
+<!-- ============================================================
+     BAGIAN 1 / 3 — HEAD, CSS, HTML BODY
+     ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -348,6 +351,7 @@ input, select { font-size:16px !important; }
 
 <canvas id="canvas" class="hidden"></canvas>
 <canvas id="thumbCanvas" class="hidden"></canvas>
+<canvas id="enhanceCanvas" class="hidden"></canvas>
 
 <div id="app" class="hidden">
   <header class="p-6 flex justify-between items-center bg-white border-b sticky top-0 z-50">
@@ -516,11 +520,36 @@ input, select { font-size:16px !important; }
     </div>
 
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-key text-amber-500 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Ganti Password Saya</h4>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Password Baru</label>
+          <input type="password" id="myNewPass" placeholder="Password baru"
+            class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Ulangi Password Baru</label>
+          <input type="password" id="myNewPass2" placeholder="Ulangi password baru"
+            class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+        </div>
+        <button onclick="changeMyPassword()" class="w-full bg-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+          <i class="fas fa-save mr-2"></i> SIMPAN PASSWORD BARU
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <h4 class="font-black text-sm uppercase tracking-widest text-gray-400 mb-4">Kelola Wajah Saya</h4>
-      <button onclick="openEnrollment()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+      <button onclick="openEnrollment()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all mb-2">
         <i class="fas fa-face-smile-beam mr-2"></i> DAFTARKAN ULANG WAJAH
       </button>
-      <p class="text-[10px] text-gray-400 text-center mt-3">Gunakan jika wajah Anda tidak dikenali lagi</p>
+      <button onclick="resetMyFace()" class="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+        <i class="fas fa-trash mr-2"></i> RESET WAJAH SAYA
+      </button>
+      <p class="text-[10px] text-gray-400 text-center mt-3">Reset wajah jika tidak dikenali / mau daftar ulang</p>
     </div>
   </main>
 
@@ -568,6 +597,42 @@ input, select { font-size:16px !important; }
         <h4 id="statHadir2" class="text-2xl font-black text-emerald-500">0</h4>
       </div>
     </div>
+
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-file-circle-check text-amber-500 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Approval Izin</h4>
+      </div>
+      <div id="permitApprovalList" class="space-y-2">
+        <p class="text-center text-xs text-gray-400 py-3">Memuat...</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-file-export text-emerald-500 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Export & Rekap</h4>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Pilih Bulan Rekap</label>
+          <input type="month" id="rekapBulan"
+            class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs font-bold outline-none text-gray-600">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="exportLogCSV()" class="bg-emerald-500 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs">
+            <i class="fas fa-file-csv mr-1"></i> EXPORT CSV
+          </button>
+          <button onclick="exportRekapWord()" class="bg-blue-500 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs">
+            <i class="fas fa-file-word mr-1"></i> REKAP WORD
+          </button>
+        </div>
+        <button onclick="exportRekapExcel()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs">
+          <i class="fas fa-file-excel mr-1"></i> REKAP EXCEL (BULANAN)
+        </button>
+      </div>
+    </div>
+
     <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="font-black text-sm uppercase text-gray-400">Filter Riwayat</h3>
@@ -723,6 +788,14 @@ input, select { font-size:16px !important; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
+// ============================================================
+// AKHIR BAGIAN 1 — LANJUT BAGIAN 2 DI BAWAH INI
+// ============================================================
+// ============================================================
+// BAGIAN 2 / 3 — VARIABEL GLOBAL, TTS, API WRAPPER, LOGIN,
+// JAM KERJA, GANTI PASSWORD, ENROLLMENT, ABSEN MANUAL
+// ============================================================
+
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
 
 var user = null;
@@ -737,21 +810,27 @@ var adminMap, adminMarker, adminCircle;
 var userMap, userPosMarker, userOfficeCircle, userOfficeMarker;
 var hasInitialGPSFix = false;
 var allLogData = [];
+var allPermitsData = [];
 var _clockInterval = null;
 var _mapInitDone = false;
 
 // TTS STATE
 var _ttsUnlocked = false;
-var _ttsBusy = false;
 var _ttsQueue = [];
 var _ttsQueueRunning = false;
+var _lastSpokenText = '';
+var _speakLastAt = 0;
+var _speakDedupWindow = 2000;
 
+// FACE STATE
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
-var FACE_THRESHOLD = 0.50;
+var FACE_THRESHOLD = 0.55;
+var FACE_THRESHOLD_STRICT = 0.45;
 var FACE_LOOP_INTERVAL = 150;
 var FACE_DETECT_INPUT = 160;
 var FACE_DETECT_THRESHOLD = 0.5;
+var FACE_MATCH_FRAMES_REQUIRED = 3;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
@@ -771,6 +850,8 @@ var enrollCaptureInProgress = false;
 var absStream = null;
 var absLoopTimer = null;
 var absInferenceBusy = false;
+var absMatchFrames = 0;
+var absMatchAnnounced = false;
 
 var kioskStream = null;
 var kioskLoopTimer = null;
@@ -788,7 +869,61 @@ var kioskProcessingUser = null;
 var _permitFile = null;
 
 // ============================================================
-// TTS SYSTEM BARU
+// UTILS
+// ============================================================
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function escapeJsArg(str) {
+  return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ============================================================
+// RETRY FETCH
+// ============================================================
+function fetchWithRetry(url, options, maxRetry) {
+  maxRetry = maxRetry || 2;
+  return new Promise(function(resolve, reject) {
+    var attempt = 0;
+    function doFetch() {
+      attempt++;
+      fetch(url, options)
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(resolve)
+        .catch(function(err) {
+          console.warn('Fetch attempt ' + attempt + ' failed:', err.message);
+          if (attempt <= maxRetry) {
+            setTimeout(doFetch, 800 * attempt);
+          } else {
+            reject(err);
+          }
+        });
+    }
+    doFetch();
+  });
+}
+
+function callAPI(action, payload) {
+  return fetchWithRetry(BACKEND_URL, {
+    method: 'POST',
+    mode: 'cors',
+    cache: 'no-cache',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: action, payload: payload || {} })
+  }, 2).catch(function(err) {
+    console.error('API error [' + action + ']:', err);
+    throw new Error('Gagal terhubung ke server. Periksa koneksi internet Anda.');
+  });
+}
+
+// ============================================================
+// TTS
 // ============================================================
 function unlockTTS() {
   if (_ttsUnlocked) return;
@@ -799,7 +934,6 @@ function unlockTTS() {
     u.lang = 'id-ID';
     window.speechSynthesis.speak(u);
     _ttsUnlocked = true;
-    console.log('TTS unlocked ✅');
   } catch(e) { console.warn('TTS unlock error:', e); }
 }
 
@@ -809,12 +943,12 @@ document.addEventListener('touchstart', unlockTTS, { once: false });
 function speakText(text) {
   if (!text) return;
   try {
-    if (!('speechSynthesis' in window)) {
-      console.warn('SpeechSynthesis tidak didukung browser');
-      return;
-    }
+    if (!('speechSynthesis' in window)) return;
+    var now = Date.now();
+    if (_lastSpokenText === text && (now - _speakLastAt) < _speakDedupWindow) return;
+    _lastSpokenText = text;
+    _speakLastAt = now;
     _ttsQueue.push(text);
-    console.log('TTS Queue +:', text, '(total:', _ttsQueue.length + ')');
     if (!_ttsQueueRunning) {
       _ttsQueueRunning = true;
       processTTSQueue();
@@ -828,160 +962,39 @@ function processTTSQueue() {
     return;
   }
   var text = _ttsQueue.shift();
-  console.log('TTS Speaking:', text);
   try {
     var utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'id-ID';
     utter.rate = 0.92;
     utter.pitch = 1.0;
     utter.volume = 1.0;
-
     var finished = false;
     var finishOnce = function() {
       if (finished) return;
       finished = true;
       setTimeout(processTTSQueue, 300);
     };
-
     utter.onend = finishOnce;
-    utter.onerror = function(e) {
-      console.warn('TTS onerror:', e);
-      finishOnce();
-    };
-
+    utter.onerror = function() { finishOnce(); };
     setTimeout(function() {
-      if (!finished) {
-        console.warn('TTS timeout — paksa lanjut');
-        finishOnce();
-      }
+      if (!finished) finishOnce();
     }, 20000);
-
     window.speechSynthesis.speak(utter);
   } catch(e) {
-    console.warn('TTS speak error:', e);
     setTimeout(processTTSQueue, 300);
   }
 }
 
 function testTTS() {
   unlockTTS();
-  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi wajah dan lokasi buatan Pak Ramadan Hasibuan, S.Pd.');
-  showToast('🔊 Test suara dijalankan', 'info', 3000);
+  speakText('Tes suara berhasil. Selamat datang di aplikasi absensi wajah dan lokasi.');
+  showToast('🔊 Test suara dijalankan', 'info', 3000, true);
 }
 
 // ============================================================
-// BUILD TTS ABSENSI - VERSI ROBUST
+// SHOW TOAST + AUTO TTS
 // ============================================================
-function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
-  // Ambil jam:menit dari serverTime (format "HH:mm:ss" → "HH:mm")
-  var jamAbsen = '';
-  if (serverTime) {
-    var st = String(serverTime);
-    jamAbsen = st.substring(0, 5);
-  }
-  // Kalau serverTime kosong, pakai jam HP
-  if (!jamAbsen) {
-    var now = new Date();
-    jamAbsen = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  }
-
-  // Ambil data dari jamKerja (dengan fallback)
-  var jamMasuk = jamKerja.jam_masuk || '08:00';
-  var jamKeluar = jamKerja.jam_keluar || '17:00';
-  var toleransi = jamKerja.toleransi_telat || '15';
-
-  // Debug log
-  console.log('buildAttendanceTTS:', {
-    namaUser: namaUser,
-    type: type,
-    keterangan: keterangan,
-    serverTime: serverTime,
-    jamAbsen: jamAbsen,
-    jamMasuk: jamMasuk,
-    jamKeluar: jamKeluar,
-    toleransi: toleransi
-  });
-
-  if (type === 'IN') {
-    var menitTelat = null;
-    if (keterangan) {
-      var ket = String(keterangan);
-      var m1 = ket.match(/Terlambat\s+(\d+)\s*menit/i);
-      if (m1) menitTelat = m1[1];
-      if (!menitTelat) {
-        var m2 = ket.match(/Terlambat[:\s]+(\d+)\s*menit/i);
-        if (m2) menitTelat = m2[1];
-      }
-      if (!menitTelat) {
-        var m3 = ket.match(/Terlambat\s+(\d+)/i);
-        if (m3) menitTelat = m3[1];
-      }
-    }
-
-    if (menitTelat) {
-      return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. ' +
-             'Jam masuk ' + jamMasuk + ', ' +
-             'toleransi ' + toleransi + ' menit. ' +
-             'Anda absen saat ini jam ' + jamAbsen + '.';
-    }
-    return namaUser + ' tercatat hadir.';
-  } else {
-    var menitAwal = null;
-    if (keterangan) {
-      var ket2 = String(keterangan);
-      var n1 = ket2.match(/Pulang Awal\s+(\d+)\s*menit/i);
-      if (n1) menitAwal = n1[1];
-      if (!menitAwal) {
-        var n2 = ket2.match(/Pulang Awal[:\s]+(\d+)\s*menit/i);
-        if (n2) menitAwal = n2[1];
-      }
-      if (!menitAwal) {
-        var n3 = ket2.match(/Pulang Awal\s+(\d+)/i);
-        if (n3) menitAwal = n3[1];
-      }
-    }
-
-    if (menitAwal) {
-      return namaUser + ' pulang lebih awal, jadi ' + menitAwal + ' menit lagi akan tiba waktu pulang. ' +
-             'Jam Pulang ' + jamKeluar + ', ' +
-             'Anda absen saat ini jam ' + jamAbsen + '.';
-    }
-    return namaUser + ' tercatat pulang.';
-  }
-}
-
-// ============================================================
-// API WRAPPER
-// ============================================================
-function callAPI(action, payload) {
-  return fetch(BACKEND_URL, {
-    method: 'POST',
-    mode: 'cors',
-    cache: 'no-cache',
-    redirect: 'follow',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: action, payload: payload || {} })
-  })
-  .then(function(response) {
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    return response.json();
-  })
-  .catch(function(err) {
-    console.error('API error [' + action + ']:', err);
-    throw err;
-  });
-}
-
-function escapeHtml(str) {
-  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-  });
-}
-function escapeJsArg(str) {
-  return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function showToast(msg, type, duration) {
+function showToast(msg, type, duration, silent) {
   var t = document.getElementById('toast');
   type = type || 'info';
   duration = duration || 4000;
@@ -991,6 +1004,7 @@ function showToast(msg, type, duration) {
     info: 'fa-circle-info',
     warn: 'fa-triangle-exclamation'
   };
+  var plain = String(msg).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/^🔊\s*/, '').trim();
   t.className = 'toast ' + type;
   t.innerHTML = '<i class="fas ' + (icons[type] || icons.info) + '"></i>' + escapeHtml(msg);
   t.classList.add('show');
@@ -998,6 +1012,9 @@ function showToast(msg, type, duration) {
   t._timer = setTimeout(function() {
     t.classList.remove('show');
   }, duration);
+  if (!silent && plain) {
+    speakText(plain);
+  }
 }
 
 function startTime() {
@@ -1010,6 +1027,7 @@ function startTime() {
     if (d) d.innerText = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   }, 1000);
 }
+
 function calculateDist(l1, ln1, l2, ln2) {
   var R = 6371e3;
   var dLa = (l2 - l1) * Math.PI / 180;
@@ -1030,6 +1048,50 @@ function makeThumbnail(video) {
   return can.toDataURL('image/jpeg', 0.6);
 }
 
+// ============================================================
+// AUTO-ENHANCE CAHAYA REDUP
+// ============================================================
+function enhanceFrameForFaceAPI(videoEl) {
+  try {
+    var can = document.getElementById('enhanceCanvas');
+    var w = videoEl.videoWidth;
+    var h = videoEl.videoHeight;
+    if (!w || !h) return videoEl;
+    can.width = w;
+    can.height = h;
+    var ctx = can.getContext('2d');
+    ctx.drawImage(videoEl, 0, 0, w, h);
+    var sample = ctx.getImageData(0, 0, w, h);
+    var data = sample.data;
+    var sum = 0;
+    var step = 4 * 40;
+    var count = 0;
+    for (var i = 0; i < data.length; i += step) {
+      sum += (data[i] + data[i+1] + data[i+2]) / 3;
+      count++;
+    }
+    var avg = sum / count;
+    if (avg < 90) {
+      var boost = Math.min(2.0, 1 + (90 - avg) / 90);
+      var imgData = ctx.getImageData(0, 0, w, h);
+      var d = imgData.data;
+      for (var j = 0; j < d.length; j += 4) {
+        d[j]   = Math.min(255, d[j]   * boost);
+        d[j+1] = Math.min(255, d[j+1] * boost);
+        d[j+2] = Math.min(255, d[j+2] * boost);
+      }
+      ctx.putImageData(imgData, 0, 0);
+      return can;
+    }
+    return videoEl;
+  } catch(e) {
+    return videoEl;
+  }
+}
+
+// ============================================================
+// FACE MODELS
+// ============================================================
 function loadFaceModels() {
   if (faceModelsLoaded) return Promise.resolve(true);
   if (faceModelsLoading) {
@@ -1047,7 +1109,6 @@ function loadFaceModels() {
   faceModelsLoading = true;
   if (typeof faceapi === 'undefined') {
     faceModelsLoading = false;
-    console.error('face-api.js tidak termuat');
     return Promise.resolve(false);
   }
   return Promise.all([
@@ -1057,10 +1118,8 @@ function loadFaceModels() {
   ]).then(function() {
     faceModelsLoaded = true;
     faceModelsLoading = false;
-    console.log('Face models loaded');
     return true;
-  }).catch(function(err) {
-    console.warn('CDN utama gagal, coba fallback', err);
+  }).catch(function() {
     return Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODEL_URL_FALLBACK),
       faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODEL_URL_FALLBACK),
@@ -1068,16 +1127,17 @@ function loadFaceModels() {
     ]).then(function() {
       faceModelsLoaded = true;
       faceModelsLoading = false;
-      console.log('Face models loaded (fallback)');
       return true;
-    }).catch(function(err2) {
+    }).catch(function() {
       faceModelsLoading = false;
-      console.error('Gagal load face models:', err2);
       return false;
     });
   });
 }
 
+// ============================================================
+// WINDOW ONLOAD
+// ============================================================
 window.onload = function() {
   startTime();
   initGPS();
@@ -1099,6 +1159,51 @@ window.onload = function() {
   setupPermitFileListeners();
 };
 
+// ============================================================
+// LOGIN / LOGOUT / SETUP APP
+// ============================================================
+function handleLogin() {
+  unlockTTS();
+  var phone = document.getElementById('loginPhone').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  var btn = document.getElementById('btnLogin');
+  if (!phone || !pass) return showToast("Harap isi semua bidang!", 'warn');
+  btn.innerHTML = 'Memproses...';
+  callAPI('checkLogin', { phone: phone, password: pass })
+    .then(function(res) {
+      btn.innerHTML = 'MASUK SEKARANG';
+      if (res && res.success) {
+        user = res.user;
+        localStorage.setItem('presensi_user_v3', JSON.stringify(user));
+        speakText('Selamat datang, ' + user.nama);
+        setupApp();
+        checkFaceAndRedirect();
+      } else {
+        showToast(res ? res.message : "Terjadi kesalahan server", 'err');
+      }
+    })
+    .catch(function(err) {
+      btn.innerHTML = 'MASUK SEKARANG';
+      showToast(err.message || "Gagal terhubung ke server", 'err');
+    });
+}
+
+function handleLogout() {
+  localStorage.removeItem('presensi_user_v3');
+  user = null;
+  userFaceEnrolled = false;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginPhone').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('nav-setting').classList.add('hidden');
+  document.getElementById('nav-pegawai').classList.add('hidden');
+  document.getElementById('nav-log').classList.add('hidden');
+  document.getElementById('nav-kiosk').classList.add('hidden');
+  switchTab('home');
+  showToast("Anda telah keluar", 'info', 3000);
+}
+
 function setupApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
@@ -1115,10 +1220,7 @@ function setupApp() {
   }
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
-  setTimeout(function() {
-    speakText(welcomeMsg);
-  }, 1000);
-
+  setTimeout(function() { speakText(welcomeMsg); }, 1000);
   setTimeout(function() {
     refreshData();
     loadJamKerja();
@@ -1166,50 +1268,9 @@ function switchTab(id) {
       if (userMap) { userMap.invalidateSize(); centerMapOnUser(); }
       else initUserMap(office.lat, office.lng, office.rad);
     } else if (id === 'pegawai') loadPegawaiData();
-    else if (id === 'log') loadAttendanceLog();
+    else if (id === 'log') { loadAttendanceLog(); loadPermitApproval(); }
     else if (id === 'kiosk') openKiosk();
   }, 20);
-}
-
-function handleLogin() {
-  unlockTTS();
-  var phone = document.getElementById('loginPhone').value.trim();
-  var pass = document.getElementById('loginPass').value;
-  var btn = document.getElementById('btnLogin');
-  if (!phone || !pass) return showToast("Harap isi semua bidang!", 'warn');
-  btn.innerHTML = 'Memproses...';
-  callAPI('checkLogin', { phone: phone, password: pass })
-    .then(function(res) {
-      btn.innerHTML = 'MASUK SEKARANG';
-      if (res && res.success) {
-        user = res.user;
-        localStorage.setItem('presensi_user_v3', JSON.stringify(user));
-        speakText('Selamat datang, ' + user.nama);
-        setupApp();
-        checkFaceAndRedirect();
-      } else {
-        showToast(res ? res.message : "Terjadi kesalahan server", 'err');
-      }
-    })
-    .catch(function(err) {
-      btn.innerHTML = 'MASUK SEKARANG';
-      showToast("Gagal terhubung ke server", 'err');
-    });
-}
-
-function handleLogout() {
-  localStorage.removeItem('presensi_user_v3');
-  user = null;
-  userFaceEnrolled = false;
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('loginPhone').value = '';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('nav-setting').classList.add('hidden');
-  document.getElementById('nav-pegawai').classList.add('hidden');
-  document.getElementById('nav-log').classList.add('hidden');
-  document.getElementById('nav-kiosk').classList.add('hidden');
-  switchTab('home');
 }
 
 function checkFaceAndRedirect() {
@@ -1249,7 +1310,7 @@ function updateFaceBanner() {
 }
 
 // ============================================================
-// JAM KERJA + SOUND SETTINGS
+// JAM KERJA
 // ============================================================
 function loadJamKerja() {
   callAPI('getJamKerja', {})
@@ -1266,7 +1327,6 @@ function loadJamKerja() {
         if (el3) el3.value = jamKerja.batas_telat || '08:15';
         if (el4) el4.value = jamKerja.toleransi_telat || '15';
         if (el5) el5.value = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
-        console.log('JamKerja loaded:', JSON.stringify(jamKerja));
       }
     })
     .catch(function(err) { console.warn('loadJamKerja gagal:', err); });
@@ -1295,7 +1355,7 @@ function saveJamKerja() {
         showToast(res ? res.message : "Gagal simpan", 'err');
       }
     })
-    .catch(function(err) { showToast("Gagal terhubung ke server", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
 }
 
 function saveSoundSettings() {
@@ -1319,7 +1379,37 @@ function saveSoundSettings() {
         showToast(res ? res.message : "Gagal simpan", 'err');
       }
     })
-    .catch(function(err) { showToast("Gagal terhubung ke server", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
+}
+
+// ============================================================
+// GANTI PASSWORD SENDIRI
+// ============================================================
+function changeMyPassword() {
+  var p1 = document.getElementById('myNewPass').value;
+  var p2 = document.getElementById('myNewPass2').value;
+  if (!p1 || !p2) return showToast("Isi kedua kolom password!", 'warn');
+  if (p1.length < 4) return showToast("Password minimal 4 karakter!", 'warn');
+  if (p1 !== p2) return showToast("Password tidak sama!", 'err');
+  showToast("Menyimpan password...", 'info', 2000);
+  callAPI('editUser', {
+    id: user.id,
+    nama: user.nama,
+    jabatan: user.jabatan,
+    phone: user.phone,
+    role: user.role,
+    password: p1
+  })
+    .then(function(res) {
+      if (res && res.success) {
+        document.getElementById('myNewPass').value = '';
+        document.getElementById('myNewPass2').value = '';
+        showToast("Password berhasil diubah!", 'ok');
+      } else {
+        showToast(res ? res.message : "Gagal simpan", 'err');
+      }
+    })
+    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
 }
 
 // ============================================================
@@ -1350,7 +1440,7 @@ function saveKioskPassword() {
         showToast(res ? res.message : "Gagal simpan", 'err');
       }
     })
-    .catch(function(err) { showToast("Gagal terhubung ke server", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
 }
 
 function openKioskPasswordModal() {
@@ -1358,9 +1448,7 @@ function openKioskPasswordModal() {
   document.getElementById('kioskPwdError').classList.add('hidden');
   document.getElementById('kioskPasswordModal').classList.remove('hidden');
   document.getElementById('kioskPasswordModal').classList.add('flex');
-  setTimeout(function() {
-    document.getElementById('kioskPwdInput').focus();
-  }, 200);
+  setTimeout(function() { document.getElementById('kioskPwdInput').focus(); }, 200);
 }
 
 function closeKioskPasswordModal() {
@@ -1398,41 +1486,24 @@ function verifyKioskPasswordAndClose() {
 }
 
 // ============================================================
-// PERMIT FILE HANDLING
+// RESET WAJAH SENDIRI
 // ============================================================
-function setupPermitFileListeners() {
-  var fileInput = document.getElementById('pFile');
-  var kameraInput = document.getElementById('pFileKamera');
-  if (fileInput) {
-    fileInput.addEventListener('change', function(e) {
-      handlePermitFileSelected(e.target.files[0]);
-    });
-  }
-  if (kameraInput) {
-    kameraInput.addEventListener('change', function(e) {
-      handlePermitFileSelected(e.target.files[0]);
-    });
-  }
-}
-
-function handlePermitFileSelected(file) {
-  if (!file) return;
-  _permitFile = file;
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    document.getElementById('pPreview').src = ev.target.result;
-    document.getElementById('pFileName').innerText = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
-    document.getElementById('pPreviewWrap').classList.remove('hidden');
-  };
-  reader.readAsDataURL(file);
-}
-
-function clearPermitFile() {
-  _permitFile = null;
-  document.getElementById('pFile').value = '';
-  document.getElementById('pFileKamera').value = '';
-  document.getElementById('pPreviewWrap').classList.add('hidden');
-  document.getElementById('pPreview').src = '';
+function resetMyFace() {
+  if (!user) return;
+  if (!confirm("Yakin mau reset wajah Anda? Anda harus daftar ulang wajah.")) return;
+  showToast("Menghapus data wajah...", 'info', 2000);
+  callAPI('deleteFaceDescriptor', { userId: user.id })
+    .then(function(res) {
+      if (res && res.success) {
+        userFaceEnrolled = false;
+        updateFaceBanner();
+        showToast("Wajah berhasil direset. Silakan daftar ulang.", 'ok', 4000);
+        setTimeout(function() { openEnrollment(); }, 1200);
+      } else {
+        showToast(res ? res.message : "Gagal reset", 'err');
+      }
+    })
+    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
 }
 
 // ============================================================
@@ -1477,6 +1548,7 @@ function openEnrollment() {
     if (!ok) {
       document.getElementById('enrollStatus').innerText = 'Gagal memuat model AI';
       document.getElementById('enrollStatus').className = 'face-status warn';
+      showToast('Gagal memuat model AI', 'err');
       return;
     }
     navigator.mediaDevices.getUserMedia({
@@ -1507,20 +1579,19 @@ function startEnrollLoop() {
     if (enrollInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
     if (enrollCaptureInProgress) return;
     enrollInferenceBusy = true;
-    faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
+    var src = enhanceFrameForFaceAPI(video);
+    faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
       .withFaceLandmarks()
       .then(function(det) {
         var guide = document.getElementById('enrollGuide');
         var status = document.getElementById('enrollStatus');
         var btn = document.getElementById('enrollBtn');
-
         if (det) {
           guide.className = 'face-guide detected';
           status.className = 'face-status ok';
           status.innerText = 'Wajah terdeteksi - siap capture';
           btn.disabled = false;
           btn.classList.remove('opacity-50', 'cursor-not-allowed');
-
           if (enrollMode === 'auto') {
             var box = det.detection.box;
             if (enrollLastStableBox) {
@@ -1528,14 +1599,10 @@ function startEnrollLoop() {
               var dy = Math.abs(box.y - enrollLastStableBox.y);
               var dw = Math.abs(box.width - enrollLastStableBox.width);
               var threshold = box.width * 0.10;
-              if (dx < threshold && dy < threshold && dw < threshold) {
-                enrollStableFrames++;
-              } else {
-                enrollStableFrames = 0;
-              }
+              if (dx < threshold && dy < threshold && dw < threshold) enrollStableFrames++;
+              else enrollStableFrames = 0;
             }
             enrollLastStableBox = { x: box.x, y: box.y, width: box.width, height: box.height };
-
             if (enrollStableFrames >= ENROLL_STABLE_REQUIRED) {
               guide.className = 'face-guide stable';
               status.className = 'face-status stable';
@@ -1574,9 +1641,7 @@ function autoCaptureEnroll() {
   enrollStep = 0;
   enrollDescriptors = [];
   document.getElementById('enrollStep').innerText = '0';
-
   var instructions = ['Hadap depan', 'Miring ke kiri', 'Miring ke kanan'];
-
   function doCapture(index) {
     if (index >= 3) {
       enrollCaptureInProgress = false;
@@ -1586,10 +1651,11 @@ function autoCaptureEnroll() {
     document.getElementById('enrollInstruction').innerText = instructions[index];
     document.getElementById('enrollStatus').className = 'face-status stable';
     document.getElementById('enrollStatus').innerText = 'Capture ' + (index + 1) + '/3... jangan bergerak';
-
+    speakText(instructions[index]);
     setTimeout(function() {
       var video = document.getElementById('enrollVideo');
-      faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: FACE_DETECT_THRESHOLD }))
+      var src = enhanceFrameForFaceAPI(video);
+      faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: FACE_DETECT_THRESHOLD }))
         .withFaceLandmarks()
         .withFaceDescriptor()
         .then(function(det) {
@@ -1612,7 +1678,6 @@ function autoCaptureEnroll() {
         });
     }, 800);
   }
-
   doCapture(0);
 }
 
@@ -1623,7 +1688,8 @@ function captureEnroll() {
   btn.disabled = true;
   btn.classList.add('opacity-50', 'cursor-not-allowed');
   btn.innerHTML = 'Memproses...';
-  faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: FACE_DETECT_THRESHOLD }))
+  var src = enhanceFrameForFaceAPI(video);
+  faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: FACE_DETECT_THRESHOLD }))
     .withFaceLandmarks()
     .withFaceDescriptor()
     .then(function(det) {
@@ -1662,11 +1728,29 @@ function finalizeEnrollment() {
     showToast("Capture belum lengkap. Butuh 3x.", 'warn');
     return;
   }
-  showToast("Menyimpan data wajah...", 'info', 3000);
+  showToast("Memeriksa wajah...", 'info', 2000);
   var video = document.getElementById('enrollVideo');
   var avgDescriptor = averageDescriptors(enrollDescriptors);
   var thumb = makeThumbnail(video);
-  saveEnrollment(avgDescriptor, thumb);
+
+  // PRE-CHECK DUPLICATE via API
+  callAPI('checkFaceDuplicateApi', { descriptor: avgDescriptor, excludeUserId: user.id })
+    .then(function(dup) {
+      if (dup && dup.duplicate && dup.matchedUser) {
+        showToast("Wajah ini sudah terdaftar untuk " + dup.matchedUser.nama + ". Hubungi admin.", 'err', 6000);
+        enrollStep = 0;
+        enrollDescriptors = [];
+        enrollCaptureInProgress = false;
+        document.getElementById('enrollStep').innerText = '0';
+        return;
+      }
+      saveEnrollment(avgDescriptor, thumb);
+    })
+    .catch(function(err) {
+      // Kalau pre-check gagal, lanjut simpan (backend masih cek ulang)
+      console.warn('Pre-check duplicate gagal:', err);
+      saveEnrollment(avgDescriptor, thumb);
+    });
 }
 
 function averageDescriptors(descriptors) {
@@ -1684,7 +1768,6 @@ function saveEnrollment(descriptor, thumbnail) {
     .then(function(res) {
       if (res && res.success) {
         showToast("Wajah berhasil didaftarkan!", 'ok', 4000);
-        speakText(user.nama + ' wajah berhasil didaftarkan');
         userFaceEnrolled = true;
         closeEnrollment();
         updateFaceBanner();
@@ -1697,7 +1780,7 @@ function saveEnrollment(descriptor, thumbnail) {
       }
     })
     .catch(function(err) {
-      showToast("Gagal terhubung ke server", 'err');
+      showToast(err.message || "Gagal terhubung ke server", 'err');
       enrollCaptureInProgress = false;
     });
 }
@@ -1720,11 +1803,13 @@ function closeEnrollment() {
 }
 
 // ============================================================
-// ABSEN (IN / OUT)
+// ABSEN (IN / OUT) MANUAL
 // ============================================================
 function startAttendance(type) {
   attType = type;
   unlockTTS();
+  absMatchFrames = 0;
+  absMatchAnnounced = false;
   if (!userFaceEnrolled) {
     showToast("Wajah belum terdaftar! Daftar dulu.", 'warn');
     setTimeout(openEnrollment, 800);
@@ -1746,7 +1831,6 @@ function startAttendance(type) {
   document.getElementById('absInstruction').innerText = 'Bersiap...';
   document.getElementById('absBtn').disabled = true;
   document.getElementById('absBtn').classList.add('opacity-50', 'cursor-not-allowed');
-
   loadFaceModels().then(function(ok) {
     if (!ok) {
       document.getElementById('absStatus').innerText = 'Gagal memuat model AI';
@@ -1764,7 +1848,7 @@ function startAttendance(type) {
         startAbsCamera();
       })
       .catch(function(err) {
-        showToast("Gagal ambil data wajah", 'err');
+        showToast(err.message || "Gagal ambil data wajah", 'err');
         closeAbsen();
       });
   });
@@ -1797,7 +1881,8 @@ function startAbsLoop() {
   absLoopTimer = setInterval(function() {
     if (absInferenceBusy || !faceModelsLoaded || !video.videoWidth || !window._savedDescriptor) return;
     absInferenceBusy = true;
-    faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
+    var src = enhanceFrameForFaceAPI(video);
+    faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
       .withFaceLandmarks()
       .withFaceDescriptor()
       .then(function(det) {
@@ -1810,18 +1895,26 @@ function startAbsLoop() {
           status.innerText = 'Wajah tidak terdeteksi';
           btn.disabled = true;
           btn.classList.add('opacity-50', 'cursor-not-allowed');
+          absMatchFrames = 0;
           return;
         }
         var dist = faceapi.euclideanDistance(Array.from(det.descriptor), window._savedDescriptor);
         if (dist < FACE_THRESHOLD) {
+          absMatchFrames++;
           guide.className = 'face-guide matched';
           status.className = 'face-status ok';
           status.innerText = 'Wajah COCOK (skor: ' + (1 - dist).toFixed(2) + ')';
-          document.getElementById('absInstruction').innerText = 'Wajah dikenali! Tekan Absen Sekarang';
+          document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Silakan tekan Absen Sekarang';
           btn.disabled = false;
           btn.classList.remove('opacity-50', 'cursor-not-allowed');
           window._currentAbsDescriptor = Array.from(det.descriptor);
+          // TTS sekali saja per sesi
+          if (!absMatchAnnounced && absMatchFrames >= FACE_MATCH_FRAMES_REQUIRED) {
+            absMatchAnnounced = true;
+            speakText('Saya kenal Anda, ' + user.nama + '. Silakan tekan absen sekarang.');
+          }
         } else {
+          absMatchFrames = 0;
           guide.className = 'face-guide detected';
           status.className = 'face-status warn';
           status.innerText = 'Wajah tidak cocok (skor: ' + (1 - dist).toFixed(2) + ')';
@@ -1855,12 +1948,11 @@ function captureAbsen() {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
       if (res && res.success) {
-        var serverTime = res.serverTime || '';
-        var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', serverTime);
+        var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', res.serverTime || '');
         speakText(suara);
         var toastMsg = res.message || "Absen berhasil!";
         if (res.keterangan) toastMsg += ' — ' + res.keterangan;
-        showToast(toastMsg, 'ok', 5000);
+        showToast(toastMsg, 'ok', 5000, true); // silent karena sudah TTS di atas
         closeAbsen();
         refreshData();
       } else {
@@ -1870,7 +1962,7 @@ function captureAbsen() {
     .catch(function(err) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
-      showToast("Gagal kirim absensi", 'err');
+      showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
 
@@ -1881,8 +1973,85 @@ function closeAbsen() {
     absStream = null;
   }
   window._currentAbsDescriptor = null;
+  absMatchAnnounced = false;
+  absMatchFrames = 0;
   document.getElementById('absScreen').classList.add('hidden');
 }
+
+// ============================================================
+// BUILD TTS ABSENSI
+// ============================================================
+function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
+  var jamAbsen = '';
+  if (serverTime) jamAbsen = String(serverTime).substring(0, 5);
+  if (!jamAbsen) {
+    var now = new Date();
+    jamAbsen = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+  var jamMasuk = jamKerja.jam_masuk || '08:00';
+  var jamKeluar = jamKerja.jam_keluar || '17:00';
+  var toleransi = jamKerja.toleransi_telat || '15';
+
+  if (type === 'IN') {
+    var menitTelat = null;
+    if (keterangan) {
+      var m1 = String(keterangan).match(/Terlambat\s+(\d+)\s*menit/i);
+      if (m1) menitTelat = m1[1];
+    }
+    if (menitTelat) {
+      return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. Jam masuk ' + jamMasuk + ', toleransi ' + toleransi + ' menit. Anda absen saat ini jam ' + jamAbsen + '.';
+    }
+    return namaUser + ' tercatat hadir pada jam ' + jamAbsen + '.';
+  } else {
+    var menitAwal = null;
+    if (keterangan) {
+      var n1 = String(keterangan).match(/Pulang Awal\s+(\d+)\s*menit/i);
+      if (n1) menitAwal = n1[1];
+    }
+    if (menitAwal) {
+      return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. Jam pulang ' + jamKeluar + '. Anda absen saat ini jam ' + jamAbsen + '.';
+    }
+    return namaUser + ' tercatat pulang pada jam ' + jamAbsen + '.';
+  }
+}
+
+// ============================================================
+// PERMIT FILE
+// ============================================================
+function setupPermitFileListeners() {
+  var fileInput = document.getElementById('pFile');
+  var kameraInput = document.getElementById('pFileKamera');
+  if (fileInput) fileInput.addEventListener('change', function(e) { handlePermitFileSelected(e.target.files[0]); });
+  if (kameraInput) kameraInput.addEventListener('change', function(e) { handlePermitFileSelected(e.target.files[0]); });
+}
+
+function handlePermitFileSelected(file) {
+  if (!file) return;
+  _permitFile = file;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('pPreview').src = ev.target.result;
+    document.getElementById('pFileName').innerText = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+    document.getElementById('pPreviewWrap').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPermitFile() {
+  _permitFile = null;
+  document.getElementById('pFile').value = '';
+  document.getElementById('pFileKamera').value = '';
+  document.getElementById('pPreviewWrap').classList.add('hidden');
+  document.getElementById('pPreview').src = '';
+}
+
+// ============================================================
+// AKHIR BAGIAN 2 — LANJUT BAGIAN 3 DI BAWAH INI
+// ============================================================
+// ============================================================
+// BAGIAN 3 / 3 — KIOSK, DASHBOARD, LOG, APPROVAL IZIN,
+// EXPORT CSV/EXCEL/WORD, GPS, MAPS, CRUD PEGAWAI, PENUTUP
+// ============================================================
 
 // ============================================================
 // KIOSK MODE
@@ -1920,7 +2089,6 @@ function openKiosk() {
     showToast("Di luar radius kantor (" + Math.round(dist) + "m)", 'err');
     return;
   }
-
   document.getElementById('kioskScreen').classList.remove('hidden');
   kioskMode = 'auto';
   kioskType = 'IN';
@@ -1950,7 +2118,7 @@ function openKiosk() {
         startKioskCamera();
       })
       .catch(function(err) {
-        showToast("Gagal ambil data wajah", 'err');
+        showToast(err.message || "Gagal ambil data wajah", 'err');
         closeKiosk();
       });
   });
@@ -2009,7 +2177,8 @@ function startKioskLoop() {
     if (_ttsQueueRunning) return;
 
     kioskInferenceBusy = true;
-    faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
+    var src = enhanceFrameForFaceAPI(video);
+    faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
       .withFaceLandmarks()
       .withFaceDescriptor()
       .then(function(det) {
@@ -2021,7 +2190,6 @@ function startKioskLoop() {
         }
         var descriptor = Array.from(det.descriptor);
         kioskCurrentDescriptor = descriptor;
-
         var bestMatch = null;
         var bestDist = FACE_THRESHOLD;
         for (var i = 0; i < kioskKnownFaces.length; i++) {
@@ -2033,7 +2201,6 @@ function startKioskLoop() {
             bestMatch = f;
           }
         }
-
         if (bestMatch) {
           guide.className = 'kiosk-face-guide matched';
           if (kioskMode === 'auto') {
@@ -2094,7 +2261,7 @@ function kioskProcessAttendance(face) {
     })
     .catch(function(err) {
       kioskProcessingUser = null;
-      showKioskResult({ success: false, message: 'Gagal terhubung server' }, face);
+      showKioskResult({ success: false, message: err.message || 'Gagal terhubung server' }, face);
     });
 }
 
@@ -2112,17 +2279,11 @@ function showKioskResult(res, face) {
       var suara = buildAttendanceTTS(nama, type, ket, serverTime);
       speakText(suara);
     } else {
-      if (res && res.alreadyAbsen) {
-        speakText(nama + ' sudah absen masuk');
-      } else if (res && res.belumMasuk) {
-        speakText(nama + ' belum absen masuk');
-      } else if (res && res.sudahKeluar) {
-        speakText(nama + ' sudah absen pulang');
-      } else if (res && res.alreadyRecent) {
-        speakText(nama + ' baru saja absen');
-      } else if (res && res.message) {
-        speakText(res.message);
-      }
+      if (res && res.alreadyAbsen) speakText(nama + ' sudah absen masuk');
+      else if (res && res.belumMasuk) speakText(nama + ' belum absen masuk');
+      else if (res && res.sudahKeluar) speakText(nama + ' sudah absen keluar');
+      else if (res && res.alreadyRecent) speakText(nama + ' baru saja absen');
+      else if (res && res.message) speakText(res.message);
     }
   } catch (e) { console.warn('TTS error:', e); }
 
@@ -2151,11 +2312,8 @@ function showKioskResult(res, face) {
   }
 
   var timeStr = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-
   var ketHtml = '';
-  if (ket && isOk) {
-    ketHtml = '<div class="kiosk-telat">' + escapeHtml(ket) + '</div>';
-  }
+  if (ket && isOk) ketHtml = '<div class="kiosk-telat">' + escapeHtml(ket) + '</div>';
 
   el.className = 'kiosk-result';
   el.innerHTML =
@@ -2210,10 +2368,8 @@ function refreshData() {
       }
       if (res.jamKerja) {
         jamKerja = res.jamKerja;
-        if (jamKerja.welcome_text) {
-          var el = document.getElementById('jk-welcome');
-          if (el) el.value = jamKerja.welcome_text;
-        }
+        var el = document.getElementById('jk-welcome');
+        if (el && jamKerja.welcome_text) el.value = jamKerja.welcome_text;
         var elT = document.getElementById('jk-toleransi');
         if (elT) elT.value = jamKerja.toleransi_telat || '15';
       }
@@ -2332,7 +2488,7 @@ function submitUser() {
       refreshData();
       if (document.getElementById('tab-pegawai').classList.contains('active')) loadPegawaiData();
     })
-    .catch(function(err) { showToast("Gagal simpan", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal simpan", 'err'); });
 }
 function deleteUserUI(id) {
   if (confirm("Hapus pegawai ini?")) {
@@ -2342,7 +2498,7 @@ function deleteUserUI(id) {
         refreshData();
         if (document.getElementById('tab-pegawai').classList.contains('active')) loadPegawaiData();
       })
-      .catch(function(err) { showToast("Gagal hapus", 'err'); });
+      .catch(function(err) { showToast(err.message || "Gagal hapus", 'err'); });
   }
 }
 
@@ -2385,7 +2541,7 @@ function updateGPSUI() {
 }
 
 // ============================================================
-// MAPS - SATELIT
+// MAPS
 // ============================================================
 function initUserMap(lat, lng, rad) {
   var mc = document.getElementById('user-map');
@@ -2508,7 +2664,7 @@ function saveGPS() {
   showToast("Menyimpan...", 'info', 2000);
   callAPI('updateOfficeSettings', { lat: la, lng: ln, radius: rd })
     .then(function(res) { showToast(res && res.message ? res.message : "Tersimpan", 'ok'); refreshData(); })
-    .catch(function(err) { showToast("Gagal simpan", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal simpan", 'err'); });
 }
 
 // ============================================================
@@ -2572,7 +2728,207 @@ function resetLogFilter() {
 }
 
 // ============================================================
-// PERMIT
+// APPROVAL IZIN (admin)
+// ============================================================
+function loadPermitApproval() {
+  callAPI('getDashboardData', { userId: user.id, role: user.role })
+    .then(function(res) {
+      var permits = (res && res.allPermits) ? res.allPermits : [];
+      var users = (res && res.allUsers) ? res.allUsers : [];
+      allPermitsData = permits;
+      var list = document.getElementById('permitApprovalList');
+      var pending = permits.filter(function(p) { return String(p[5]) === 'Menunggu'; });
+      if (!pending.length) {
+        list.innerHTML = '<p class="text-center text-xs text-gray-400 py-3">Tidak ada izin menunggu approval ✅</p>';
+        return;
+      }
+      list.innerHTML = pending.map(function(p) {
+        var userId = String(p[1]);
+        var u = users.find(function(x) { return String(x[0]) === userId; });
+        var nama = u ? u[1] : 'Anonim';
+        var tanggal = p[2] || '-';
+        var jenis = p[3] || '-';
+        var alasan = p[4] || '-';
+        var idAttr = escapeJsArg(p[0]);
+        return '<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">' +
+          '<div class="flex justify-between items-start">' +
+          '<div><p class="font-black text-sm text-amber-900">' + escapeHtml(nama) + '</p>' +
+          '<p class="text-[10px] text-amber-700 font-bold">' + escapeHtml(jenis) + ' — ' + escapeHtml(tanggal) + '</p></div>' +
+          '<span class="px-2 py-1 bg-amber-500 text-white text-[9px] font-black rounded-lg uppercase">Menunggu</span>' +
+          '</div>' +
+          '<p class="text-xs text-gray-700 bg-white rounded-xl p-3">' + escapeHtml(alasan) + '</p>' +
+          '<div class="flex gap-2 pt-1">' +
+          '<button onclick="approvePermit(\'' + idAttr + '\', \'Disetujui\')" class="flex-1 bg-emerald-500 text-white text-xs font-black py-2.5 rounded-xl shadow active:scale-95 transition-all"><i class="fas fa-check mr-1"></i> SETUJUI</button>' +
+          '<button onclick="approvePermit(\'' + idAttr + '\', \'Ditolak\')" class="flex-1 bg-red-500 text-white text-xs font-black py-2.5 rounded-xl shadow active:scale-95 transition-all"><i class="fas fa-times mr-1"></i> TOLAK</button>' +
+          '</div></div>';
+      }).join('');
+    })
+    .catch(function(err) {
+      console.warn('loadPermitApproval error:', err);
+    });
+}
+
+function approvePermit(id, status) {
+  if (!confirm('Yakin ' + status.toLowerCase() + ' izin ini?')) return;
+  showToast('Memproses...', 'info', 2000);
+  callAPI('updatePermitStatus', { id: id, status: status })
+    .then(function(res) {
+      if (res && res.success) {
+        showToast('Izin ' + status.toLowerCase() + '!', 'ok');
+        loadPermitApproval();
+      } else {
+        showToast(res ? res.message : 'Gagal update', 'err');
+      }
+    })
+    .catch(function(err) { showToast(err.message || 'Gagal terhubung server', 'err'); });
+}
+
+// ============================================================
+// EXPORT LOG CSV (client-side)
+// ============================================================
+function exportLogCSV() {
+  if (!allLogData || !allLogData.length) {
+    showToast('Tidak ada data untuk di-export', 'warn');
+    return;
+  }
+  showToast('Menyiapkan CSV...', 'info', 2000);
+  var rows = [];
+  rows.push(['Nama', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan', 'Latitude', 'Longitude']);
+  allLogData.forEach(function(a) {
+    var nama = a[a.length - 1] || 'Anonim';
+    rows.push([
+      nama,
+      a[2] || '',
+      a[3] || '',
+      a[4] || '',
+      a[9] || 'Hadir',
+      a[12] || '',
+      a[5] || '',
+      a[6] || ''
+    ]);
+  });
+  var csv = rows.map(function(r) {
+    return r.map(function(c) {
+      var s = String(c == null ? '' : c);
+      if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+        s = '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }).join(',');
+  }).join('\n');
+  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'log_absensi_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('CSV berhasil di-download!', 'ok');
+}
+
+// ============================================================
+// REKAP BULANAN EXCEL (client-side)
+// ============================================================
+function exportRekapExcel() {
+  var bulan = document.getElementById('rekapBulan').value;
+  if (!bulan) return showToast('Pilih bulan dulu!', 'warn');
+  showToast('Mengambil data rekap...', 'info', 2000);
+  callAPI('getAttendanceReport', { bulan: bulan })
+    .then(function(res) {
+      if (!res || !res.success) {
+        showToast(res ? res.message : 'Gagal ambil data', 'err');
+        return;
+      }
+      if (!res.data || !res.data.length) {
+        showToast('Tidak ada data di bulan ' + bulan, 'warn');
+        return;
+      }
+      var html = '<html><head><meta charset="utf-8"></head><body>';
+      html += '<table border="1" cellpadding="6" cellspacing="0" style="font-family:Arial;font-size:12px;">';
+      html += '<tr style="background:#4f46e5;color:#fff;font-weight:bold;">';
+      html += '<th>No</th><th>Nama</th><th>Jabatan</th><th>Hari, Tanggal</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Keterangan</th></tr>';
+      res.data.forEach(function(r, i) {
+        html += '<tr>';
+        html += '<td>' + (i + 1) + '</td>';
+        html += '<td>' + escapeHtml(r.nama) + '</td>';
+        html += '<td>' + escapeHtml(r.jabatan) + '</td>';
+        html += '<td>' + escapeHtml(r.hariTanggal) + '</td>';
+        html += '<td>' + escapeHtml(r.jamMasuk) + '</td>';
+        html += '<td>' + escapeHtml(r.jamKeluar) + '</td>';
+        html += '<td>' + escapeHtml(r.status) + '</td>';
+        html += '<td>' + escapeHtml(r.keterangan) + '</td>';
+        html += '</tr>';
+      });
+      html += '</table></body></html>';
+      var blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'rekap_absensi_' + bulan + '.xls';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Rekap Excel berhasil di-download!', 'ok');
+    })
+    .catch(function(err) { showToast(err.message || 'Gagal ambil data', 'err'); });
+}
+
+// ============================================================
+// REKAP BULANAN WORD (client-side)
+// ============================================================
+function exportRekapWord() {
+  var bulan = document.getElementById('rekapBulan').value;
+  if (!bulan) return showToast('Pilih bulan dulu!', 'warn');
+  showToast('Mengambil data rekap...', 'info', 2000);
+  callAPI('getAttendanceReport', { bulan: bulan })
+    .then(function(res) {
+      if (!res || !res.success) {
+        showToast(res ? res.message : 'Gagal ambil data', 'err');
+        return;
+      }
+      if (!res.data || !res.data.length) {
+        showToast('Tidak ada data di bulan ' + bulan, 'warn');
+        return;
+      }
+      var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">';
+      html += '<head><meta charset="utf-8"><title>Rekap Absensi</title></head><body>';
+      html += '<h2 style="text-align:center;font-family:Arial;">REKAP ABSENSI PEGAWAI</h2>';
+      html += '<p style="text-align:center;font-family:Arial;">Periode: ' + escapeHtml(bulan) + '</p>';
+      html += '<table border="1" cellpadding="6" cellspacing="0" style="font-family:Arial;font-size:11px;width:100%;border-collapse:collapse;">';
+      html += '<tr style="background:#4f46e5;color:#fff;font-weight:bold;">';
+      html += '<th>No</th><th>Nama</th><th>Jabatan</th><th>Hari, Tanggal</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Keterangan</th></tr>';
+      res.data.forEach(function(r, i) {
+        html += '<tr>';
+        html += '<td>' + (i + 1) + '</td>';
+        html += '<td>' + escapeHtml(r.nama) + '</td>';
+        html += '<td>' + escapeHtml(r.jabatan) + '</td>';
+        html += '<td>' + escapeHtml(r.hariTanggal) + '</td>';
+        html += '<td>' + escapeHtml(r.jamMasuk) + '</td>';
+        html += '<td>' + escapeHtml(r.jamKeluar) + '</td>';
+        html += '<td>' + escapeHtml(r.status) + '</td>';
+        html += '<td>' + escapeHtml(r.keterangan) + '</td>';
+        html += '</tr>';
+      });
+      html += '</table></body></html>';
+      var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'rekap_absensi_' + bulan + '.doc';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Rekap Word berhasil di-download!', 'ok');
+    })
+    .catch(function(err) { showToast(err.message || 'Gagal ambil data', 'err'); });
+}
+
+// ============================================================
+// PERMIT (IZIN)
 // ============================================================
 function openPermitModal() {
   unlockTTS();
@@ -2639,7 +2995,7 @@ function submitPermitAction() {
         .catch(function(err) {
           btn.innerHTML = 'Kirim';
           btn.disabled = false;
-          showToast("Gagal kirim", 'err');
+          showToast(err.message || "Gagal kirim", 'err');
         });
     };
     img.onerror = function() {
@@ -2651,6 +3007,11 @@ function submitPermitAction() {
   };
   reader.readAsDataURL(_permitFile);
 }
+
+// ============================================================
+// PENUTUP — AKHIR BAGIAN 3 / 3
+// ============================================================
 </script>
 </body>
 </html>
+
