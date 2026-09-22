@@ -1409,30 +1409,30 @@ function switchTab(id) {
 // ============================================================
 // CEK WAJAH TERDAFTAR + GATING TOMBOL ABSEN (BARU v11)
 // ============================================================
-function checkFaceAndRedirect() {
-  if (!user) return;
-  // Nonaktifkan tombol absen dulu
-  setAbsenButtonsState(false, 'Memeriksa wajah...');
-  callAPI('checkFaceEnrolled', { userId: user.id })
-    .then(function(res) {
-      if (res && res.enrolled) {
-        userFaceEnrolled = true;
-        updateFaceBanner();
-        setAbsenButtonsState(true, null);
-        speakText('Wajah Anda terdaftar. Silakan pilih absen masuk atau keluar.');
-      } else {
-        userFaceEnrolled = false;
-        updateFaceBanner();
-        setAbsenButtonsState(false, 'Wajah belum terdaftar');
-        speakText('Wajah Anda belum terdaftar. Silakan daftar wajah terlebih dahulu.');
-        setTimeout(function() { openEnrollment(); }, 1000);
-      }
-    })
-    .catch(function(err) {
-      userFaceEnrolled = false;
-      updateFaceBanner();
-      setAbsenButtonsState(false, 'Gagal cek wajah');
-    });
+function setAbsenButtonsState(enabled, reason) {
+  var btnMasuk = document.getElementById('btnAbsenMasuk');
+  var btnKeluar = document.getElementById('btnAbsenKeluar');
+  if (!btnMasuk || !btnKeluar) return;
+  if (enabled) {
+    btnMasuk.disabled = false;
+    btnKeluar.disabled = false;
+    btnMasuk.classList.remove('opacity-50', 'cursor-not-allowed');
+    btnKeluar.classList.remove('opacity-50', 'cursor-not-allowed');
+    btnMasuk.innerHTML = '<i class="fas fa-face-smile"></i> ABSEN MASUK';
+    btnKeluar.innerHTML = '<i class="fas fa-sign-out-alt"></i> ABSEN KELUAR';
+    btnMasuk.title = '';
+    btnKeluar.title = '';
+  } else {
+    btnMasuk.disabled = true;
+    btnKeluar.disabled = true;
+    btnMasuk.classList.add('opacity-50', 'cursor-not-allowed');
+    btnKeluar.classList.add('opacity-50', 'cursor-not-allowed');
+    var label = reason ? ('<i class="fas fa-lock"></i> ' + reason) : '<i class="fas fa-lock"></i> TERKUNCI';
+    btnMasuk.innerHTML = label;
+    btnKeluar.innerHTML = label;
+    btnMasuk.title = reason || '';
+    btnKeluar.title = reason || '';
+  }
 }
 
 function setAbsenButtonsState(enabled, reason) {
