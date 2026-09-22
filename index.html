@@ -2589,28 +2589,49 @@ function finishLiveness() {
   document.getElementById('absStatus').className = 'face-status ok';
   document.getElementById('absStatus').innerText = 'Verifikasi selesai ✔';
   var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
-  document.getElementById('absInstruction').innerText = 'Silahkan tunggu, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
+  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
   document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
   document.getElementById('livenessIndicator').innerText = '● SELESAI';
   document.getElementById('challengeTimer').innerText = 'Semua langkah selesai';
 
   var ttsMsg = (attType === 'IN')
-    ? 'Silahkan Tunggu, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
-    : 'Silahkan Tunggu, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
+    ? 'Saya kenal Anda, ' + user.nama + '. Absen masuk Anda sedang dikirim.'
+    : 'Saya kenal Anda, ' + user.nama + '. Absen pulang Anda sedang dikirim.';
   speakText(ttsMsg);
 
   window._currentAbsDescriptor = livenessVerifiedDescriptors[livenessVerifiedDescriptors.length - 1] || null;
 
+  // Guard: kalau descriptor null, jangan panggil captureAbsen
+  if (!window._currentAbsDescriptor) {
+    showToast('Verifikasi wajah gagal, silakan ulangi', 'err', 5000);
+    return;
+  }
+
+  // Simpan flag proses
+  window._absenProcessing = true;
+
   setTimeout(function() {
+    // Kalau sudah selesai / layar sudah ditutup, jangan panggil lagi
+    if (!window._absenProcessing) return;
+    if (!window._currentAbsDescriptor) return;
+    if (document.getElementById('absScreen').classList.contains('hidden')) return;
     captureAbsen();
   }, 1000);
 }
 
 function captureAbsen() {
+  // Guard: kalau descriptor sudah null (absen sudah selesai), diam saja — jangan muncul notif
   if (!window._currentAbsDescriptor) {
-    showToast("Verifikasi wajah belum selesai", 'warn');
+    // Cek apakah absen memang sudah selesai (layar sudah ditutup)
+    if (document.getElementById('absScreen').classList.contains('hidden')) {
+      // Sudah selesai → diam (tidak usah notif)
+      return;
+    }
+    // Layar masih terbuka tapi descriptor null → ini benar-benar error
+    showToast("Verifikasi wajah belum selesai", 'warn', 3000, true);  // silent: TTS mati
     return;
   }
+
   unlockTTS();
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
@@ -2636,6 +2657,9 @@ function captureAbsen() {
         msg.indexOf('sudah melakukan absen') >= 0 ||
         msg.indexOf('belum melakukan absen masuk') >= 0
       );
+
+      // Tandai proses selesai — supaya timer finishLiveness tidak panggil lagi
+      window._absenProcessing = false;
 
       if (isDone) {
         var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', res.serverTime || '');
@@ -2663,6 +2687,7 @@ function captureAbsen() {
     })
     .catch(function(err) {
       btn.disabled = false;
+      window._absenProcessing = false;
       showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
@@ -2674,6 +2699,7 @@ function closeAbsen() {
     absStream = null;
   }
   window._currentAbsDescriptor = null;
+  window._absenProcessing = false;   // ← tandai proses selesai
   livenessHoldStart = 0;
   livenessChallengeIndex = 0;
   livenessVerifiedDescriptors = [];
@@ -2681,6 +2707,9 @@ function closeAbsen() {
   document.getElementById('absScreen').classList.add('hidden');
 }
 
+
+
+     
 // ============================================================
 // BUILD TTS ABSENSI
 // ============================================================
