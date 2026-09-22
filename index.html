@@ -1260,7 +1260,7 @@ function checkFaceAndRedirect() {
     banner.className = 'rounded-2xl p-4 flex items-center gap-3 border-2 border-gray-200 bg-gray-50';
     banner.innerHTML = '<div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white"><i class="fas fa-spinner fa-spin"></i></div>' +
       '<div class="flex-1"><p class="font-black text-sm text-gray-700">Memeriksa status wajah...</p>' +
-      '<p class="text-[10px] text-gray-500">Mohon tunggu sebentar</p></div>';
+      '<p class="text-[10px] text-gray-2000">Mohon tunggu sebentar</p></div>';
   }
   callAPI('checkFaceEnrolled', { userId: user.id })
     .then(function(res) {
