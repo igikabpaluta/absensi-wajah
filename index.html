@@ -1,6 +1,7 @@
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v14
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v15
      Bagian 1/3: HEAD, CSS, HTML BODY
+     Fitur: Per-user liveness + Foto enrollment + Foto absen
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -1020,7 +1021,7 @@ input, select { font-size:16px !important; }
 // ============================================================
 // BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
 // JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT 6 FOTO,
-// LIVENESS + DETEKSI SENYUM + PER-USER LIVENESS
+// LIVENESS + FOTO ABSEN (v15)
 // ============================================================
 
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
@@ -1100,7 +1101,7 @@ var enrollLastAutoCaptureAt = 0;
 var ENROLL_STABLE_REQUIRED = 5;
 var ENROLL_AUTO_COOLDOWN = 1200;
 var enrollCaptureInProgress = false;
-var enrollFrontPhoto = null;   // ← FOTO HADAP DEPAN (v14)
+var enrollFrontPhoto = null;
 
 var absStream = null;
 var absLoopTimer = null;
@@ -1343,7 +1344,7 @@ function makeThumbnail(video) {
 }
 
 /**
- * v14: Buat thumbnail HD (400x400) untuk foto hadap depan ke Drive.
+ * Buat thumbnail HD (400x400) untuk foto ke Drive.
  */
 function makeThumbnailHD(video) {
   try {
@@ -1356,6 +1357,18 @@ function makeThumbnailHD(video) {
     var sy = (video.videoHeight - size) / 2;
     ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
     return can.toDataURL('image/jpeg', 0.85);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * v15: Ambil foto dari video absen (untuk foto absen masuk/keluar).
+ */
+function captureAbsenPhoto(videoEl) {
+  try {
+    if (!videoEl || !videoEl.videoWidth) return null;
+    return makeThumbnailHD(videoEl);
   } catch (e) {
     return null;
   }
@@ -2157,7 +2170,6 @@ function autoCaptureEnroll() {
             return;
           }
           enrollDescriptors.push(Array.from(det.descriptor));
-          // v14: Simpan foto hadap depan (capture ke-1 / index 0)
           if (index === 0) {
             enrollFrontPhoto = makeThumbnailHD(video);
           }
@@ -2196,7 +2208,6 @@ function captureEnroll() {
         return;
       }
       enrollDescriptors.push(Array.from(det.descriptor));
-      // v14: Simpan foto hadap depan (capture step-0)
       if (enrollStep === 0) {
         enrollFrontPhoto = makeThumbnailHD(video);
       }
@@ -2267,7 +2278,6 @@ function averageDescriptors(descriptors) {
 }
 
 function saveEnrollment(descriptor, thumbnail) {
-  // v14: kirim photoBase64 juga
   callAPI('saveFaceDescriptor', {
     userId: user.id,
     descriptor: descriptor,
@@ -2311,7 +2321,7 @@ function closeEnrollment() {
     enrollStream = null;
   }
   enrollCaptureInProgress = false;
-  enrollFrontPhoto = null;   // reset
+  enrollFrontPhoto = null;
   document.getElementById('enrollScreen').classList.add('hidden');
 }
 
@@ -2812,12 +2822,17 @@ function captureAbsen() {
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
   btn.innerHTML = 'Proses Mengirim Data Absen, Tunggu Ya..';
+
+  // v15: Ambil foto dari video absen SEBELUM kirim
+  var photoBase64 = captureAbsenPhoto(document.getElementById('absVideo'));
+
   callAPI('submitAttendance', {
     type: attType,
     lat: currentLoc.lat,
     lng: currentLoc.lng,
     userId: user.id,
-    faceMatched: true
+    faceMatched: true,
+    photoBase64: photoBase64 || ''
   })
     .then(function(res) {
       btn.disabled = false;
@@ -3261,11 +3276,16 @@ function kioskProcessAttendance(face) {
   if (kioskProcessingUser) return;
   kioskProcessingUser = face.userId;
   kioskLastResultAt = Date.now();
+
+  // v15: Ambil foto dari video kiosk
+  var photoBase64 = captureAbsenPhoto(document.getElementById('kioskVideo'));
+
   callAPI('submitAttendanceKiosk', {
     userId: face.userId,
     lat: currentLoc.lat,
     lng: currentLoc.lng,
-    mode: kioskType
+    mode: kioskType,
+    photoBase64: photoBase64 || ''
   })
     .then(function(res) {
       kioskProcessingUser = null;
