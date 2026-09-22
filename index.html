@@ -858,8 +858,8 @@ input, select { font-size:16px !important; }
 // AKHIR BAGIAN 1 — LANJUT BAGIAN 2 DI BAWAH INI
 // ============================================================
 // ============================================================
-// BAGIAN 2 / 3 — VARIABEL GLOBAL, TTS, API WRAPPER, LOGIN,
-// JAM KERJA, GANTI PASSWORD, ENROLLMENT, LIVENESS ABSEN
+// BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
+// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT, LIVENESS
 // ============================================================
 
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
@@ -898,7 +898,7 @@ var FACE_DETECT_THRESHOLD = 0.5;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
-// LIVENESS STATE — 5 gerakan, 1 detik per gerakan (lebih cepat)
+// LIVENESS STATE
 var LIVENESS_HOLD_MS = 1000;
 var LIVENESS_TIMEOUT_MS = 15000;
 var LIVENESS_CHALLENGES = [
@@ -1223,7 +1223,7 @@ window.onload = function() {
 };
 
 // ============================================================
-// GATING TOMBOL ABSEN — KUNCI SEBELUM VERIFIKASI
+// GATING TOMBOL ABSEN
 // ============================================================
 function setAbsenButtonsState(enabled, reason) {
   var btnMasuk = document.getElementById('btnAbsenMasuk');
@@ -1254,13 +1254,12 @@ function setAbsenButtonsState(enabled, reason) {
 function checkFaceAndRedirect() {
   if (!user) return;
   setAbsenButtonsState(false, 'Memeriksa wajah...');
-  // Update banner jadi loading
   var banner = document.getElementById('faceBanner');
   if (banner) {
     banner.className = 'rounded-2xl p-4 flex items-center gap-3 border-2 border-gray-200 bg-gray-50';
     banner.innerHTML = '<div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white"><i class="fas fa-spinner fa-spin"></i></div>' +
       '<div class="flex-1"><p class="font-black text-sm text-gray-700">Memeriksa status wajah...</p>' +
-      '<p class="text-[10px] text-gray-2000">Mohon tunggu sebentar</p></div>';
+      '<p class="text-[10px] text-gray-500">Mohon tunggu sebentar</p></div>';
   }
   callAPI('checkFaceEnrolled', { userId: user.id })
     .then(function(res) {
@@ -1320,7 +1319,6 @@ function handleLogin() {
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
         speakText('Selamat datang, ' + user.nama);
         setupApp();
-        // KUNCI tombol absen SEGERA
         setAbsenButtonsState(false, 'Memeriksa wajah...');
         checkFaceAndRedirect();
       } else {
@@ -1364,7 +1362,6 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.add('flex');
   }
 
-  // KUNCI tombol absen SEGERA setelah app muncul
   setAbsenButtonsState(false, 'Memeriksa wajah...');
 
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
@@ -1614,7 +1611,7 @@ function resetMyFace() {
 }
 
 // ============================================================
-// ENROLLMENT
+// ENROLLMENT (Daftar Wajah)
 // ============================================================
 function setEnrollMode(mode) {
   enrollMode = mode;
@@ -1925,31 +1922,19 @@ function getYawRatio(landmarks) {
 
 function getPitchRatio(landmarks) {
   try {
-    // Pakai 2 rasio untuk stabilitas:
-    // Rasio 1: jarak hidung-dagu vs mata-hidung (untuk tengadah)
-    // Rasio 2: posisi hidung [30] vs garis mata (untuk tengadah)
-
     var leftEye = landmarks[36];
     var rightEye = landmarks[45];
     var nose = landmarks[30];
-    var noseTip = landmarks[33];   // ujung hidung
     var chin = landmarks[8];
-
     var eyeY = (leftEye.y + rightEye.y) / 2;
-
-    // Cek validitas landmark dagu
     var lower = chin.y - nose.y;
     if (lower < 5 || lower > 500) {
-      // Dagu tidak valid → pakai fallback hidung
       var upperFB = nose.y - eyeY;
       var lowerFB = Math.abs(nose.y - chin.y) || 60;
       return upperFB / lowerFB;
     }
-
     var upper = nose.y - eyeY;
     var ratio = upper / lower;
-
-    // Clamp ke range wajar
     if (ratio < 0) ratio = 0;
     if (ratio > 2) ratio = 2;
     return ratio;
@@ -1972,28 +1957,17 @@ function matchesChallenge(challengeKey, landmarks) {
   if (challengeKey === 'FRONT') {
     var yaw = getYawRatio(landmarks);
     var pitch = getPitchRatio(landmarks);
-    return Math.abs(yaw) < 0.25 && pitch > 0.35 && pitch < 0.90;
+    return Math.abs(yaw) < 0.30 && pitch > 0.25 && pitch < 1.10;
   }
   if (challengeKey === 'LEFT') return getYawRatio(landmarks) > 0.10;
   if (challengeKey === 'RIGHT') return getYawRatio(landmarks) < -0.10;
-
-  // UP: butuh pitch JAUH lebih kecil dari normal (tengadah signifikan)
   if (challengeKey === 'UP') {
     var p = getPitchRatio(landmarks);
-    // Cek posisi hidung naik di atas garis tengah mata (tengadah ekstrem)
-    var leftEyeY = landmarks[36].y;
-    var rightEyeY = landmarks[45].y;
+    var eyeMidY = (landmarks[36].y + landmarks[45].y) / 2;
     var noseY = landmarks[30].y;
-    var eyeMidY = (leftEyeY + rightEyeY) / 2;
-    // Wajah normal: noseY > eyeMidY (hidung di bawah mata)
-    // Tengadah: hidung naik mendekati/melewati mata, atau jarak mengecil tajam
     var noseToEye = noseY - eyeMidY;
-    // Ambang: kalau jarak hidung ke mata < 12 piksel DAN pitch < 0.55
-    // (dianggap mendongak tajam)
     return p < 0.50 && noseToEye < 8;
-       
   }
-
   if (challengeKey === 'SMILE') return getSmileRatio(landmarks) > 0.36;
   return false;
 }
@@ -2241,7 +2215,6 @@ function captureAbsen() {
 
       var msg = (res && res.message) ? String(res.message) : '';
 
-      // Cek apakah ini "kondisi selesai / sudah absen" → balik HOME
       var isDone = res && res.success;
       var isAlready = res && (
         res.alreadyAbsen ||
@@ -2254,7 +2227,6 @@ function captureAbsen() {
       );
 
       if (isDone) {
-        // ===== ABSEN BERHASIL =====
         var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', res.serverTime || '');
         speakText(suara);
         var toastMsg = msg || "Absen berhasil!";
@@ -2267,7 +2239,6 @@ function captureAbsen() {
         refreshData();
       }
       else if (isAlready) {
-        // ===== SUDAH ABSEN (masuk/pulang) → tetap balik HOME =====
         showToast(msg || 'Anda sudah absen hari ini', 'warn', 5000);
         speakText(msg || 'Anda sudah absen hari ini');
 
@@ -2277,7 +2248,6 @@ function captureAbsen() {
         refreshData();
       }
       else {
-        // ===== GAGAL TEKNIS (wajah, radius, server) → tetap di kamera =====
         showToast(msg || 'Gagal absen', 'err', 5000);
       }
     })
@@ -2287,27 +2257,6 @@ function captureAbsen() {
       showToast(err.message || "Gagal kirim absensi", 'err');
     });
 }
-
-     
-        // === PATCH: kembali ke menu utama ===
-        closeAbsen();
-        switchTab('home');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        refreshData();
-      } else {
-        showToast(res && res.message ? res.message : "Gagal absen", 'err', 5000);
-      }
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ABSEN SEKARANG';
-      showToast(err.message || "Gagal kirim absensi", 'err');
-    });
-}
-
-
-
-     
 
 function closeAbsen() {
   if (absLoopTimer) { clearInterval(absLoopTimer); absLoopTimer = null; }
