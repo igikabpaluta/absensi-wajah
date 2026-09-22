@@ -1990,7 +1990,7 @@ function matchesChallenge(challengeKey, landmarks) {
     var noseToEye = noseY - eyeMidY;
     return p < 0.50 && noseToEye < 8;
   }
-  if (challengeKey === 'SMILE') return getSmileRatio(landmarks) > 0.36;
+  if (challengeKey === 'SMILE') return getSmileRatio(landmarks) > 0.28;
   return false;
 }
 
