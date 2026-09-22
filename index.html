@@ -1310,9 +1310,8 @@ function handleLogin() {
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
         speakText('Selamat datang, ' + user.nama);
         setupApp();
-        // KUNCI TOMBOL ABSEN DULU sebelum cek wajah
+        // KUNCI tombol dulu (double protection)
         setAbsenButtonsState(false, 'Memeriksa wajah...');
-        // Baru cek wajah
         checkFaceAndRedirect();
       } else {
         showToast(res ? res.message : "Terjadi kesalahan server", 'err');
@@ -1356,7 +1355,7 @@ function setupApp() {
     document.getElementById('nav-kiosk').classList.add('flex');
   }
 
-  // KUNCI tombol absen SEGERA setelah app muncul
+  // KUNCI SEGERA — sebelum apapun
   setAbsenButtonsState(false, 'Memeriksa wajah...');
 
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
@@ -1387,9 +1386,6 @@ function setupApp() {
 
 
 
-
-
-     
   var welcomeMsg = jamKerja.welcome_text || 'Halo {nama}, silakan absen';
   welcomeMsg = welcomeMsg.replace(/\{nama\}/g, user.nama);
   setTimeout(function() { speakText(welcomeMsg); }, 1000);
