@@ -1,8 +1,7 @@
-
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v16
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v18
      Bagian 1/3: HEAD, CSS, HTML BODY
-     Fitur: Per-user liveness + Foto enrollment + Foto absen (retry)
+     Fitur: Foto absen masuk/keluar + Rekap lengkap + Backup otomatis
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -262,6 +261,18 @@ input, select { font-size:16px !important; }
   font-size:14px; font-weight:900; background:#f59e0b; color:white;
   margin-top:8px; animation: pulseRing 2s infinite;
 }
+
+/* Rekap tabel scroll */
+.rekap-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.rekap-scroll table {
+  min-width: 1400px;
+}
+.rekap-scroll th, .rekap-scroll td {
+  white-space: nowrap;
+}
 </style>
 </head>
 
@@ -275,7 +286,7 @@ input, select { font-size:16px !important; }
         <i class="fas fa-face-smile"></i>
       </div>
       <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">ABSENSI WAJAH LOKASI</h1>
-      <p class="text-gray-500 mt-2">Dibuat oleh : IGI KAB.PALUTA </p>
+      <p class="text-gray-500 mt-2">Dibuat oleh : IGI KAB.PALUTA</p>
     </div>
     <div class="space-y-4">
       <div class="relative">
@@ -461,6 +472,7 @@ input, select { font-size:16px !important; }
     </div>
   </header>
 
+  <!-- TAB HOME -->
   <main id="tab-home" class="tab-content active p-6 space-y-6">
     <div id="faceBanner" class="rounded-2xl p-4 flex items-center gap-3 border-2 border-gray-200 bg-gray-50">
       <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
@@ -518,6 +530,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
+  <!-- TAB SETTING -->
   <main id="tab-setting" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Setting Kantor</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -531,27 +544,111 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
+    <!-- BACKUP OTOMATIS -->
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-database text-emerald-500 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Backup Otomatis</h4>
+      </div>
+      <p class="text-[10px] text-gray-500 mb-4 italic">Backup akan otomatis dibuat di folder Drive <strong>Presensi_App_Data/Backup/</strong>. Backup lama (>90 hari) otomatis dihapus.</p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Periode Backup</label>
+          <select id="backupPeriod" class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+            <option value="daily">Harian (setiap hari)</option>
+            <option value="weekly" selected>Mingguan (setiap 7 hari)</option>
+            <option value="monthly">Bulanan (setiap 30 hari)</option>
+          </select>
+        </div>
+        <div class="bg-indigo-50 p-3 rounded-xl">
+          <p class="text-[10px] font-bold text-indigo-700">Backup terakhir:</p>
+          <p id="backupLastRun" class="text-xs font-black text-indigo-900 mt-1">Belum pernah</p>
+        </div>
+        <button onclick="saveBackupSettings()" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+          <i class="fas fa-save mr-2"></i> SIMPAN PENGATURAN BACKUP
+        </button>
+        <button onclick="runBackupNow()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+          <i class="fas fa-play mr-2"></i> BACKUP SEKARANG
+        </button>
+      </div>
+    </div>
+
+    <!-- REKAP ABSENSI LENGKAP -->
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-table-list text-indigo-600 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Rekap Absensi Lengkap</h4>
+      </div>
+      <p class="text-[10px] text-gray-500 mb-4 italic">Semua data absen dari kolom userId hingga foto masuk/keluar. Klik foto peta untuk buka Google Maps.</p>
+
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Filter Bulan</label>
+          <input type="month" id="rekapBulanV18"
+            class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="loadRekapLengkap()" class="bg-indigo-600 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs">
+            <i class="fas fa-search mr-1"></i> TAMPILKAN
+          </button>
+          <button onclick="clearRekapFilter()" class="bg-gray-500 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs">
+            <i class="fas fa-eraser mr-1"></i> RESET
+          </button>
+        </div>
+      </div>
+
+      <div class="rekap-scroll border-2 border-gray-100 rounded-2xl">
+        <table class="w-full text-[10px]">
+          <thead>
+            <tr class="bg-slate-900 text-white uppercase tracking-wider text-[9px]">
+              <th class="py-2 px-2 text-left font-bold">No</th>
+              <th class="py-2 px-2 text-left font-bold">Nama</th>
+              <th class="py-2 px-2 text-left font-bold">Jabatan</th>
+              <th class="py-2 px-2 text-left font-bold">Tgl</th>
+              <th class="py-2 px-2 text-left font-bold">Masuk</th>
+              <th class="py-2 px-2 text-left font-bold">Keluar</th>
+              <th class="py-2 px-2 text-center font-bold">Status</th>
+              <th class="py-2 px-2 text-left font-bold">Keterangan</th>
+              <th class="py-2 px-2 text-center font-bold">Foto Masuk</th>
+              <th class="py-2 px-2 text-center font-bold">Foto Keluar</th>
+              <th class="py-2 px-2 text-center font-bold">Peta</th>
+            </tr>
+          </thead>
+          <tbody id="rekapTableBody">
+            <tr><td colspan="11" class="py-8 text-center text-gray-400 text-xs">Klik "TAMPILKAN" untuk memuat data</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex justify-between items-center mt-3">
+        <p id="rekapInfo" class="text-[10px] font-bold text-gray-500">Belum ada data dimuat</p>
+        <button onclick="exportRekapLengkap()" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-xl shadow text-[10px] active:scale-95 transition-all">
+          <i class="fas fa-download mr-1"></i> EXPORT CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- LIVENESS GLOBAL -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-shield-halved text-indigo-600 text-lg"></i>
         <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Mode Liveness Global</h4>
       </div>
-      <p class="text-[10px] text-gray-500 mb-4 italic">Setting ini jadi <strong>default</strong> untuk user yang belum di-set per-user. Bisa di-override di tab Pegawai.</p>
+      <p class="text-[10px] text-gray-500 mb-4 italic">Setting ini jadi <strong>default</strong> untuk user yang belum di-set per-user.</p>
 
       <div class="space-y-3">
         <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
           <input type="radio" name="globalLivenessMode" value="instruction" id="glModeInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
           <div>
             <p class="font-black text-sm text-gray-900">Custom + Instruksi</p>
-            <p class="text-[10px] text-gray-500">Challenge box tampil, user dipandu gerakan satu-satu</p>
+            <p class="text-[10px] text-gray-500">Challenge box tampil, user dipandu</p>
           </div>
         </label>
-
         <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
           <input type="radio" name="globalLivenessMode" value="no_instruction" id="glModeNoInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
           <div>
             <p class="font-black text-sm text-gray-900">Custom Tanpa Instruksi</p>
-            <p class="text-[10px] text-gray-500">Challenge box disembunyikan, TTS-only pandu, auto-submit</p>
+            <p class="text-[10px] text-gray-500">TTS-only pandu, auto-submit</p>
           </div>
         </label>
       </div>
@@ -589,6 +686,7 @@ input, select { font-size:16px !important; }
       </button>
     </div>
 
+    <!-- TITIK KANTOR -->
     <div class="bg-slate-900 p-6 rounded-[2.5rem] text-white shadow-xl">
       <div class="flex justify-between items-center mb-4 px-2">
         <h4 class="font-bold text-[10px] uppercase tracking-widest text-indigo-400">Titik Kantor & Radius</h4>
@@ -614,6 +712,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
+    <!-- JAM KERJA -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-clock text-indigo-600 text-lg"></i>
@@ -631,7 +730,6 @@ input, select { font-size:16px !important; }
         <div>
           <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Batas Telat</label>
           <input type="time" id="jk-telat" class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
-          <p class="text-[10px] text-gray-400 italic ml-2 mt-1">Lewat jam ini = Terlambat</p>
         </div>
         <button onclick="saveJamKerja()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
           <i class="fas fa-save mr-2"></i> SIMPAN JAM KERJA
@@ -639,6 +737,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
+    <!-- SUARA -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-microphone text-purple-500 text-lg"></i>
@@ -654,7 +753,6 @@ input, select { font-size:16px !important; }
           <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Teks TTS Saat Buka Ulang App</label>
           <input type="text" id="jk-welcome" placeholder="Halo {nama}, silakan absen"
             class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
-          <p class="text-[10px] text-gray-400 italic ml-2 mt-1">Gunakan <strong>{nama}</strong> untuk nama user</p>
         </div>
         <button onclick="saveSoundSettings()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
           <i class="fas fa-save mr-2"></i> SIMPAN PENGATURAN SUARA
@@ -665,6 +763,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
+    <!-- PASSWORD KIOSK -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-lock text-red-500 text-lg"></i>
@@ -682,6 +781,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
+    <!-- GANTI PASSWORD SAYA -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-key text-amber-500 text-lg"></i>
@@ -704,6 +804,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
+    <!-- KELOLA WAJAH -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <h4 class="font-black text-sm uppercase tracking-widest text-gray-400 mb-4">Kelola Wajah Saya</h4>
       <button onclick="openEnrollment()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all mb-2">
@@ -712,10 +813,10 @@ input, select { font-size:16px !important; }
       <button onclick="resetMyFace()" class="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
         <i class="fas fa-trash mr-2"></i> RESET WAJAH SAYA
       </button>
-      <p class="text-[10px] text-gray-400 text-center mt-3">Reset wajah jika tidak dikenali / mau daftar ulang</p>
     </div>
   </main>
 
+  <!-- TAB PEGAWAI -->
   <main id="tab-pegawai" class="tab-content p-6 space-y-6 pb-24">
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-black text-gray-900">Data Pegawai</h2>
@@ -749,6 +850,7 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
+  <!-- TAB LOG -->
   <main id="tab-log" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Log Absensi</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -865,6 +967,7 @@ input, select { font-size:16px !important; }
   </nav>
 </div>
 
+<!-- MODAL USER -->
 <div id="userModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
     <h3 id="modalTitle" class="text-xl font-black text-gray-900">Data Pegawai</h3>
@@ -889,27 +992,27 @@ input, select { font-size:16px !important; }
           <input type="radio" name="uLivenessMode" value="" id="uLmGlobal" class="mt-1 w-4 h-4 accent-indigo-600">
           <div>
             <p class="font-black text-xs text-gray-900">Pakai Global</p>
-            <p class="text-[9px] text-gray-500">Ikut setting global di tab Setting</p>
+            <p class="text-[9px] text-gray-500">Ikut setting global</p>
           </div>
         </label>
         <label class="flex items-start gap-3 p-2.5 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
           <input type="radio" name="uLivenessMode" value="instruction" id="uLmInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
           <div>
             <p class="font-black text-xs text-gray-900">Custom + Instruksi</p>
-            <p class="text-[9px] text-gray-500">Challenge box tampil, user dipandu</p>
+            <p class="text-[9px] text-gray-500">Challenge box tampil</p>
           </div>
         </label>
         <label class="flex items-start gap-3 p-2.5 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
           <input type="radio" name="uLivenessMode" value="no_instruction" id="uLmNoInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
           <div>
             <p class="font-black text-xs text-gray-900">Custom Tanpa Instruksi</p>
-            <p class="text-[9px] text-gray-500">TTS-only pandu, auto-submit</p>
+            <p class="text-[9px] text-gray-500">TTS-only pandu</p>
           </div>
         </label>
       </div>
 
       <div id="uLmCustomBox" class="p-3 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-1.5 opacity-50 pointer-events-none">
-        <p class="text-[9px] font-black text-indigo-700 uppercase mb-1">Gerakan (kosong = pakai global):</p>
+        <p class="text-[9px] font-black text-indigo-700 uppercase mb-1">Gerakan:</p>
         <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
           <input type="checkbox" id="uLmChkFront" class="w-4 h-4 accent-indigo-600">
           <span class="text-xs font-bold text-gray-700">Hadap Depan</span>
@@ -944,6 +1047,7 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
+<!-- MODAL IZIN -->
 <div id="permitModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <h3 class="text-xl font-black text-gray-900">Pengajuan Izin</h3>
@@ -988,6 +1092,7 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
+<!-- MODAL KIOSK PASSWORD -->
 <div id="kioskPasswordModal" class="fixed inset-0 z-[800] bg-black/80 backdrop-blur-md hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <div class="text-center">
@@ -1005,6 +1110,11 @@ input, select { font-size:16px !important; }
       <button onclick="verifyKioskPasswordAndClose()" class="flex-1 bg-red-500 text-white rounded-2xl font-bold shadow-lg shadow-red-200">TUTUP</button>
     </div>
   </div>
+</div>
+
+<!-- MODAL FOTO ZOOM -->
+<div id="photoZoomModal" class="fixed inset-0 z-[900] bg-black/90 hidden items-center justify-center p-4" onclick="closePhotoZoom()">
+  <img id="photoZoomImg" src="" class="max-w-full max-h-full rounded-2xl shadow-2xl">
 </div>
 
 <div id="toast" class="toast">Notifikasi...</div>
@@ -1034,6 +1144,7 @@ var userMap, userPosMarker, userOfficeCircle, userOfficeMarker;
 var hasInitialGPSFix = false;
 var allLogData = [];
 var allPermitsData = [];
+var allRekapData = [];   // v18 untuk rekap lengkap
 var _clockInterval = null;
 var _mapInitDone = false;
 
@@ -1061,7 +1172,7 @@ var LIVENESS_SMILE_HOLD_MS = 1500;
 var KIOSK_NO_INSTR_TIMEOUT = 30000;
 var ABS_NO_INSTR_TIMEOUT = 30000;
 
-// FOTO ABSEN RETRY (v16)
+// FOTO ABSEN RETRY
 var ABS_PHOTO_MAX_RETRY = 8;
 var ABS_PHOTO_RETRY_DELAY = 300;
 
@@ -1360,19 +1471,6 @@ function makeThumbnailHD(video) {
   }
 }
 
-function captureAbsenPhoto(videoEl) {
-  try {
-    if (!videoEl || !videoEl.videoWidth) return null;
-    return makeThumbnailHD(videoEl);
-  } catch (e) {
-    return null;
-  }
-}
-
-/**
- * v16: Capture foto dengan RETRY sampai video ready.
- * Return Promise<string> base64.
- */
 function captureAbsenPhotoWithRetry(videoEl, maxRetry, delayMs) {
   maxRetry = maxRetry || ABS_PHOTO_MAX_RETRY;
   delayMs = delayMs || ABS_PHOTO_RETRY_DELAY;
@@ -1762,6 +1860,7 @@ function switchTab(id) {
       loadJamKerja();
       loadKioskPassword();
       loadGlobalLivenessSettings();
+      loadBackupSettings(); // v18
     } else if (id === 'home') {
       if (userMap) { userMap.invalidateSize(); centerMapOnUser(); }
       else initUserMap(office.lat, office.lng, office.rad);
@@ -1769,6 +1868,187 @@ function switchTab(id) {
     else if (id === 'log') { loadAttendanceLog(); loadPermitApproval(); }
     else if (id === 'kiosk') openKiosk();
   }, 20);
+}
+
+// ============================================================
+// v18: BACKUP SETTINGS
+// ============================================================
+function loadBackupSettings() {
+  callAPI('getBackupSettings', {})
+    .then(function(res) {
+      if (res && res.success) {
+        var sel = document.getElementById('backupPeriod');
+        if (sel) sel.value = res.period || 'weekly';
+        var lastEl = document.getElementById('backupLastRun');
+        if (lastEl) {
+          lastEl.innerText = res.last_run ? res.last_run : 'Belum pernah';
+        }
+      }
+    })
+    .catch(function(err) { console.warn('loadBackupSettings gagal:', err); });
+}
+
+function saveBackupSettings() {
+  var period = document.getElementById('backupPeriod').value;
+  showToast('Menyimpan pengaturan backup...', 'info', 2000);
+  callAPI('updateBackupSettings', { period: period })
+    .then(function(res) {
+      if (res && res.success) {
+        showToast(res.message || 'Tersimpan!', 'ok');
+      } else {
+        showToast(res ? res.message : 'Gagal simpan', 'err');
+      }
+    })
+    .catch(function(err) { showToast(err.message || 'Gagal terhubung', 'err'); });
+}
+
+function runBackupNow() {
+  if (!confirm('Jalankan backup sekarang? File akan disimpan ke Drive folder Backup.')) return;
+  showToast('Menjalankan backup...', 'info', 3000);
+  callAPI('runBackupNow', {})
+    .then(function(res) {
+      if (res && res.success) {
+        showToast(res.message || 'Backup berhasil!', 'ok', 5000);
+        loadBackupSettings();
+      } else {
+        showToast(res ? res.message : 'Backup gagal', 'err', 5000);
+      }
+    })
+    .catch(function(err) { showToast(err.message || 'Gagal terhubung', 'err'); });
+}
+
+// ============================================================
+// v18: REKAP LENGKAP
+// ============================================================
+function loadRekapLengkap() {
+  var bulan = document.getElementById('rekapBulanV18').value;
+  showToast('Memuat rekap...', 'info', 2000);
+  var tbody = document.getElementById('rekapTableBody');
+  tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-gray-400 text-xs">Memuat data...</td></tr>';
+
+  callAPI('getAttendanceRekap', { bulan: bulan || '' })
+    .then(function(res) {
+      if (!res || !res.success) {
+        tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
+        showToast(res ? res.message : 'Gagal memuat', 'err');
+        return;
+      }
+      allRekapData = res.data || [];
+      renderRekapTable(allRekapData);
+      var info = document.getElementById('rekapInfo');
+      if (info) info.innerText = 'Total: ' + allRekapData.length + ' data' + (bulan ? ' (bulan ' + bulan + ')' : '');
+      showToast('Rekap dimuat: ' + allRekapData.length + ' data', 'ok', 2500);
+    })
+    .catch(function(err) {
+      tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal terhubung</td></tr>';
+      showToast(err.message || 'Gagal terhubung', 'err');
+    });
+}
+
+function renderRekapTable(data) {
+  var tbody = document.getElementById('rekapTableBody');
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-gray-400 text-xs">Tidak ada data</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(function(r, i) {
+    // Foto masuk
+    var fotoMasukHtml = '—';
+    if (r.fotoMasuk && r.fotoMasuk.indexOf('=IMAGE') === 0) {
+      // Extract URL dari formula =IMAGE("url", 1)
+      var m = r.fotoMasuk.match(/=IMAGE\("([^"]+)"/);
+      if (m && m[1]) {
+        fotoMasukHtml = '<img src="' + m[1] + '" class="w-12 h-12 object-cover rounded-lg border-2 border-emerald-200 cursor-pointer mx-auto" onclick="showPhotoZoom(\'' + m[1] + '\')" onerror="this.style.display=\'none\'">';
+      }
+    }
+
+    // Foto keluar
+    var fotoKeluarHtml = '—';
+    if (r.fotoKeluar && r.fotoKeluar.indexOf('=IMAGE') === 0) {
+      var m2 = r.fotoKeluar.match(/=IMAGE\("([^"]+)"/);
+      if (m2 && m2[1]) {
+        fotoKeluarHtml = '<img src="' + m2[1] + '" class="w-12 h-12 object-cover rounded-lg border-2 border-red-200 cursor-pointer mx-auto" onclick="showPhotoZoom(\'' + m2[1] + '\')" onerror="this.style.display=\'none\'">';
+      }
+    }
+
+    // Peta
+    var petaHtml = '—';
+    if (r.petaUrl) {
+      petaHtml = '<a href="' + escapeHtml(r.petaLink) + '" target="_blank"><img src="' + escapeHtml(r.petaUrl) + '" class="w-20 h-15 object-cover rounded-lg border-2 border-indigo-200 cursor-pointer mx-auto" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<i class=\\\'fas fa-map\\\'></i>\'"></a>';
+    }
+
+    var rowClass = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+    return '<tr class="' + rowClass + ' border-b border-gray-100 text-[10px]">' +
+      '<td class="py-2 px-2 font-bold text-gray-500">' + escapeHtml(r.no) + '</td>' +
+      '<td class="py-2 px-2 font-bold text-gray-900">' + escapeHtml(r.nama) + '</td>' +
+      '<td class="py-2 px-2 text-gray-600">' + escapeHtml(r.jabatan) + '</td>' +
+      '<td class="py-2 px-2 text-gray-700">' + escapeHtml(r.tanggal) + '</td>' +
+      '<td class="py-2 px-2 font-bold text-indigo-600">' + escapeHtml(r.jamMasuk) + '</td>' +
+      '<td class="py-2 px-2 font-bold text-red-500">' + escapeHtml(r.jamKeluar || '--:--') + '</td>' +
+      '<td class="py-2 px-2 text-center"><span class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black">' + escapeHtml(r.status) + '</span></td>' +
+      '<td class="py-2 px-2 text-gray-600 max-w-[150px] truncate" title="' + escapeHtml(r.keterangan) + '">' + escapeHtml(r.keterangan || '—') + '</td>' +
+      '<td class="py-2 px-2 text-center">' + fotoMasukHtml + '</td>' +
+      '<td class="py-2 px-2 text-center">' + fotoKeluarHtml + '</td>' +
+      '<td class="py-2 px-2 text-center">' + petaHtml + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function clearRekapFilter() {
+  document.getElementById('rekapBulanV18').value = '';
+  document.getElementById('rekapTableBody').innerHTML = '<tr><td colspan="11" class="py-8 text-center text-gray-400 text-xs">Klik "TAMPILKAN" untuk memuat data</td></tr>';
+  document.getElementById('rekapInfo').innerText = 'Belum ada data dimuat';
+  allRekapData = [];
+}
+
+function showPhotoZoom(url) {
+  var modal = document.getElementById('photoZoomModal');
+  var img = document.getElementById('photoZoomImg');
+  if (!modal || !img) return;
+  img.src = url;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closePhotoZoom() {
+  var modal = document.getElementById('photoZoomModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function exportRekapLengkap() {
+  if (!allRekapData || allRekapData.length === 0) {
+    showToast('Tidak ada data untuk di-export. Klik TAMPILKAN dulu.', 'warn');
+    return;
+  }
+  showToast('Menyiapkan CSV...', 'info', 2000);
+  var rows = [];
+  rows.push(['No', 'Nama', 'Jabatan', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan']);
+  allRekapData.forEach(function(r) {
+    rows.push([r.no || '', r.nama || '', r.jabatan || '', r.tanggal || '', r.jamMasuk || '', r.jamKeluar || '', r.status || '', r.keterangan || '']);
+  });
+  var csv = rows.map(function(row) {
+    return row.map(function(c) {
+      var s = String(c == null ? '' : c);
+      if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+        s = '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }).join(',');
+  }).join('\n');
+  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'rekap_lengkap_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('CSV berhasil di-download!', 'ok');
 }
 
 // ============================================================
@@ -2695,7 +2975,7 @@ function startAbsLoop() {
         if (LIVENESS_CHALLENGES.length === 0) {
           guide.className = 'face-guide matched';
           status.className = 'face-status ok';
-          status.innerText = 'Wajah dikenali ✔';
+          status.innerText = 'Wajah dikenali';
           indicator.className = 'liveness-indicator ok';
           indicator.innerText = '● COCOK';
           document.getElementById('absInstruction').innerText = 'Wajah dikenali! Memproses absen...';
@@ -2809,7 +3089,7 @@ function finishLiveness() {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mengirim...';
 
   document.getElementById('absStatus').className = 'face-status ok';
-  document.getElementById('absStatus').innerText = 'Verifikasi selesai ✔';
+  document.getElementById('absStatus').innerText = 'Verifikasi selesai';
   var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
   document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
   document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
@@ -2838,7 +3118,6 @@ function finishLiveness() {
 
   window._absenProcessing = true;
 
-  // v16: Delay 1.5 detik biar video ready sebelum capture
   setTimeout(function() {
     if (!window._absenProcessing) return;
     if (!window._currentAbsDescriptor) return;
@@ -2847,9 +3126,6 @@ function finishLiveness() {
   }, 1500);
 }
 
-/**
- * v16: captureAbsen dengan retry foto — foto PASTI terkirim.
- */
 function captureAbsen() {
   if (!window._currentAbsDescriptor) {
     if (document.getElementById('absScreen').classList.contains('hidden')) return;
@@ -2864,13 +3140,12 @@ function captureAbsen() {
 
   var absVideoEl = document.getElementById('absVideo');
 
-  // Ambil foto dengan RETRY (max 8x, delay 300ms)
   captureAbsenPhotoWithRetry(absVideoEl, ABS_PHOTO_MAX_RETRY, ABS_PHOTO_RETRY_DELAY)
     .then(function(photoBase64) {
       var photoLen = photoBase64 ? photoBase64.length : 0;
       console.log('[captureAbsen] Kirim absen. Panjang foto:', photoLen);
       if (photoLen < 1000) {
-        console.warn('[captureAbsen] ⚠️ Foto kosong/pendek, kirim tanpa foto');
+        console.warn('[captureAbsen] Foto kosong/pendek, kirim tanpa foto');
       }
       doSubmitAttendance(photoBase64);
     })
@@ -3330,7 +3605,6 @@ function kioskProcessAttendance(face) {
 
   var kioskVideoEl = document.getElementById('kioskVideo');
 
-  // v16: Capture foto dengan retry
   captureAbsenPhotoWithRetry(kioskVideoEl, ABS_PHOTO_MAX_RETRY, ABS_PHOTO_RETRY_DELAY)
     .then(function(photoBase64) {
       console.log('[kioskProcessAttendance] Kirim absen. Panjang foto:', photoBase64 ? photoBase64.length : 0);
@@ -3451,7 +3725,7 @@ function closeKiosk() {
 // DASHBOARD REFRESH
 // ============================================================
 function refreshData() {
-  if (!user) return;   // v16 fix: cegah error saat user null
+  if (!user) return;
   callAPI('getDashboardData', { userId: user.id, role: user.role })
     .then(function(res) {
       if (!res || res.error) {
@@ -3479,6 +3753,15 @@ function refreshData() {
         globalLivenessSettings.challenges = res.livenessSettings.challenges || 'FRONT,LEFT,RIGHT,UP,SMILE';
         if (document.getElementById('tab-setting').classList.contains('active')) {
           renderGlobalLivenessUI();
+        }
+      }
+      // v18 backup
+      if (res.backupSettings && res.backupSettings.success) {
+        if (document.getElementById('tab-setting').classList.contains('active')) {
+          var sel = document.getElementById('backupPeriod');
+          if (sel) sel.value = res.backupSettings.period || 'weekly';
+          var lastEl = document.getElementById('backupLastRun');
+          if (lastEl) lastEl.innerText = res.backupSettings.last_run || 'Belum pernah';
         }
       }
       if (typeof res.faceEnrolled !== 'undefined') {
@@ -3921,7 +4204,7 @@ function loadPermitApproval() {
       var list = document.getElementById('permitApprovalList');
       var pending = permits.filter(function(p) { return String(p[5]) === 'Menunggu'; });
       if (!pending.length) {
-        list.innerHTML = '<p class="text-center text-xs text-gray-400 py-3">Tidak ada izin menunggu approval ✅</p>';
+        list.innerHTML = '<p class="text-center text-xs text-gray-400 py-3">Tidak ada izin menunggu approval</p>';
         return;
       }
       list.innerHTML = pending.map(function(p) {
