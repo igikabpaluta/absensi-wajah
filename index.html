@@ -2824,7 +2824,26 @@ function captureAbsen() {
   btn.innerHTML = 'Proses Mengirim Data Absen, Tunggu Ya..';
 
   // v15: Ambil foto dari video absen SEBELUM kirim
-  var photoBase64 = captureAbsenPhoto(document.getElementById('absVideo'));
+    // v15.1: Ambil foto dari video absen (dengan validasi + debug)
+  var absVideoEl = document.getElementById('absVideo');
+  var photoBase64 = '';
+  try {
+    if (absVideoEl && absVideoEl.videoWidth > 0 && absVideoEl.videoHeight > 0) {
+      photoBase64 = makeThumbnailHD(absVideoEl) || '';
+      console.log('[captureAbsen] FOTO OK, panjang:', photoBase64.length);
+    } else {
+      console.warn('[captureAbsen] VIDEO BELUM SIAP. videoWidth=', absVideoEl ? absVideoEl.videoWidth : 'null');
+    }
+  } catch (e) {
+    console.error('[captureAbsen] GAGAL CAPTURE:', e);
+  }
+
+  if (!photoBase64 || photoBase64.length < 100) {
+    console.warn('[captureAbsen] photoBase64 KOSONG, panjang:', photoBase64.length);
+  }
+
+
+     
 
   callAPI('submitAttendance', {
     type: attType,
