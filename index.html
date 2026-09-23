@@ -1,7 +1,6 @@
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v18
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v19
      Bagian 1/3: HEAD, CSS, HTML BODY
-     Fitur: Foto absen masuk/keluar + Rekap lengkap + Backup otomatis
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -262,13 +261,12 @@ input, select { font-size:16px !important; }
   margin-top:8px; animation: pulseRing 2s infinite;
 }
 
-/* Rekap tabel scroll */
 .rekap-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 .rekap-scroll table {
-  min-width: 1400px;
+  min-width: 1500px;
 }
 .rekap-scroll th, .rekap-scroll td {
   white-space: nowrap;
@@ -550,7 +548,10 @@ input, select { font-size:16px !important; }
         <i class="fas fa-database text-emerald-500 text-lg"></i>
         <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Backup Otomatis</h4>
       </div>
-      <p class="text-[10px] text-gray-500 mb-4 italic">Backup akan otomatis dibuat di folder Drive <strong>Presensi_App_Data/Backup/</strong>. Backup lama (>90 hari) otomatis dihapus.</p>
+      <p class="text-[10px] text-gray-500 mb-4 italic">
+        Backup menghasilkan <strong>Excel (.xlsx)</strong> dan <strong>Word (.docx)</strong> di folder
+        <strong>Presensi_App_Data/Backup/</strong>. Setiap bulan baru otomatis tambah sheet bulan.
+      </p>
 
       <div class="space-y-3">
         <div>
@@ -580,7 +581,7 @@ input, select { font-size:16px !important; }
         <i class="fas fa-table-list text-indigo-600 text-lg"></i>
         <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Rekap Absensi Lengkap</h4>
       </div>
-      <p class="text-[10px] text-gray-500 mb-4 italic">Semua data absen dari kolom userId hingga foto masuk/keluar. Klik foto peta untuk buka Google Maps.</p>
+      <p class="text-[10px] text-gray-500 mb-4 italic">Semua data absen. Klik foto untuk zoom, klik peta untuk buka Google Maps.</p>
 
       <div class="space-y-3 mb-4">
         <div>
@@ -602,7 +603,7 @@ input, select { font-size:16px !important; }
         <table class="w-full text-[10px]">
           <thead>
             <tr class="bg-slate-900 text-white uppercase tracking-wider text-[9px]">
-              <th class="py-2 px-2 text-left font-bold">No</th>
+              <th class="py-2 px-2 text-center font-bold">No</th>
               <th class="py-2 px-2 text-left font-bold">Nama</th>
               <th class="py-2 px-2 text-left font-bold">Jabatan</th>
               <th class="py-2 px-2 text-left font-bold">Tgl</th>
@@ -708,7 +709,6 @@ input, select { font-size:16px !important; }
             class="flex-1 bg-transparent p-2 rounded-xl text-xs outline-none text-white font-bold">
           <button onclick="saveGPS()" class="bg-indigo-600 px-6 py-3 rounded-xl font-bold text-xs shadow-lg active:scale-95 transition-all">SIMPAN</button>
         </div>
-        <p class="text-[9px] text-gray-400 text-center italic">*Geser pin atau klik peta untuk ubah lokasi</p>
       </div>
     </div>
 
@@ -1124,6 +1124,9 @@ input, select { font-size:16px !important; }
 // ============================================================
 // AKHIR BAGIAN 1 — LANJUT BAGIAN 2 DI BAWAH INI
 // ============================================================
+
+
+
 // ============================================================
 // BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, ENROLLMENT,
 // LIVENESS, ABSEN + FOTO ABSEN dengan RETRY
@@ -1144,7 +1147,7 @@ var userMap, userPosMarker, userOfficeCircle, userOfficeMarker;
 var hasInitialGPSFix = false;
 var allLogData = [];
 var allPermitsData = [];
-var allRekapData = [];   // v18 untuk rekap lengkap
+var allRekapData = [];
 var _clockInterval = null;
 var _mapInitDone = false;
 
@@ -1860,7 +1863,7 @@ function switchTab(id) {
       loadJamKerja();
       loadKioskPassword();
       loadGlobalLivenessSettings();
-      loadBackupSettings(); // v18
+      loadBackupSettings();
     } else if (id === 'home') {
       if (userMap) { userMap.invalidateSize(); centerMapOnUser(); }
       else initUserMap(office.lat, office.lng, office.rad);
@@ -1871,7 +1874,7 @@ function switchTab(id) {
 }
 
 // ============================================================
-// v18: BACKUP SETTINGS
+// BACKUP SETTINGS
 // ============================================================
 function loadBackupSettings() {
   callAPI('getBackupSettings', {})
@@ -1903,22 +1906,22 @@ function saveBackupSettings() {
 }
 
 function runBackupNow() {
-  if (!confirm('Jalankan backup sekarang? File akan disimpan ke Drive folder Backup.')) return;
-  showToast('Menjalankan backup...', 'info', 3000);
+  if (!confirm('Jalankan backup sekarang?\n\nFile Excel (.xlsx) dan Word (.docx) akan dibuat di folder Presensi_App_Data/Backup/.')) return;
+  showToast('Menjalankan backup... mohon tunggu', 'info', 5000);
   callAPI('runBackupNow', {})
     .then(function(res) {
       if (res && res.success) {
-        showToast(res.message || 'Backup berhasil!', 'ok', 5000);
+        showToast(res.message || 'Backup berhasil!', 'ok', 8000);
         loadBackupSettings();
       } else {
-        showToast(res ? res.message : 'Backup gagal', 'err', 5000);
+        showToast(res ? res.message : 'Backup gagal', 'err', 6000);
       }
     })
-    .catch(function(err) { showToast(err.message || 'Gagal terhubung', 'err'); });
+    .catch(function(err) { showToast(err.message || 'Gagal terhubung', 'err', 6000); });
 }
 
 // ============================================================
-// v18: REKAP LENGKAP
+// REKAP LENGKAP
 // ============================================================
 function loadRekapLengkap() {
   var bulan = document.getElementById('rekapBulanV18').value;
@@ -1928,8 +1931,9 @@ function loadRekapLengkap() {
 
   callAPI('getAttendanceRekap', { bulan: bulan || '' })
     .then(function(res) {
+      console.log('[loadRekapLengkap] Response:', res);
       if (!res || !res.success) {
-        tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal memuat: ' + escapeHtml(res ? res.message : 'unknown') + '</td></tr>';
         showToast(res ? res.message : 'Gagal memuat', 'err');
         return;
       }
@@ -1940,59 +1944,69 @@ function loadRekapLengkap() {
       showToast('Rekap dimuat: ' + allRekapData.length + ' data', 'ok', 2500);
     })
     .catch(function(err) {
-      tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal terhubung</td></tr>';
+      console.error('[loadRekapLengkap] Error:', err);
+      tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal terhubung: ' + escapeHtml(err.message || '') + '</td></tr>';
       showToast(err.message || 'Gagal terhubung', 'err');
     });
 }
 
 function renderRekapTable(data) {
   var tbody = document.getElementById('rekapTableBody');
+  if (!tbody) return;
+
   if (!data || data.length === 0) {
     tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-gray-400 text-xs">Tidak ada data</td></tr>';
     return;
   }
 
-  tbody.innerHTML = data.map(function(r, i) {
+  var html = '';
+  for (var i = 0; i < data.length; i++) {
+    var r = data[i];
+
     // Foto masuk
-    var fotoMasukHtml = '—';
-    if (r.fotoMasuk && r.fotoMasuk.indexOf('=IMAGE') === 0) {
-      // Extract URL dari formula =IMAGE("url", 1)
-      var m = r.fotoMasuk.match(/=IMAGE\("([^"]+)"/);
-      if (m && m[1]) {
-        fotoMasukHtml = '<img src="' + m[1] + '" class="w-12 h-12 object-cover rounded-lg border-2 border-emerald-200 cursor-pointer mx-auto" onclick="showPhotoZoom(\'' + m[1] + '\')" onerror="this.style.display=\'none\'">';
-      }
+    var fotoMasukHtml = '<span class="text-gray-300">—</span>';
+    if (r.fotoMasukUrl) {
+      fotoMasukHtml = '<img src="' + escapeHtml(r.fotoMasukUrl) + '" ' +
+        'class="w-12 h-12 object-cover rounded border-2 border-emerald-300 mx-auto cursor-pointer" ' +
+        'onclick="showPhotoZoom(\'' + escapeJsArg(r.fotoMasukUrl) + '\')" ' +
+        'onerror="this.outerHTML=\'<span class=&quot;text-red-400 text-[9px]&quot;>err</span>\'">';
     }
 
     // Foto keluar
-    var fotoKeluarHtml = '—';
-    if (r.fotoKeluar && r.fotoKeluar.indexOf('=IMAGE') === 0) {
-      var m2 = r.fotoKeluar.match(/=IMAGE\("([^"]+)"/);
-      if (m2 && m2[1]) {
-        fotoKeluarHtml = '<img src="' + m2[1] + '" class="w-12 h-12 object-cover rounded-lg border-2 border-red-200 cursor-pointer mx-auto" onclick="showPhotoZoom(\'' + m2[1] + '\')" onerror="this.style.display=\'none\'">';
-      }
+    var fotoKeluarHtml = '<span class="text-gray-300">—</span>';
+    if (r.fotoKeluarUrl) {
+      fotoKeluarHtml = '<img src="' + escapeHtml(r.fotoKeluarUrl) + '" ' +
+        'class="w-12 h-12 object-cover rounded border-2 border-red-300 mx-auto cursor-pointer" ' +
+        'onclick="showPhotoZoom(\'' + escapeJsArg(r.fotoKeluarUrl) + '\')" ' +
+        'onerror="this.outerHTML=\'<span class=&quot;text-red-400 text-[9px]&quot;>err</span>\'">';
     }
 
     // Peta
-    var petaHtml = '—';
+    var petaHtml = '<span class="text-gray-300">—</span>';
     if (r.petaUrl) {
-      petaHtml = '<a href="' + escapeHtml(r.petaLink) + '" target="_blank"><img src="' + escapeHtml(r.petaUrl) + '" class="w-20 h-15 object-cover rounded-lg border-2 border-indigo-200 cursor-pointer mx-auto" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<i class=\\\'fas fa-map\\\'></i>\'"></a>';
+      petaHtml = '<a href="' + escapeHtml(r.petaLink) + '" target="_blank" title="Buka di Google Maps">' +
+        '<img src="' + escapeHtml(r.petaUrl) + '" ' +
+        'class="w-20 h-14 object-cover rounded border-2 border-indigo-300 mx-auto cursor-pointer" ' +
+        'onerror="this.outerHTML=\'<span class=&quot;text-gray-300&quot;>—</span>\'">' +
+        '</a>';
     }
 
-    var rowClass = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-    return '<tr class="' + rowClass + ' border-b border-gray-100 text-[10px]">' +
-      '<td class="py-2 px-2 font-bold text-gray-500">' + escapeHtml(r.no) + '</td>' +
+    var rowClass = (i % 2 === 0) ? 'bg-white' : 'bg-gray-50';
+    html += '<tr class="' + rowClass + ' border-b border-gray-100 text-[10px] hover:bg-indigo-50">' +
+      '<td class="py-2 px-2 font-bold text-gray-500 text-center">' + escapeHtml(r.no) + '</td>' +
       '<td class="py-2 px-2 font-bold text-gray-900">' + escapeHtml(r.nama) + '</td>' +
       '<td class="py-2 px-2 text-gray-600">' + escapeHtml(r.jabatan) + '</td>' +
       '<td class="py-2 px-2 text-gray-700">' + escapeHtml(r.tanggal) + '</td>' +
       '<td class="py-2 px-2 font-bold text-indigo-600">' + escapeHtml(r.jamMasuk) + '</td>' +
       '<td class="py-2 px-2 font-bold text-red-500">' + escapeHtml(r.jamKeluar || '--:--') + '</td>' +
-      '<td class="py-2 px-2 text-center"><span class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black">' + escapeHtml(r.status) + '</span></td>' +
-      '<td class="py-2 px-2 text-gray-600 max-w-[150px] truncate" title="' + escapeHtml(r.keterangan) + '">' + escapeHtml(r.keterangan || '—') + '</td>' +
+      '<td class="py-2 px-2 text-center"><span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase">' + escapeHtml(r.status) + '</span></td>' +
+      '<td class="py-2 px-2 text-gray-600 max-w-[120px] truncate" title="' + escapeHtml(r.keterangan) + '">' + escapeHtml(r.keterangan || '—') + '</td>' +
       '<td class="py-2 px-2 text-center">' + fotoMasukHtml + '</td>' +
       '<td class="py-2 px-2 text-center">' + fotoKeluarHtml + '</td>' +
       '<td class="py-2 px-2 text-center">' + petaHtml + '</td>' +
       '</tr>';
-  }).join('');
+  }
+  tbody.innerHTML = html;
 }
 
 function clearRekapFilter() {
@@ -2026,9 +2040,21 @@ function exportRekapLengkap() {
   }
   showToast('Menyiapkan CSV...', 'info', 2000);
   var rows = [];
-  rows.push(['No', 'Nama', 'Jabatan', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan']);
+  rows.push(['No', 'Nama', 'Jabatan', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan', 'Foto Masuk URL', 'Foto Keluar URL', 'Maps URL']);
   allRekapData.forEach(function(r) {
-    rows.push([r.no || '', r.nama || '', r.jabatan || '', r.tanggal || '', r.jamMasuk || '', r.jamKeluar || '', r.status || '', r.keterangan || '']);
+    rows.push([
+      r.no || '',
+      r.nama || '',
+      r.jabatan || '',
+      r.tanggal || '',
+      r.jamMasuk || '',
+      r.jamKeluar || '',
+      r.status || '',
+      r.keterangan || '',
+      r.fotoMasukUrl || '',
+      r.fotoKeluarUrl || '',
+      r.petaLink || ''
+    ]);
   });
   var csv = rows.map(function(row) {
     return row.map(function(c) {
@@ -3304,6 +3330,7 @@ function clearPermitFile() {
 // ============================================================
 // AKHIR BAGIAN 2 — LANJUT BAGIAN 3 DI BAWAH INI
 // ============================================================
+
 // ============================================================
 // BAGIAN 3 / 3 — KIOSK, DASHBOARD, LOG, APPROVAL, EXPORT, GPS, MAPS
 // ============================================================
@@ -3755,7 +3782,6 @@ function refreshData() {
           renderGlobalLivenessUI();
         }
       }
-      // v18 backup
       if (res.backupSettings && res.backupSettings.success) {
         if (document.getElementById('tab-setting').classList.contains('active')) {
           var sel = document.getElementById('backupPeriod');
@@ -4283,7 +4309,7 @@ function exportLogCSV() {
 }
 
 // ============================================================
-// REKAP EXCEL
+// REKAP EXCEL (bulanan lama)
 // ============================================================
 function exportRekapExcel() {
   var bulan = document.getElementById('rekapBulan').value;
@@ -4316,7 +4342,7 @@ function exportRekapExcel() {
 }
 
 // ============================================================
-// REKAP WORD
+// REKAP WORD (bulanan lama)
 // ============================================================
 function exportRekapWord() {
   var bulan = document.getElementById('rekapBulan').value;
