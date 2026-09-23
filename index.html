@@ -1,7 +1,8 @@
+
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v15
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v16
      Bagian 1/3: HEAD, CSS, HTML BODY
-     Fitur: Per-user liveness + Foto enrollment + Foto absen
+     Fitur: Per-user liveness + Foto enrollment + Foto absen (retry)
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -460,7 +461,6 @@ input, select { font-size:16px !important; }
     </div>
   </header>
 
-  <!-- TAB HOME -->
   <main id="tab-home" class="tab-content active p-6 space-y-6">
     <div id="faceBanner" class="rounded-2xl p-4 flex items-center gap-3 border-2 border-gray-200 bg-gray-50">
       <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
@@ -518,7 +518,6 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
-  <!-- TAB SETTING -->
   <main id="tab-setting" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Setting Kantor</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -717,7 +716,6 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
-  <!-- TAB PEGAWAI -->
   <main id="tab-pegawai" class="tab-content p-6 space-y-6 pb-24">
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-black text-gray-900">Data Pegawai</h2>
@@ -751,7 +749,6 @@ input, select { font-size:16px !important; }
     </div>
   </main>
 
-  <!-- TAB LOG -->
   <main id="tab-log" class="tab-content p-6 space-y-6">
     <h2 class="text-2xl font-black text-gray-900">Log Absensi</h2>
     <div class="grid grid-cols-2 gap-3">
@@ -868,7 +865,6 @@ input, select { font-size:16px !important; }
   </nav>
 </div>
 
-<!-- MODAL USER -->
 <div id="userModal" class="fixed inset-0 z-[700] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
     <h3 id="modalTitle" class="text-xl font-black text-gray-900">Data Pegawai</h3>
@@ -1019,9 +1015,8 @@ input, select { font-size:16px !important; }
 // AKHIR BAGIAN 1 — LANJUT BAGIAN 2 DI BAWAH INI
 // ============================================================
 // ============================================================
-// BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, GATING,
-// JAM KERJA, KIOSK PWD, RESET WAJAH, ENROLLMENT 6 FOTO,
-// LIVENESS + FOTO ABSEN (v15)
+// BAGIAN 2 / 3 — VARIABEL, TTS, API, LOGIN, ENROLLMENT,
+// LIVENESS, ABSEN + FOTO ABSEN dengan RETRY
 // ============================================================
 
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx30vygTT-MH6YihD5q7C4VviTRUFT0HWucR-oM8Iqj09tnz23A7ZuuyLqtItLJank6/exec';
@@ -1065,6 +1060,10 @@ var LIVENESS_HOLD_MS = 1000;
 var LIVENESS_SMILE_HOLD_MS = 1500;
 var KIOSK_NO_INSTR_TIMEOUT = 30000;
 var ABS_NO_INSTR_TIMEOUT = 30000;
+
+// FOTO ABSEN RETRY (v16)
+var ABS_PHOTO_MAX_RETRY = 8;
+var ABS_PHOTO_RETRY_DELAY = 300;
 
 var globalLivenessSettings = {
   mode: 'instruction',
@@ -1343,11 +1342,9 @@ function makeThumbnail(video) {
   return can.toDataURL('image/jpeg', 0.6);
 }
 
-/**
- * Buat thumbnail HD (400x400) untuk foto ke Drive.
- */
 function makeThumbnailHD(video) {
   try {
+    if (!video || !video.videoWidth || !video.videoHeight) return null;
     var can = document.createElement('canvas');
     can.width = 400;
     can.height = 400;
@@ -1358,13 +1355,11 @@ function makeThumbnailHD(video) {
     ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
     return can.toDataURL('image/jpeg', 0.85);
   } catch (e) {
+    console.warn('[makeThumbnailHD] error:', e);
     return null;
   }
 }
 
-/**
- * v15: Ambil foto dari video absen (untuk foto absen masuk/keluar).
- */
 function captureAbsenPhoto(videoEl) {
   try {
     if (!videoEl || !videoEl.videoWidth) return null;
@@ -1372,6 +1367,46 @@ function captureAbsenPhoto(videoEl) {
   } catch (e) {
     return null;
   }
+}
+
+/**
+ * v16: Capture foto dengan RETRY sampai video ready.
+ * Return Promise<string> base64.
+ */
+function captureAbsenPhotoWithRetry(videoEl, maxRetry, delayMs) {
+  maxRetry = maxRetry || ABS_PHOTO_MAX_RETRY;
+  delayMs = delayMs || ABS_PHOTO_RETRY_DELAY;
+  return new Promise(function(resolve) {
+    var attempt = 0;
+    function tryOnce() {
+      attempt++;
+      try {
+        if (videoEl && videoEl.videoWidth > 0 && videoEl.videoHeight > 0 && videoEl.readyState >= 2) {
+          var data = makeThumbnailHD(videoEl);
+          if (data && data.length > 1000) {
+            console.log('[captureAbsenPhoto] OK attempt=' + attempt + ' len=' + data.length);
+            resolve(data);
+            return;
+          } else {
+            console.warn('[captureAbsenPhoto] data pendek attempt=' + attempt + ' len=' + (data ? data.length : 0));
+          }
+        } else {
+          console.warn('[captureAbsenPhoto] video belum ready attempt=' + attempt +
+            ' vw=' + (videoEl ? videoEl.videoWidth : 'null') +
+            ' rs=' + (videoEl ? videoEl.readyState : 'null'));
+        }
+      } catch (e) {
+        console.warn('[captureAbsenPhoto] error attempt=' + attempt + ':', e);
+      }
+      if (attempt < maxRetry) {
+        setTimeout(tryOnce, delayMs);
+      } else {
+        console.error('[captureAbsenPhoto] GAGAL setelah ' + maxRetry + ' attempt');
+        resolve('');
+      }
+    }
+    tryOnce();
+  });
 }
 
 function enhanceFrameForFaceAPI(videoEl) {
@@ -2803,14 +2838,18 @@ function finishLiveness() {
 
   window._absenProcessing = true;
 
+  // v16: Delay 1.5 detik biar video ready sebelum capture
   setTimeout(function() {
     if (!window._absenProcessing) return;
     if (!window._currentAbsDescriptor) return;
     if (document.getElementById('absScreen').classList.contains('hidden')) return;
     captureAbsen();
-  }, 1000);
+  }, 1500);
 }
 
+/**
+ * v16: captureAbsen dengan retry foto — foto PASTI terkirim.
+ */
 function captureAbsen() {
   if (!window._currentAbsDescriptor) {
     if (document.getElementById('absScreen').classList.contains('hidden')) return;
@@ -2821,86 +2860,83 @@ function captureAbsen() {
   unlockTTS();
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
-  btn.innerHTML = 'Proses Mengirim Data Absen, Tunggu Ya..';
+  btn.innerHTML = 'Mengambil foto & mengirim...';
 
-  // v15: Ambil foto dari video absen SEBELUM kirim
-    // v15.1: Ambil foto dari video absen (dengan validasi + debug)
   var absVideoEl = document.getElementById('absVideo');
-  var photoBase64 = '';
-  try {
-    if (absVideoEl && absVideoEl.videoWidth > 0 && absVideoEl.videoHeight > 0) {
-      photoBase64 = makeThumbnailHD(absVideoEl) || '';
-      console.log('[captureAbsen] FOTO OK, panjang:', photoBase64.length);
-    } else {
-      console.warn('[captureAbsen] VIDEO BELUM SIAP. videoWidth=', absVideoEl ? absVideoEl.videoWidth : 'null');
-    }
-  } catch (e) {
-    console.error('[captureAbsen] GAGAL CAPTURE:', e);
-  }
 
-  if (!photoBase64 || photoBase64.length < 100) {
-    console.warn('[captureAbsen] photoBase64 KOSONG, panjang:', photoBase64.length);
-  }
+  // Ambil foto dengan RETRY (max 8x, delay 300ms)
+  captureAbsenPhotoWithRetry(absVideoEl, ABS_PHOTO_MAX_RETRY, ABS_PHOTO_RETRY_DELAY)
+    .then(function(photoBase64) {
+      var photoLen = photoBase64 ? photoBase64.length : 0;
+      console.log('[captureAbsen] Kirim absen. Panjang foto:', photoLen);
+      if (photoLen < 1000) {
+        console.warn('[captureAbsen] ⚠️ Foto kosong/pendek, kirim tanpa foto');
+      }
+      doSubmitAttendance(photoBase64);
+    })
+    .catch(function(err) {
+      console.error('[captureAbsen] Gagal total:', err);
+      doSubmitAttendance('');
+    });
 
+  function doSubmitAttendance(photoBase64) {
+    callAPI('submitAttendance', {
+      type: attType,
+      lat: currentLoc.lat,
+      lng: currentLoc.lng,
+      userId: user.id,
+      faceMatched: true,
+      photoBase64: photoBase64 || ''
+    })
+      .then(function(res) {
+        btn.disabled = false;
+        var msg = (res && res.message) ? String(res.message) : '';
+        var isDone = res && res.success;
+        var isAlready = res && (
+          res.alreadyAbsen ||
+          res.sudahKeluar ||
+          msg.toUpperCase().indexOf('SUDAH ABSEN') >= 0 ||
+          msg.toUpperCase().indexOf('SUDAH MELAKUKAN ABSEN') >= 0 ||
+          msg.indexOf('sudah absen') >= 0 ||
+          msg.indexOf('sudah melakukan absen') >= 0 ||
+          msg.indexOf('belum melakukan absen masuk') >= 0
+        );
+        window._absenProcessing = false;
 
-     
-
-  callAPI('submitAttendance', {
-    type: attType,
-    lat: currentLoc.lat,
-    lng: currentLoc.lng,
-    userId: user.id,
-    faceMatched: true,
-    photoBase64: photoBase64 || ''
-  })
-    .then(function(res) {
-      btn.disabled = false;
-      var msg = (res && res.message) ? String(res.message) : '';
-      var isDone = res && res.success;
-      var isAlready = res && (
-        res.alreadyAbsen ||
-        res.sudahKeluar ||
-        msg.toUpperCase().indexOf('SUDAH ABSEN') >= 0 ||
-        msg.toUpperCase().indexOf('SUDAH MELAKUKAN ABSEN') >= 0 ||
-        msg.indexOf('sudah absen') >= 0 ||
-        msg.indexOf('sudah melakukan absen') >= 0 ||
-        msg.indexOf('belum melakukan absen masuk') >= 0
-      );
-      window._absenProcessing = false;
-
-      if (isDone) {
-        var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', res.serverTime || '');
-        speakText(suara);
-        var toastMsg = msg || "Absen berhasil!";
-        if (res.keterangan) toastMsg += ' — ' + res.keterangan;
-        showToast(toastMsg, 'ok', 5000, true);
-        closeAbsen();
-        switchTab('home');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        refreshData();
-      } else if (isAlready) {
-        showToast(msg || 'Anda sudah absen hari ini', 'warn', 5000);
-        speakText(msg || 'Anda sudah absen hari ini');
-        closeAbsen();
-        switchTab('home');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        refreshData();
-      } else {
-        showToast(msg || 'Gagal absen', 'err', 5000);
+        if (isDone) {
+          var suara = buildAttendanceTTS(user.nama, attType, res.keterangan || '', res.serverTime || '');
+          speakText(suara);
+          var toastMsg = msg || "Absen berhasil!";
+          if (res.keterangan) toastMsg += ' — ' + res.keterangan;
+          showToast(toastMsg, 'ok', 5000, true);
+          closeAbsen();
+          switchTab('home');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          refreshData();
+        } else if (isAlready) {
+          showToast(msg || 'Anda sudah absen hari ini', 'warn', 5000);
+          speakText(msg || 'Anda sudah absen hari ini');
+          closeAbsen();
+          switchTab('home');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          refreshData();
+        } else {
+          showToast(msg || 'Gagal absen', 'err', 5000);
+          btn.disabled = false;
+          btn.classList.remove('opacity-50', 'cursor-not-allowed');
+          btn.innerHTML = '<i class="fas fa-redo mr-2"></i> COBA LAGI';
+          btn.onclick = captureAbsen;
+        }
+      })
+      .catch(function(err) {
+        window._absenProcessing = false;
         btn.disabled = false;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
         btn.innerHTML = '<i class="fas fa-redo mr-2"></i> COBA LAGI';
         btn.onclick = captureAbsen;
-      }
-    })
-    .catch(function(err) {
-      window._absenProcessing = false;
-      btn.disabled = false;
-      btn.classList.remove('opacity-50', 'cursor-not-allowed');
-      btn.innerHTML = '<i class="fas fa-redo mr-2"></i> COBA LAGI';
-      btn.onclick = captureAbsen;
-      showToast(err.message || "Gagal kirim absensi", 'err');
-    });
+        showToast(err.message || "Gagal kirim absensi", 'err');
+      });
+  }
 }
 
 function closeAbsen() {
@@ -2994,13 +3030,9 @@ function clearPermitFile() {
 // AKHIR BAGIAN 2 — LANJUT BAGIAN 3 DI BAWAH INI
 // ============================================================
 // ============================================================
-// BAGIAN 3 / 3 — KIOSK, DASHBOARD, LOG, APPROVAL,
-// EXPORT, GPS, MAPS, CRUD PEGAWAI
+// BAGIAN 3 / 3 — KIOSK, DASHBOARD, LOG, APPROVAL, EXPORT, GPS, MAPS
 // ============================================================
 
-// ============================================================
-// KIOSK MODE
-// ============================================================
 function setKioskType(type) {
   kioskType = type;
   var tabMasuk = document.getElementById('kioskTabMasuk');
@@ -3296,23 +3328,27 @@ function kioskProcessAttendance(face) {
   kioskProcessingUser = face.userId;
   kioskLastResultAt = Date.now();
 
-  // v15: Ambil foto dari video kiosk
-  var photoBase64 = captureAbsenPhoto(document.getElementById('kioskVideo'));
+  var kioskVideoEl = document.getElementById('kioskVideo');
 
-  callAPI('submitAttendanceKiosk', {
-    userId: face.userId,
-    lat: currentLoc.lat,
-    lng: currentLoc.lng,
-    mode: kioskType,
-    photoBase64: photoBase64 || ''
-  })
-    .then(function(res) {
-      kioskProcessingUser = null;
-      showKioskResult(res, face);
-    })
-    .catch(function(err) {
-      kioskProcessingUser = null;
-      showKioskResult({ success: false, message: err.message || 'Mohon maaf, gagal. Ada gangguan, coba kembali.' }, face);
+  // v16: Capture foto dengan retry
+  captureAbsenPhotoWithRetry(kioskVideoEl, ABS_PHOTO_MAX_RETRY, ABS_PHOTO_RETRY_DELAY)
+    .then(function(photoBase64) {
+      console.log('[kioskProcessAttendance] Kirim absen. Panjang foto:', photoBase64 ? photoBase64.length : 0);
+      callAPI('submitAttendanceKiosk', {
+        userId: face.userId,
+        lat: currentLoc.lat,
+        lng: currentLoc.lng,
+        mode: kioskType,
+        photoBase64: photoBase64 || ''
+      })
+        .then(function(res) {
+          kioskProcessingUser = null;
+          showKioskResult(res, face);
+        })
+        .catch(function(err) {
+          kioskProcessingUser = null;
+          showKioskResult({ success: false, message: err.message || 'Mohon maaf, gagal. Ada gangguan, coba kembali.' }, face);
+        });
     });
 }
 
@@ -3415,7 +3451,7 @@ function closeKiosk() {
 // DASHBOARD REFRESH
 // ============================================================
 function refreshData() {
-  if (!user) return;
+  if (!user) return;   // v16 fix: cegah error saat user null
   callAPI('getDashboardData', { userId: user.id, role: user.role })
     .then(function(res) {
       if (!res || res.error) {
@@ -3546,9 +3582,6 @@ function loadPegawaiData() {
     });
 }
 
-// ============================================================
-// USER MODAL
-// ============================================================
 function openUserModal(id, nama, jab, phone, role, livenessMode, livenessChallenges) {
   document.getElementById('editId').value = id || '';
   document.getElementById('uNama').value = nama || '';
@@ -4120,7 +4153,7 @@ function submitPermitAction() {
 }
 
 // ============================================================
-// EVENT LISTENER untuk radio mode liveness di modal user
+// EVENT LISTENER
 // ============================================================
 document.addEventListener('change', function(e) {
   if (e.target && e.target.name === 'uLivenessMode') {
