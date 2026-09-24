@@ -4739,18 +4739,43 @@ function doPrint(format) {
   
   var file = _currentBackupFiles[format];
   
-  if (format === 'pdf') {
-    window.open('https://docs.google.com/document/d/' + file.id + '/preview', '_blank');
-    showToast('Klik Ctrl+P di preview PDF untuk mencetak', 'info', 6000);
-  } else if (format === 'docx') {
-    window.open('https://docs.google.com/document/d/' + file.id + '/preview', '_blank');
-    showToast('Klik Ctrl+P di preview Word untuk mencetak', 'info', 6000);
-  } else if (format === 'xlsx') {
-    window.open('https://docs.google.com/spreadsheets/d/' + file.id + '/preview', '_blank');
-    showToast('Klik Ctrl+P di preview Excel untuk mencetak', 'info', 6000);
-  }
-  
+  // TUTUP modal dulu
   closeRekapModal('modalPrint');
+  
+  if (format === 'pdf') {
+    // PDF: buka di tab baru, user bisa lihat & Ctrl+P
+    window.open(file.viewUrl, '_blank');
+    showToast(
+      '📄 PDF terbuka di tab baru. Klik Ctrl+P untuk mencetak.',
+      'info', 
+      8000
+    );
+  } else {
+    // Word & Excel: DOWNLOAD file → user buka & print via aplikasi
+    showToast(
+      '📥 File ' + format.toUpperCase() + ' sedang diunduh. Buka file untuk mencetak (Ctrl+P).',
+      'info',
+      8000
+    );
+    
+    // Trigger download
+    var a = document.createElement('a');
+    a.href = file.url;
+    a.download = file.name;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Instruksi detail setelah download
+    setTimeout(function() {
+      showToast(
+        '✅ File terunduh. Buka dari folder Download → Print (Ctrl+P).',
+        'ok',
+        10000
+      );
+    }, 2000);
+  }
 }
 
 function generateBackupRekap(bulan, callback) {
