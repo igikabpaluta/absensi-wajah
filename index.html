@@ -4739,24 +4739,36 @@ function doPrint(format) {
   closeRekapModal('modalPrint');
   
   if (format === 'pdf') {
+    // PDF: Google Drive Viewer → Ctrl+P
     window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
     showToast('📄 PDF terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
+    
   } else if (format === 'docx') {
+    // Word: Google Docs Editor → Ctrl+P
     if (file.previewId) {
       window.open('https://docs.google.com/document/d/' + file.previewId + '/edit', '_blank');
-      showToast('📝 Word terbuka di Editor. Tunggu 3-5 detik, lalu klik File → Print.', 'info', 10000);
+      showToast('📝 Word terbuka di Editor. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
     } else {
       window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
       showToast('📝 Word terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
     }
+    
   } else if (format === 'xlsx') {
-    if (file.previewId) {
-      window.open('https://docs.google.com/spreadsheets/d/' + file.previewId + '/edit', '_blank');
-      showToast('📊 Excel terbuka di Editor. Tunggu 3-5 detik, lalu klik File → Print.', 'info', 10000);
-    } else {
-      window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
-      showToast('📊 Excel terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
-    }
+    // Excel: buka file langsung (di-download atau preview Drive)
+    // Karena file .xls (HTML-based), Google Drive tidak bisa render
+    // Solusi: DOWNLOAD file → user buka di Excel/WPS
+    window.open(file.viewUrl, '_blank');
+    
+    // Trigger download juga
+    var a = document.createElement('a');
+    a.href = file.url;
+    a.download = file.name;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    showToast('📊 File Excel diunduh. Buka di aplikasi Excel/WPS untuk print (Ctrl+P).', 'ok', 10000);
   }
 }
 
