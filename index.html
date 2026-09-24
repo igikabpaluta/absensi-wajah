@@ -1762,6 +1762,8 @@ function handleLogin() {
         user = res.user;
         localStorage.setItem('presensi_user_v3', JSON.stringify(user));
         setupApp();
+        // TTS Login: sebutkan hari + jam + pilihan absen
+        speakText(buildLoginTTS(user.nama));
         setAbsenButtonsState(false, 'Memeriksa wajah...');
         checkFaceAndRedirect();
       } else {
@@ -3297,6 +3299,53 @@ function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
   }
 }
 
+
+
+/**
+ * Build TTS untuk login
+ * "Wajah Anda terdaftar, hari ini Kamis pukul 19:30. 
+ *  Silakan pilih absen masuk atau absen pulang"
+ */
+/**
+ * Build TTS untuk login
+ * Contoh output: "Ahmad, wajah Anda terdaftar. Hari ini Kamis pukul 19:30.
+ *                 Silakan pilih absen masuk atau absen pulang."
+ */
+function buildLoginTTS(namaUser) {
+  try {
+    var now = new Date();
+    var hariArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    var hari = hariArr[now.getDay()];
+    var jam = String(now.getHours()).padStart(2, '0');
+    var menit = String(now.getMinutes()).padStart(2, '0');
+    var waktu = jam + ':' + menit;
+    
+    // Format: "[Nama], wajah Anda terdaftar. Hari ini [Hari] pukul [Jam:Menit]. Silakan pilih absen masuk atau absen pulang."
+    var tts = '';
+    if (namaUser) {
+      tts = namaUser + ', wajah Anda terdaftar. ';
+    } else {
+      tts = 'Wajah Anda terdaftar. ';
+    }
+    tts += 'Hari ini ' + hari + ' pukul ' + waktu + '. ';
+    tts += 'Silakan pilih absen masuk atau absen pulang.';
+    
+    console.log('🔊 TTS Login:', tts);
+    return tts;
+  } catch (e) {
+    console.warn('buildLoginTTS error:', e);
+    return 'Selamat datang' + (namaUser ? ', ' + namaUser : '') + '. Silakan pilih absen masuk atau absen pulang.';
+  }
+}
+
+
+
+
+
+
+
+
+     
 // ============================================================
 // PERMIT FILE
 // ============================================================
