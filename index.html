@@ -4752,16 +4752,23 @@ function doPrint(format) {
     showToast('📄 PDF terbuka. Klik Ctrl+P untuk mencetak.', 'info', 8000);
     
   } else if (format === 'docx') {
-    // Word: buka Google Docs Viewer dengan mode preview print
-    var docxPrintUrl = 'https://docs.google.com/document/d/' + file.id + '/preview';
-    var w2 = window.open(docxPrintUrl, '_blank');
-    showToast('📝 Word terbuka. Klik Ctrl+P atau ikon printer untuk cetak.', 'info', 8000);
-    
-  } else if (format === 'xlsx') {
-    // Excel: buka Google Sheets Viewer dengan mode preview print
-    var xlsxPrintUrl = 'https://docs.google.com/spreadsheets/d/' + file.id + '/preview';
-    var w3 = window.open(xlsxPrintUrl, '_blank');
-    showToast('📊 Excel terbuka. Klik Ctrl+P atau ikon printer untuk cetak.', 'info', 8000);
+  // Word: buka Google Docs EDITOR (ada toolbar print)
+  if (file.previewId) {
+    window.open('https://docs.google.com/document/d/' + file.previewId + '/edit', '_blank');
+    showToast('📝 Word terbuka di Editor. Klik File → Print atau Ctrl+P.', 'info', 8000);
+  } else {
+    window.open('https://docs.google.com/document/d/' + file.id + '/edit', '_blank');
+    showToast('📝 Word terbuka. Klik File → Print atau Ctrl+P.', 'info', 8000);
+  }
+  
+} else if (format === 'xlsx') {
+  // Excel: buka Google Sheets EDITOR (ada toolbar print)
+  if (file.previewId) {
+    window.open('https://docs.google.com/spreadsheets/d/' + file.previewId + '/edit', '_blank');
+    showToast('📊 Excel terbuka di Editor. Klik File → Print atau Ctrl+P.', 'info', 8000);
+  } else {
+    window.open('https://docs.google.com/spreadsheets/d/' + file.id + '/edit', '_blank');
+    showToast('📊 Excel terbuka. Klik File → Print atau Ctrl+P.', 'info', 8000);
   }
 }
 
