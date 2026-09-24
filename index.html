@@ -4740,7 +4740,7 @@ function doPrint(format) {
   var file = _currentBackupFiles[format];
   
   if (format === 'pdf') {
-    window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
+    window.open('https://docs.google.com/document/d/' + file.id + '/preview', '_blank');
     showToast('Klik Ctrl+P di preview PDF untuk mencetak', 'info', 6000);
   } else if (format === 'docx') {
     window.open('https://docs.google.com/document/d/' + file.id + '/preview', '_blank');
