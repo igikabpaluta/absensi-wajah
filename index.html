@@ -4714,23 +4714,18 @@ function doDownload(format) {
   
   var file = _currentBackupFiles[format];
   
-  if (format === 'pdf') {
-    window.open(file.viewUrl, '_blank');
-    showToast('PDF dibuka di tab baru', 'ok', 3000);
-  } else {
-    var a = document.createElement('a');
-    a.href = file.url;
-    a.download = file.name;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showToast('Mengunduh ' + file.name, 'ok', 3000);
-  }
+  // Semua format: langsung download
+  var a = document.createElement('a');
+  a.href = file.url;
+  a.download = file.name;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('📥 Mengunduh ' + file.name, 'ok', 3000);
   
   closeRekapModal('modalUnduh');
 }
-
 
      
 
