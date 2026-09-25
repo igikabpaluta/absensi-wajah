@@ -2086,7 +2086,7 @@ function verifyKioskPasswordLogin() {
   
   console.log('🔐 Verifikasi password...');
   
-  callAPI('verifyKioskPassword', { password: pwd })
+  callAPI('verifyKioskOpenPassword', { password: pwd })
     .then(function(res) {
       if (res && res.success) {
         console.log('✅ Password benar, buka kiosk');
@@ -2216,7 +2216,7 @@ function closeKioskFromLogin() {
 // KIOSK PASSWORD (DARI DALAM APP — admin)
 // ============================================================
 function loadKioskPassword() {
-  callAPI('getKioskPassword', {})
+  callAPI('getKioskOpenPassword', {})
     .then(function(res) {
       if (res && res.password) {
         kioskPassword = res.password;
@@ -2242,6 +2242,40 @@ function saveKioskPassword() {
     })
     .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
 }
+
+
+
+// ===== FUNGSI BARU: Simpan Password BUKA kiosk =====
+function saveKioskOpenPassword() {
+  var pwd = document.getElementById('kiosk-open-pwd').value.trim();
+  if (!pwd) return showToast("Password tidak boleh kosong!", 'warn');
+  showToast("Menyimpan password BUKA...", 'info', 2000);
+  callAPI('updateKioskOpenPassword', { password: pwd })
+    .then(function(res) {
+      if (res && res.success) {
+        _kioskLoginPassword = pwd;
+        showToast(res.message || "Password BUKA tersimpan!", 'ok');
+      } else {
+        showToast(res ? res.message : "Gagal simpan", 'err');
+      }
+    })
+    .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
 
 function openKioskPasswordModal() {
   document.getElementById('kioskPwdInput').value = '';
