@@ -2111,12 +2111,12 @@ function verifyKioskPasswordLogin() {
     });
 }
 
+
+
 function openKioskFromLogin() {
   console.log('🚀 Membuka kiosk dari login');
   
-  _kioskFromLogin = true;
-  
-  // Set user dummy KIOSK_GUEST
+  // ⚠️ WAJIB: SET USER DULU
   user = {
     id: 'KIOSK_GUEST',
     nama: 'Mode Kiosk',
@@ -2126,6 +2126,10 @@ function openKioskFromLogin() {
     livenessMode: '',
     livenessChallenges: ''
   };
+  
+  console.log('👤 User di-set:', user);
+  
+  _kioskFromLogin = true;
   
   // Cek GPS
   if (currentLoc.lat === 0 && currentLoc.lng === 0) {
@@ -2140,9 +2144,17 @@ function openKioskFromLogin() {
     return;
   }
   
+  console.log('✅ Buka openKiosk()');
   openKiosk();
 }
 
+
+
+     
+
+
+
+     
 // ============================================================
 // ENROLL DARI KIOSK (wajah tidak dikenali)
 // ============================================================
