@@ -3526,8 +3526,22 @@ function setKioskType(type) {
   showToast('Mode: ' + (type === 'IN' ? 'ABSEN MASUK' : 'ABSEN PULANG'), 'info', 1500);
 }
 
+
+
+
+     
+
+
 function openKiosk() {
-  if (!user || user.role !== 'admin') return;
+  // Cek user: boleh guest kiosk atau admin
+  var isKioskGuest = (user && user.id === 'KIOSK_GUEST');
+  var isAdmin = (user && user.role === 'admin');
+  
+  if (!isKioskGuest && !isAdmin) {
+    showToast('Akses ditolak', 'err');
+    return;
+  }
+  
   unlockTTS();
   if (!office.lat || !office.lng) {
     showToast("Lokasi kantor belum diatur!", 'err');
@@ -3542,7 +3556,13 @@ function openKiosk() {
     showToast("Di luar radius kantor (" + Math.round(dist) + "m)", 'err');
     return;
   }
+  
+  // Sembunyikan login screen & app, tampilkan kiosk
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('hidden');
   document.getElementById('kioskScreen').classList.remove('hidden');
+  
+  // ... sisanya sama (kode lama)
   document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskInfoText').innerText = 'Menunggu wajah terdeteksi...';
   document.getElementById('kioskResult').className = 'kiosk-result hidden';
@@ -3582,6 +3602,21 @@ function openKiosk() {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
 function startKioskCamera() {
   navigator.mediaDevices.getUserMedia({
     video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
@@ -4843,6 +4878,155 @@ function closeRekapModal(id) {
     el.classList.remove('flex');
   }
 }
+
+
+
+
+// ============================================================
+// KIOSK DARI HALAMAN LOGIN (TANPA LOGIN USER)
+// ============================================================
+var _kioskLoginPassword = '1234';  // default, akan di-load dari server
+
+function openKioskPasswordFromLogin() {
+  unlockTTS();
+  // Reset input
+  document.getElementById('kioskLoginPwdInput').value = '';
+  document.getElementById('kioskLoginPwdError').classList.add('hidden');
+  
+  // Load password terbaru dari server (opsional, biar selalu update)
+  callAPI('getKioskPassword', {})
+    .then(function(res) {
+      if (res && res.password) {
+        _kioskLoginPassword = res.password;
+      }
+    })
+    .catch(function(e) { console.warn('Gagal ambil password kiosk:', e); });
+  
+  // Tampilkan modal
+  document.getElementById('kioskPasswordLoginModal').classList.remove('hidden');
+  document.getElementById('kioskPasswordLoginModal').classList.add('flex');
+  setTimeout(function() { document.getElementById('kioskLoginPwdInput').focus(); }, 200);
+}
+
+function closeKioskPasswordLoginModal() {
+  document.getElementById('kioskPasswordLoginModal').classList.add('hidden');
+  document.getElementById('kioskPasswordLoginModal').classList.remove('flex');
+}
+
+function verifyKioskPasswordLogin() {
+  var input = document.getElementById('kioskLoginPwdInput').value.trim();
+  if (!input) {
+    document.getElementById('kioskLoginPwdError').classList.remove('hidden');
+    return;
+  }
+  
+  // Verifikasi ke server
+  callAPI('verifyKioskPassword', { password: input })
+    .then(function(res) {
+      if (res && res.success) {
+        // Password benar → buka mode kiosk
+        closeKioskPasswordLoginModal();
+        openKioskFromLogin();
+      } else {
+        document.getElementById('kioskLoginPwdError').classList.remove('hidden');
+        document.getElementById('kioskLoginPwdInput').value = '';
+      }
+    })
+    .catch(function(err) {
+      // Fallback: cek lokal
+      if (input === _kioskLoginPassword) {
+        closeKioskPasswordLoginModal();
+        openKioskFromLogin();
+      } else {
+        document.getElementById('kioskLoginPwdError').classList.remove('hidden');
+        document.getElementById('kioskLoginPwdInput').value = '';
+      }
+    });
+}
+
+/**
+ * Buka mode kiosk dari halaman login (tanpa login user)
+ * Set user dummy sebagai admin supaya bisa akses fitur kiosk
+ */
+function openKioskFromLogin() {
+  // Set user dummy khusus kiosk
+  if (!user) {
+    user = {
+      id: 'KIOSK_GUEST',
+      nama: 'Mode Kiosk',
+      jabatan: 'Kiosk',
+      phone: '',
+      role: 'admin',  // supaya bisa akses fitur kiosk
+      livenessMode: '',
+      livenessChallenges: ''
+    };
+  }
+  
+  // Pastikan GPS aktif
+  if (currentLoc.lat === 0 && currentLoc.lng === 0) {
+    showToast('Menunggu GPS...', 'warn', 3000);
+    // Coba tunggu GPS sebentar
+    setTimeout(function() {
+      if (currentLoc.lat === 0 && currentLoc.lng === 0) {
+        showToast('GPS belum siap. Coba lagi 5 detik.', 'err', 4000);
+        return;
+      }
+      openKiosk();
+    }, 2000);
+    return;
+  }
+  
+  // Buka kiosk
+  openKiosk();
+}
+
+/**
+ * Override closeKiosk supaya kembali ke halaman login
+ * (bukan kembali ke home user)
+ */
+var _origCloseKiosk = window.closeKiosk;
+window.closeKiosk = function() {
+  // Kalau user = KIOSK_GUEST, kembali ke login
+  if (user && user.id === 'KIOSK_GUEST') {
+    // Cleanup kiosk
+    if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
+    if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
+    if (kioskStream) {
+      kioskStream.getTracks().forEach(function(t) { t.stop(); });
+      kioskStream = null;
+    }
+    kioskProcessingUser = null;
+    kioskCurrentDescriptor = null;
+    kioskLivenessActive = false;
+    kioskLivenessFace = null;
+    document.getElementById('kioskChallenge').classList.add('hidden');
+    document.getElementById('kioskResult').className = 'kiosk-result hidden';
+    document.getElementById('kioskScreen').classList.add('hidden');
+    
+    // Reset user
+    user = null;
+    
+    // Tampilkan login screen
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+    
+    showToast('Mode Kiosk ditutup', 'ok', 2000);
+    return;
+  }
+  
+  // Kalau user normal, pakai closeKiosk original
+  if (_origCloseKiosk) _origCloseKiosk.call(this);
+};
+
+
+
+
+
+
+
+
+
+     
 
 // ============================================================
 // EVENT LISTENER
