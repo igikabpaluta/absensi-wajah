@@ -4921,7 +4921,6 @@ function doPrint(format) {
   if (format === 'pdf') {
     window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
     showToast('📄 PDF terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
-
   } else if (format === 'docx') {
     if (file.previewId) {
       window.open('https://docs.google.com/document/d/' + file.previewId + '/edit', '_blank');
@@ -4930,41 +4929,12 @@ function doPrint(format) {
       window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
       showToast('📝 Word terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
     }
-
-} else if (format === 'xlsx') {
-  // ✅ Buka FOLDER BACKUP di Google Drive
-  // User bisa pilih sendiri file: Sheets native, PDF, atau Word
-  var folderUrl = file.folderUrl || file.parentUrl;
-
-  if (!folderUrl) {
-    // Fallback: kalau tidak ada URL folder, ambil dari file ID
-    // Buka file-nya di Drive preview (user masih bisa klik "Buka dengan Google Sheets")
-    folderUrl = 'https://drive.google.com/drive/folders/1BqV9f-j_jPLACEHOLDER';
-    // ⚠️ GANTI dengan cara ambil folder ID yang benar (lihat Patch 2)
-  }
-
-  console.log('📂 Buka folder Backup:', folderUrl);
-  var win = window.open(folderUrl, '_blank');
-  if (!win) {
-    showToast('Popup diblokir. Izinkan popup di browser.', 'warn', 5000);
-  } else {
-    showToast('📂 Folder Backup terbuka. Pilih file Sheets/PDF/Word untuk print.', 'info', 10000);
+  } else if (format === 'xlsx') {
+    var sheetId = file.previewId || file.id;
+    window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
+    showToast('📊 Google Sheets terbuka. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
   }
 }
-    } else {
-      // File .xlsx biasa — arahkan ke Sheets viewer (Google akan konversi otomatis)
-      // Pakai URL /edit yang akan trigger "Buka dengan Google Sheets"
-      var urlConv = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/edit';
-      var win2 = window.open(urlConv, '_blank');
-      if (!win2) {
-        showToast('Popup diblokir. Izinkan popup di browser.', 'warn', 5000);
-      } else {
-        showToast('📊 File dibuka. Jika muncul "Buka dengan Google Sheets", klik OK.', 'info', 10000);
-      }
-    }
-  }
-}
-
 
 
      
