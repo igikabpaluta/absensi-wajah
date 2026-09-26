@@ -1,5 +1,5 @@
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v32
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v33
      Bagian 1/4: HEAD, CSS, HTML BODY
      ============================================================ -->
 <!DOCTYPE html>
@@ -261,7 +261,6 @@ input, select { font-size:16px !important; }
   margin-top:8px; animation: pulseRing 2s infinite;
 }
 
-/* KIOSK UNKNOWN - tombol daftar wajah */
 .kiosk-unknown-panel {
   position:absolute; bottom:120px; left:20px; right:20px; z-index:30;
   display:none; justify-content:center;
@@ -272,12 +271,8 @@ input, select { font-size:16px !important; }
   border-radius: 24px; padding: 20px 30px; color:white; text-align:center;
   box-shadow: 0 12px 40px rgba(220,38,38,.6); max-width: 420px; width: 100%;
 }
-.kiosk-unknown-title {
-  font-size: 18px; font-weight: 900; margin-bottom: 8px;
-}
-.kiosk-unknown-desc {
-  font-size: 12px; opacity: 0.9; margin-bottom: 14px;
-}
+.kiosk-unknown-title { font-size: 18px; font-weight: 900; margin-bottom: 8px; }
+.kiosk-unknown-desc { font-size: 12px; opacity: 0.9; margin-bottom: 14px; }
 .kiosk-unknown-btn {
   background: white; color: #dc2626; font-weight: 900; font-size: 14px;
   padding: 12px 24px; border-radius: 12px; border: none;
@@ -321,14 +316,14 @@ input, select { font-size:16px !important; }
         MASUK SEKARANG
       </button>
     </div>
-    
+
     <!-- Pemisah -->
     <div class="flex items-center gap-3 my-2">
       <div class="flex-1 h-px bg-gray-200"></div>
       <span class="text-[10px] font-bold text-gray-400 uppercase">atau</span>
       <div class="flex-1 h-px bg-gray-200"></div>
     </div>
-    
+
     <!-- Tombol KIOSK -->
     <button onclick="openKioskPasswordFromLogin()" type="button" id="btnKioskLogin"
       class="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
@@ -363,9 +358,7 @@ input, select { font-size:16px !important; }
     <div class="video-wrap">
       <video id="enrollVideo" autoplay playsinline muted></video>
       <div class="video-overlay">
-        <div class="face-guide" id="enrollGuide">
-          <div class="scan-line"></div>
-        </div>
+        <div class="face-guide" id="enrollGuide"><div class="scan-line"></div></div>
       </div>
       <div class="face-status info" id="enrollStatus">Memuat model...</div>
     </div>
@@ -415,9 +408,7 @@ input, select { font-size:16px !important; }
     <div class="video-wrap">
       <video id="absVideo" autoplay playsinline muted></video>
       <div class="video-overlay">
-        <div class="face-guide" id="absGuide">
-          <div class="scan-line"></div>
-        </div>
+        <div class="face-guide" id="absGuide"><div class="scan-line"></div></div>
       </div>
       <div class="face-status info" id="absStatus">Memuat model...</div>
       <div class="liveness-indicator wait" id="livenessIndicator">● LIVE</div>
@@ -440,9 +431,7 @@ input, select { font-size:16px !important; }
 <div id="kioskScreen" class="fixed inset-0 z-[670] hidden bg-black">
   <div class="kiosk-video-wrap">
     <video id="kioskVideo" autoplay playsinline muted></video>
-    <div class="kiosk-overlay">
-      <div class="kiosk-face-guide" id="kioskGuide"></div>
-    </div>
+    <div class="kiosk-overlay"><div class="kiosk-face-guide" id="kioskGuide"></div></div>
     <div class="kiosk-header">
       <div class="kiosk-subtabs">
         <button id="kioskTabMasuk" onclick="setKioskType('IN')" type="button" class="kiosk-subtab active">
@@ -477,15 +466,10 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- PANEL WAJAH TIDAK DIKENALI -->
     <div class="kiosk-unknown-panel" id="kioskUnknownPanel">
       <div class="kiosk-unknown-inner">
-        <div class="kiosk-unknown-title">
-          <i class="fas fa-user-slash mr-2"></i> Wajah Tidak Dikenali
-        </div>
-        <div class="kiosk-unknown-desc">
-          Wajah Anda belum terdaftar dalam sistem. Silakan daftar wajah terlebih dahulu.
-        </div>
+        <div class="kiosk-unknown-title"><i class="fas fa-user-slash mr-2"></i> Wajah Tidak Dikenali</div>
+        <div class="kiosk-unknown-desc">Wajah belum terdaftar. Silakan daftar wajah dulu.</div>
         <button onclick="openEnrollFromKiosk()" type="button" class="kiosk-unknown-btn">
           <i class="fas fa-camera mr-2"></i> DAFTAR WAJAH SEKARANG
         </button>
@@ -599,7 +583,6 @@ input, select { font-size:16px !important; }
         Backup menghasilkan <strong>Google Sheets</strong>, <strong>Word (.docx)</strong>, dan <strong>PDF</strong> di folder
         <strong>Presensi_App_Data/Backup/</strong>.
       </p>
-
       <div class="space-y-3">
         <div>
           <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Periode Backup</label>
@@ -629,7 +612,6 @@ input, select { font-size:16px !important; }
         <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Rekap Absensi Lengkap</h4>
       </div>
       <p class="text-[10px] text-gray-500 mb-4 italic">Semua data absen. Klik foto untuk zoom, klik peta untuk buka Google Maps.</p>
-
       <div class="space-y-3 mb-4">
         <div>
           <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Filter Bulan</label>
@@ -645,7 +627,6 @@ input, select { font-size:16px !important; }
           </button>
         </div>
       </div>
-
       <div class="rekap-scroll border-2 border-gray-100 rounded-2xl">
         <table class="w-full text-[10px]">
           <thead>
@@ -691,7 +672,6 @@ input, select { font-size:16px !important; }
         <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Mode Liveness Global</h4>
       </div>
       <p class="text-[10px] text-gray-500 mb-4 italic">Setting ini jadi <strong>default</strong> untuk user yang belum di-set per-user.</p>
-
       <div class="space-y-3">
         <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
           <input type="radio" name="globalLivenessMode" value="instruction" id="glModeInstruction" class="mt-1 w-4 h-4 accent-indigo-600">
@@ -708,7 +688,6 @@ input, select { font-size:16px !important; }
           </div>
         </label>
       </div>
-
       <div class="mt-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-2">
         <p class="text-[10px] font-black text-indigo-700 uppercase mb-2">Gerakan Global:</p>
         <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer">
@@ -736,7 +715,6 @@ input, select { font-size:16px !important; }
           <span class="text-sm font-bold text-gray-700">Senyum</span>
         </label>
       </div>
-
       <button onclick="saveGlobalLivenessSettings()" type="button" class="w-full mt-4 bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
         <i class="fas fa-save mr-2"></i> SIMPAN MODE GLOBAL
       </button>
@@ -818,20 +796,40 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- PASSWORD KIOSK -->
+    <!-- PASSWORD KIOSK — 2 PASSWORD -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-lock text-red-500 text-lg"></i>
         <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Password Kiosk</h4>
       </div>
-      <div class="space-y-3">
-        <div>
-          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Password Tutup Kiosk</label>
-          <input type="text" id="kiosk-pwd" placeholder="Masukkan password"
-            class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-gray-700">
+
+      <!-- Password BUKA -->
+      <div class="mb-4 p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-200">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fas fa-unlock text-emerald-600"></i>
+          <p class="text-xs font-black text-emerald-700 uppercase">🔓 Password BUKA</p>
         </div>
-        <button onclick="saveKioskPassword()" type="button" class="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
-          <i class="fas fa-save mr-2"></i> SIMPAN PASSWORD
+        <p class="text-[10px] text-emerald-600 mb-3">Untuk membuka kiosk dari halaman login</p>
+        <input type="text" id="kiosk-open-pwd" placeholder="Password BUKA"
+          class="w-full p-4 bg-white rounded-2xl outline-none ring-1 ring-emerald-100 font-bold text-gray-700 mb-2">
+        <button onclick="saveKioskOpenPassword()" type="button"
+          class="w-full bg-emerald-600 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs">
+          <i class="fas fa-save mr-2"></i> SIMPAN PASSWORD BUKA
+        </button>
+      </div>
+
+      <!-- Password TUTUP -->
+      <div class="p-4 bg-red-50 rounded-2xl border-2 border-red-200">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fas fa-lock text-red-600"></i>
+          <p class="text-xs font-black text-red-700 uppercase">🔒 Password TUTUP</p>
+        </div>
+        <p class="text-[10px] text-red-600 mb-3">Untuk menutup kiosk saat aktif</p>
+        <input type="text" id="kiosk-pwd" placeholder="Password TUTUP"
+          class="w-full p-4 bg-white rounded-2xl outline-none ring-1 ring-red-100 font-bold text-gray-700 mb-2">
+        <button onclick="saveKioskPassword()" type="button"
+          class="w-full bg-red-500 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs">
+          <i class="fas fa-save mr-2"></i> SIMPAN PASSWORD TUTUP
         </button>
       </div>
     </div>
@@ -918,7 +916,6 @@ input, select { font-size:16px !important; }
         <h4 id="statHadir2" class="text-2xl font-black text-emerald-500">0</h4>
       </div>
     </div>
-
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-file-circle-check text-amber-500 text-lg"></i>
@@ -928,7 +925,6 @@ input, select { font-size:16px !important; }
         <p class="text-center text-xs text-gray-400 py-3">Memuat...</p>
       </div>
     </div>
-
     <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="font-black text-sm uppercase text-gray-400">Filter Riwayat</h3>
@@ -1011,12 +1007,10 @@ input, select { font-size:16px !important; }
     </select>
     <input type="text" id="uPass" placeholder="Password (kosongkan jika tidak diubah)"
       class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100">
-
     <div class="pt-3 mt-3 border-t-2 border-dashed border-gray-200">
       <p class="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-3">
         <i class="fas fa-shield-halved mr-1"></i> Mode Liveness (Per-User)
       </p>
-
       <div class="space-y-2 mb-3">
         <label class="flex items-start gap-3 p-2.5 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-indigo-200 transition-all">
           <input type="radio" name="uLivenessMode" value="" id="uLmGlobal" class="mt-1 w-4 h-4 accent-indigo-600">
@@ -1040,7 +1034,6 @@ input, select { font-size:16px !important; }
           </div>
         </label>
       </div>
-
       <div id="uLmCustomBox" class="p-3 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-1.5 opacity-50 pointer-events-none">
         <p class="text-[9px] font-black text-indigo-700 uppercase mb-1">Gerakan:</p>
         <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white cursor-pointer">
@@ -1069,7 +1062,6 @@ input, select { font-size:16px !important; }
         </label>
       </div>
     </div>
-
     <div class="flex gap-3 pt-4">
       <button onclick="closeUserModal()" type="button" class="flex-1 py-4 font-bold text-gray-400">Batal</button>
       <button onclick="submitUser()" type="button" class="flex-1 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200">Simpan</button>
@@ -1122,15 +1114,15 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- MODAL KIOSK PASSWORD (dari dalam app) -->
+<!-- MODAL KIOSK PASSWORD (DARI DALAM APP) -->
 <div id="kioskPasswordModal" class="fixed inset-0 z-[800] bg-black/80 backdrop-blur-md hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <div class="text-center">
       <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
         <i class="fas fa-lock text-red-500 text-2xl"></i>
       </div>
-      <h3 class="text-xl font-black text-gray-900">Tutup Mode Massal</h3>
-      <p class="text-xs text-gray-500 mt-1">Masukkan password untuk keluar</p>
+      <h3 class="text-xl font-black text-gray-900">🔒 Tutup Mode Kiosk</h3>
+      <p class="text-xs text-gray-500 mt-1">Masukkan <strong>Password TUTUP</strong></p>
     </div>
     <input type="password" id="kioskPwdInput" placeholder="Password"
       class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-center text-lg tracking-widest">
@@ -1147,10 +1139,10 @@ input, select { font-size:16px !important; }
   <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
     <div class="text-center">
       <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-        <i class="fas fa-video text-emerald-600 text-2xl"></i>
+        <i class="fas fa-unlock text-emerald-600 text-2xl"></i>
       </div>
-      <h3 class="text-xl font-black text-gray-900">Mode Kiosk</h3>
-      <p class="text-xs text-gray-500 mt-1">Masukkan password untuk membuka absensi massal</p>
+      <h3 class="text-xl font-black text-gray-900">🔓 Buka Mode Kiosk</h3>
+      <p class="text-xs text-gray-500 mt-1">Masukkan <strong>Password BUKA</strong> untuk absensi massal</p>
     </div>
     <input type="password" id="kioskLoginPwdInput" placeholder="Password Kiosk"
       class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-center text-lg tracking-widest"
@@ -1179,7 +1171,6 @@ input, select { font-size:16px !important; }
       <p class="text-xs text-gray-500 mt-1">Pilih format file yang ingin diunduh</p>
       <p id="unduhBulanLabel" class="text-sm font-bold text-indigo-600 mt-2"></p>
     </div>
-
     <div class="space-y-3">
       <button onclick="doDownload('pdf')" type="button" id="unduhPdf"
         class="w-full flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 rounded-2xl transition-all active:scale-95">
@@ -1192,7 +1183,6 @@ input, select { font-size:16px !important; }
         </div>
         <i class="fas fa-chevron-right text-red-400"></i>
       </button>
-
       <button onclick="doDownload('docx')" type="button" id="unduhDocx"
         class="w-full flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-2xl transition-all active:scale-95">
         <div class="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center">
@@ -1204,7 +1194,6 @@ input, select { font-size:16px !important; }
         </div>
         <i class="fas fa-chevron-right text-blue-400"></i>
       </button>
-
       <button onclick="doDownload('xlsx')" type="button" id="unduhXlsx"
         class="w-full flex items-center gap-3 p-4 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 rounded-2xl transition-all active:scale-95">
         <div class="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center">
@@ -1217,11 +1206,8 @@ input, select { font-size:16px !important; }
         <i class="fas fa-chevron-right text-emerald-400"></i>
       </button>
     </div>
-
     <button onclick="closeRekapModal('modalUnduh')" type="button"
-      class="w-full mt-5 py-3 text-sm font-bold text-gray-400 hover:text-gray-600">
-      Batal
-    </button>
+      class="w-full mt-5 py-3 text-sm font-bold text-gray-400 hover:text-gray-600">Batal</button>
   </div>
 </div>
 
@@ -1236,7 +1222,6 @@ input, select { font-size:16px !important; }
       <p class="text-xs text-gray-500 mt-1">Pilih format file untuk dicetak</p>
       <p id="printBulanLabel" class="text-sm font-bold text-emerald-600 mt-2"></p>
     </div>
-
     <div class="space-y-3">
       <button onclick="doPrint('pdf')" type="button"
         class="w-full flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 rounded-2xl transition-all active:scale-95">
@@ -1249,7 +1234,6 @@ input, select { font-size:16px !important; }
         </div>
         <i class="fas fa-chevron-right text-red-400"></i>
       </button>
-
       <button onclick="doPrint('docx')" type="button"
         class="w-full flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-2xl transition-all active:scale-95">
         <div class="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center">
@@ -1261,7 +1245,6 @@ input, select { font-size:16px !important; }
         </div>
         <i class="fas fa-chevron-right text-blue-400"></i>
       </button>
-
       <button onclick="doPrint('xlsx')" type="button"
         class="w-full flex items-center gap-3 p-4 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 rounded-2xl transition-all active:scale-95">
         <div class="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center">
@@ -1274,11 +1257,8 @@ input, select { font-size:16px !important; }
         <i class="fas fa-chevron-right text-emerald-400"></i>
       </button>
     </div>
-
     <button onclick="closeRekapModal('modalPrint')" type="button"
-      class="w-full mt-5 py-3 text-sm font-bold text-gray-400 hover:text-gray-600">
-      Batal
-    </button>
+      class="w-full mt-5 py-3 text-sm font-bold text-gray-400 hover:text-gray-600">Batal</button>
   </div>
 </div>
 
@@ -1296,12 +1276,10 @@ input, select { font-size:16px !important; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 // ============================================================
-// AKHIR BAGIAN 1 — LANJUT BAGIAN 2 DI BAWAH INI
-// ============================================================
-// ============================================================
 // BAGIAN 2 / 4 — VARIABEL, API, TTS, LOGIN, KIOSK
 // ============================================================
 
+// ⚠️ GANTI DENGAN URL DEPLOYMENT APPS SCRIPT ANDA
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxbaebNb_LaEB51AmanRmPPO-yOad3wLTPaNOVdyuJ--zFW4ub_JvbnV09VfUnno2fo/exec';
 
 var user = null;
@@ -1345,15 +1323,13 @@ var LIVENESS_SMILE_HOLD_MS = 1500;
 var KIOSK_NO_INSTR_TIMEOUT = 30000;
 var ABS_NO_INSTR_TIMEOUT = 30000;
 
-// FOTO ABSEN RETRY
 var ABS_PHOTO_MAX_RETRY = 8;
 var ABS_PHOTO_RETRY_DELAY = 300;
 
-// KIOSK UNKNOWN (tidak dikenali)
-var KIOSK_UNKNOWN_THRESHOLD = 3;  // 3 deteksi "tidak dikenal" berturut-turut → tampilkan panel daftar
+var KIOSK_UNKNOWN_THRESHOLD = 3;
 var kioskUnknownCount = 0;
 var kioskUnknownLastAt = 0;
-var KIOSK_UNKNOWN_RESET_MS = 5000;  // reset count kalau 5 detik tidak ada wajah
+var KIOSK_UNKNOWN_RESET_MS = 5000;
 
 var globalLivenessSettings = {
   mode: 'instruction',
@@ -1391,7 +1367,7 @@ var ENROLL_STABLE_REQUIRED = 5;
 var ENROLL_AUTO_COOLDOWN = 1200;
 var enrollCaptureInProgress = false;
 var enrollFrontPhoto = null;
-var _enrollFromKiosk = false;  // penanda: enrollment dibuka dari kiosk
+var _enrollFromKiosk = false;
 
 var absStream = null;
 var absLoopTimer = null;
@@ -1424,9 +1400,8 @@ var _todayAttendanceComplete = false;
 var _smileFrameCount = 0;
 var _smileFrameRequired = 3;
 
-// KIOSK PASSWORD DARI LOGIN
-var _kioskLoginPassword = '1234';
-var _kioskFromLogin = false;  // penanda: kiosk dibuka dari halaman login
+var _kioskLoginPassword = '5678';
+var _kioskFromLogin = false;
 
 // ============================================================
 // UTILS
@@ -1459,9 +1434,6 @@ function isTimeEmptyFrontend(t) {
   return (s === '' || s === '-' || s === '0' || s === '00:00' || s === '00:00:00');
 }
 
-// ============================================================
-// BUILD CHALLENGES
-// ============================================================
 function buildChallengesFromString(challengesStr) {
   if (!challengesStr) return [];
   var keys = String(challengesStr).split(',').map(function(k) { return String(k).trim().toUpperCase(); });
@@ -1650,7 +1622,6 @@ function makeThumbnailHD(video) {
     ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
     return can.toDataURL('image/jpeg', 0.85);
   } catch (e) {
-    console.warn('[makeThumbnailHD] error:', e);
     return null;
   }
 }
@@ -1666,7 +1637,6 @@ function captureAbsenPhotoWithRetry(videoEl, maxRetry, delayMs) {
         if (videoEl && videoEl.videoWidth > 0 && videoEl.videoHeight > 0 && videoEl.readyState >= 2) {
           var data = makeThumbnailHD(videoEl);
           if (data && data.length > 1000) {
-            console.log('[captureAbsenPhoto] OK attempt=' + attempt + ' len=' + data.length);
             resolve(data);
             return;
           }
@@ -1761,6 +1731,7 @@ function loadFaceModels() {
 // WINDOW ONLOAD
 // ============================================================
 window.onload = function() {
+  console.log('🚀 Window loaded');
   startTime();
   initGPS();
   var cachedOffice = localStorage.getItem('presensi_office_v3');
@@ -2032,33 +2003,32 @@ function switchTab(id) {
 }
 
 // ============================================================
-// KIOSK DARI HALAMAN LOGIN (BARU)
+// KIOSK DARI HALAMAN LOGIN
 // ============================================================
 function openKioskPasswordFromLogin() {
   console.log('🔓 Tombol KIOSK diklik');
   unlockTTS();
-  
+
   var modal = document.getElementById('kioskPasswordLoginModal');
   if (!modal) {
     console.error('❌ Modal kioskPasswordLoginModal TIDAK DITEMUKAN');
-    alert('Error: Modal password kiosk tidak ditemukan.');
     return;
   }
-  
+
   var input = document.getElementById('kioskLoginPwdInput');
   if (input) input.value = '';
   var errEl = document.getElementById('kioskLoginPwdError');
   if (errEl) errEl.classList.add('hidden');
-  
-  callAPI('getKioskPassword', {})
+
+  callAPI('getKioskOpenPassword', {})
     .then(function(res) {
       if (res && res.password) {
         _kioskLoginPassword = res.password;
-        console.log('✅ Password kiosk di-load');
+        console.log('✅ Password BUKA kiosk di-load');
       }
     })
-    .catch(function(e) { console.warn('Gagal ambil password kiosk:', e); });
-  
+    .catch(function(e) { console.warn('Gagal ambil password BUKA:', e); });
+
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   setTimeout(function() {
@@ -2077,19 +2047,19 @@ function closeKioskPasswordLoginModal() {
 function verifyKioskPasswordLogin() {
   var input = document.getElementById('kioskLoginPwdInput');
   var pwd = input ? input.value.trim() : '';
-  
+
   if (!pwd) {
     var errEl = document.getElementById('kioskLoginPwdError');
     if (errEl) errEl.classList.remove('hidden');
     return;
   }
-  
-  console.log('🔐 Verifikasi password...');
-  
+
+  console.log('🔐 Verifikasi password BUKA...');
+
   callAPI('verifyKioskOpenPassword', { password: pwd })
     .then(function(res) {
       if (res && res.success) {
-        console.log('✅ Password benar, buka kiosk');
+        console.log('✅ Password BUKA benar');
         closeKioskPasswordLoginModal();
         openKioskFromLogin();
       } else {
@@ -2099,24 +2069,16 @@ function verifyKioskPasswordLogin() {
       }
     })
     .catch(function(err) {
-      console.warn('⚠️ Fallback ke cek lokal:', err);
-      if (pwd === _kioskLoginPassword) {
-        closeKioskPasswordLoginModal();
-        openKioskFromLogin();
-      } else {
-        var errEl = document.getElementById('kioskLoginPwdError');
-        if (errEl) errEl.classList.remove('hidden');
-        if (input) input.value = '';
-      }
+      console.warn('Verifikasi error:', err);
+      var errEl = document.getElementById('kioskLoginPwdError');
+      if (errEl) errEl.classList.remove('hidden');
+      if (input) input.value = '';
     });
 }
 
-
-
 function openKioskFromLogin() {
   console.log('🚀 Membuka kiosk dari login');
-  
-  // ⚠️ WAJIB: SET USER DULU
+
   user = {
     id: 'KIOSK_GUEST',
     nama: 'Mode Kiosk',
@@ -2126,54 +2088,44 @@ function openKioskFromLogin() {
     livenessMode: '',
     livenessChallenges: ''
   };
-  
+
   console.log('👤 User di-set:', user);
-  
   _kioskFromLogin = true;
-  
-  // Cek GPS
+
   if (currentLoc.lat === 0 && currentLoc.lng === 0) {
-    showToast('Menunggu GPS...', 'warn', 3000);
+    showToast('Menunggu GPS... coba lagi 3 detik', 'warn', 3000);
     setTimeout(function() {
       if (currentLoc.lat === 0 && currentLoc.lng === 0) {
         showToast('GPS belum siap. Coba lagi.', 'err', 4000);
+        user = null;
+        _kioskFromLogin = false;
         return;
       }
+      console.log('✅ GPS OK, buka openKiosk()');
       openKiosk();
     }, 3000);
     return;
   }
-  
-  console.log('✅ Buka openKiosk()');
+
+  console.log('✅ GPS OK, buka openKiosk()');
   openKiosk();
 }
 
-
-
-     
-
-
-
-     
 // ============================================================
-// ENROLL DARI KIOSK (wajah tidak dikenali)
+// ENROLL DARI KIOSK
 // ============================================================
 function openEnrollFromKiosk() {
   console.log('📷 Daftar wajah dari kiosk');
-  
-  // Hentikan kiosk dulu
+
   if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
   if (kioskStream) {
     kioskStream.getTracks().forEach(function(t) { t.stop(); });
     kioskStream = null;
   }
-  
-  // Sembunyikan kiosk
+
   document.getElementById('kioskScreen').classList.add('hidden');
   document.getElementById('kioskUnknownPanel').classList.remove('active');
-  
-  // Reset user supaya enrollment bisa dibuka
-  // (enrollment butuh user.id — kita set dummy kalau dari login)
+
   if (!user || !user.id || user.id === 'KIOSK_GUEST') {
     user = {
       id: 'KIOSK_ENROLL_' + Date.now(),
@@ -2185,50 +2137,16 @@ function openEnrollFromKiosk() {
       livenessChallenges: ''
     };
   }
-  
-  // Buka enrollment
+
   _enrollFromKiosk = true;
   openEnrollment();
 }
 
 // ============================================================
-// LOGOUT DARI KIOSK (kembali ke login)
-// ============================================================
-function closeKioskFromLogin() {
-  console.log('🔒 Menutup kiosk dari login');
-  
-  // Cleanup kiosk
-  if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
-  if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
-  if (kioskStream) {
-    kioskStream.getTracks().forEach(function(t) { t.stop(); });
-    kioskStream = null;
-  }
-  kioskProcessingUser = null;
-  kioskCurrentDescriptor = null;
-  kioskLivenessActive = false;
-  kioskLivenessFace = null;
-  document.getElementById('kioskChallenge').classList.add('hidden');
-  document.getElementById('kioskUnknownPanel').classList.remove('active');
-  document.getElementById('kioskResult').className = 'kiosk-result hidden';
-  document.getElementById('kioskScreen').classList.add('hidden');
-  
-  // Reset user
-  user = null;
-  _kioskFromLogin = false;
-  
-  // Tampilkan login screen
-  document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-  
-  showToast('Mode Kiosk ditutup', 'ok', 2000);
-}
-
-// ============================================================
-// KIOSK PASSWORD (DARI DALAM APP — admin)
+// KIOSK PASSWORD
 // ============================================================
 function loadKioskPassword() {
-  callAPI('getKioskOpenPassword', {})
+  callAPI('getKioskPassword', {})
     .then(function(res) {
       if (res && res.password) {
         kioskPassword = res.password;
@@ -2237,17 +2155,26 @@ function loadKioskPassword() {
       }
     })
     .catch(function(err) { console.warn('loadKioskPassword gagal:', err); });
+
+  callAPI('getKioskOpenPassword', {})
+    .then(function(res) {
+      if (res && res.password) {
+        var el = document.getElementById('kiosk-open-pwd');
+        if (el) el.value = res.password;
+      }
+    })
+    .catch(function(err) { console.warn('loadKioskOpenPassword gagal:', err); });
 }
 
 function saveKioskPassword() {
   var pwd = document.getElementById('kiosk-pwd').value.trim();
   if (!pwd) return showToast("Password tidak boleh kosong!", 'warn');
-  showToast("Menyimpan...", 'info', 2000);
+  showToast("Menyimpan password TUTUP...", 'info', 2000);
   callAPI('updateKioskPassword', { password: pwd })
     .then(function(res) {
       if (res && res.success) {
         kioskPassword = pwd;
-        showToast(res.message || "Password kiosk tersimpan!", 'ok');
+        showToast(res.message || "Password TUTUP tersimpan!", 'ok');
       } else {
         showToast(res ? res.message : "Gagal simpan", 'err');
       }
@@ -2255,9 +2182,6 @@ function saveKioskPassword() {
     .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
 }
 
-
-
-// ===== FUNGSI BARU: Simpan Password BUKA kiosk =====
 function saveKioskOpenPassword() {
   var pwd = document.getElementById('kiosk-open-pwd').value.trim();
   if (!pwd) return showToast("Password tidak boleh kosong!", 'warn');
@@ -2273,21 +2197,6 @@ function saveKioskOpenPassword() {
     })
     .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-     
 
 function openKioskPasswordModal() {
   document.getElementById('kioskPwdInput').value = '';
@@ -2311,7 +2220,7 @@ function verifyKioskPasswordAndClose() {
       if (res && res.success) {
         closeKioskPasswordModal();
         closeKiosk();
-        showToast("Mode Massal ditutup", 'ok', 2000);
+        showToast("Mode Kiosk ditutup", 'ok', 2000);
       } else {
         document.getElementById('kioskPwdError').classList.remove('hidden');
         document.getElementById('kioskPwdInput').value = '';
@@ -2321,7 +2230,7 @@ function verifyKioskPasswordAndClose() {
       if (input === kioskPassword) {
         closeKioskPasswordModal();
         closeKiosk();
-        showToast("Mode Massal ditutup", 'ok', 2000);
+        showToast("Mode Kiosk ditutup", 'ok', 2000);
       } else {
         document.getElementById('kioskPwdError').classList.remove('hidden');
         document.getElementById('kioskPwdInput').value = '';
@@ -2330,18 +2239,21 @@ function verifyKioskPasswordAndClose() {
 }
 
 // ============================================================
-// KIOSK - BUKA (DIPANGGIL DARI ADMIN ATAU DARI LOGIN)
+// KIOSK — BUKA
 // ============================================================
 function openKiosk() {
-  // Terima guest kiosk atau admin
+  console.log('🎬 openKiosk dipanggil');
+
   var isKioskGuest = (user && user.id === 'KIOSK_GUEST');
   var isAdmin = (user && user.role === 'admin');
-  
+
+  console.log('🔍 Cek akses:', { isKioskGuest: isKioskGuest, isAdmin: isAdmin });
+
   if (!isKioskGuest && !isAdmin) {
     showToast('Akses ditolak', 'err');
     return;
   }
-  
+
   unlockTTS();
   if (!office.lat || !office.lng) {
     showToast("Lokasi kantor belum diatur!", 'err');
@@ -2356,8 +2268,7 @@ function openKiosk() {
     showToast("Di luar radius kantor (" + Math.round(dist) + "m)", 'err');
     return;
   }
-  
-  // Sembunyikan login & app
+
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').classList.add('hidden');
   document.getElementById('kioskScreen').classList.remove('hidden');
@@ -2375,38 +2286,58 @@ function openKiosk() {
   kioskUnknownLastAt = 0;
   if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
 
+  console.log('🎬 Load face models...');
   loadFaceModels().then(function(ok) {
+    console.log('🎬 Face models loaded:', ok);
     if (!ok) {
       showToast("Gagal memuat model AI", 'err');
+      if (isKioskGuest) {
+        document.getElementById('kioskInfoText').innerText = '⚠️ Gagal muat model AI. Coba refresh.';
+        return;
+      }
       closeKiosk();
       return;
     }
+
     callAPI('getAllFaceDescriptors', {})
       .then(function(res) {
+        console.log('🎬 GetAllFaceDescriptors result:', res ? res.total : 0);
         if (!res || !res.success) {
           showToast("Gagal memuat data wajah", 'err');
+          if (isKioskGuest) {
+            document.getElementById('kioskInfoText').innerText = '⚠️ Gagal muat data wajah.';
+            return;
+          }
           closeKiosk();
           return;
         }
+
         kioskKnownFaces = res.data || [];
-        Logger && console.log('Kiosk known faces:', kioskKnownFaces.length);
-        
-        // Log nama user untuk debug
+        console.log('👥 Kiosk known faces:', kioskKnownFaces.length);
+
         if (kioskKnownFaces.length > 0) {
           kioskKnownFaces.slice(0, 5).forEach(function(f) {
             console.log('  👤 ' + f.userId + ' = ' + f.nama);
           });
         }
-        
+
         if (kioskKnownFaces.length === 0) {
           showToast("Belum ada wajah terdaftar", 'warn');
-          closeKiosk();
+          document.getElementById('kioskInfoText').innerText = '⚠️ Belum ada wajah terdaftar. Daftar wajah dulu.';
+          document.getElementById('kioskUnknownPanel').classList.add('active');
+          startKioskCamera();
           return;
         }
+
+        console.log('🎬 Start kiosk camera...');
         startKioskCamera();
       })
       .catch(function(err) {
         showToast(err.message || "Gagal ambil data wajah", 'err');
+        if (isKioskGuest) {
+          document.getElementById('kioskInfoText').innerText = '⚠️ Koneksi gagal. Coba refresh.';
+          return;
+        }
         closeKiosk();
       });
   });
@@ -2430,6 +2361,11 @@ function setKioskType(type) {
 }
 
 function startKioskCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Kamera tidak didukung browser ini. Buka lewat Chrome / HTTPS.', 'err', 8000, true);
+    if (!_kioskFromLogin) closeKiosk();
+    return;
+  }
   navigator.mediaDevices.getUserMedia({
     video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
     audio: false
@@ -2441,19 +2377,24 @@ function startKioskCamera() {
     speakText('Silakan hadapkan wajah Anda ke kamera.');
     startKioskLoop();
   }).catch(function(e) {
-    console.error(e);
-    showToast('Kamera tidak bisa diakses', 'err');
-    closeKiosk();
+    console.error('Kiosk camera error:', e);
+    var msg = 'Kamera tidak bisa diakses. ';
+    if (e.name === 'NotAllowedError') msg += 'Izinkan kamera di browser (klik ikon 🔒 di address bar).';
+    else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera terdeteksi.';
+    else if (e.name === 'NotReadableError') msg += 'Kamera sedang dipakai aplikasi lain.';
+    else msg += e.message || e.name || '';
+    showToast(msg, 'err', 8000, true);
+    if (!_kioskFromLogin) closeKiosk();
   });
 }
 
 // ============================================================
-// KIOSK LOOP — dengan fix Anonim + auto-open enrollment
+// KIOSK LOOP
 // ============================================================
 function startKioskLoop() {
   if (kioskLoopTimer) clearInterval(kioskLoopTimer);
   var video = document.getElementById('kioskVideo');
-  
+
   kioskLoopTimer = setInterval(function() {
     if (kioskInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
     if (kioskProcessingUser) return;
@@ -2462,19 +2403,17 @@ function startKioskLoop() {
 
     kioskInferenceBusy = true;
     var src = enhanceFrameForFaceAPI(video);
-    
+
     faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
       .withFaceLandmarks()
       .withFaceDescriptor()
       .then(function(det) {
         var guide = document.getElementById('kioskGuide');
         var unknownPanel = document.getElementById('kioskUnknownPanel');
-        
+
         if (!det) {
           guide.className = 'kiosk-face-guide';
           kioskCurrentDescriptor = null;
-          
-          // Reset unknown counter kalau tidak ada wajah
           var now = Date.now();
           if (now - kioskUnknownLastAt > KIOSK_UNKNOWN_RESET_MS) {
             if (kioskUnknownCount > 0) {
@@ -2482,7 +2421,6 @@ function startKioskLoop() {
               unknownPanel.classList.remove('active');
             }
           }
-          
           if (kioskLivenessActive) {
             kioskLivenessHoldStart = 0;
             document.getElementById('kioskInfoText').innerText = 'Wajah tidak terdeteksi';
@@ -2493,7 +2431,6 @@ function startKioskLoop() {
         var descriptor = Array.from(det.descriptor);
         kioskCurrentDescriptor = descriptor;
 
-        // Cari match terbaik
         var bestMatch = null;
         var bestDist = FACE_THRESHOLD;
         for (var i = 0; i < kioskKnownFaces.length; i++) {
@@ -2504,31 +2441,28 @@ function startKioskLoop() {
         }
 
         if (!bestMatch) {
-          // Wajah tidak dikenal
           guide.className = 'kiosk-face-guide detected';
           kioskUnknownCount++;
           kioskUnknownLastAt = Date.now();
-          
-          console.log('❓ Wajah tidak dikenal. Count: ' + kioskUnknownCount + '/' + KIOSK_UNKNOWN_THRESHOLD);
-          
-          // Kalau sudah 3x berturut-turut → tampilkan panel daftar wajah
+
+          console.log('❓ Tidak dikenal. Count: ' + kioskUnknownCount + '/' + KIOSK_UNKNOWN_THRESHOLD);
+
           if (kioskUnknownCount >= KIOSK_UNKNOWN_THRESHOLD) {
             unknownPanel.classList.add('active');
             document.getElementById('kioskInfoText').innerText = 'Wajah tidak dikenali — silakan daftar';
-            
-            var now = Date.now();
-            if (now - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
-              kioskLastUnknownAt = now;
-              speakText('Wajah tidak dikenali. Silakan daftar wajah terlebih dahulu.');
-            }
-          } else {
             var now2 = Date.now();
             if (now2 - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
               kioskLastUnknownAt = now2;
+              speakText('Wajah tidak dikenali. Silakan daftar wajah terlebih dahulu.');
+            }
+          } else {
+            var now3 = Date.now();
+            if (now3 - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
+              kioskLastUnknownAt = now3;
               speakText('Wajah tidak dikenali. Silakan coba kembali.');
             }
           }
-          
+
           if (kioskLivenessActive) {
             kioskLivenessHoldStart = 0;
             document.getElementById('kioskInfoText').innerText = 'Wajah bukan pemilik sesi';
@@ -2536,13 +2470,10 @@ function startKioskLoop() {
           return;
         }
 
-        // Wajah dikenali → reset counter
         kioskUnknownCount = 0;
         unknownPanel.classList.remove('active');
-        
-        // Debug: log nama user yang dikenali
-        console.log('✅ Wajah dikenali: userId=' + bestMatch.userId + ' nama=' + bestMatch.nama);
-        
+        console.log('✅ Wajah dikenali: ' + bestMatch.nama);
+
         guide.className = 'kiosk-face-guide matched';
 
         if (!kioskLivenessActive) {
@@ -2686,7 +2617,7 @@ function finishKioskLiveness() {
   if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
   document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskInfoText').innerText = 'Verifikasi selesai, memproses absen...';
-  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda telah dicatat, silakan berganti pengguna lain.');
+  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda telah dicatat.');
   kioskProcessAttendance(face);
 }
 
@@ -2699,7 +2630,6 @@ function kioskProcessAttendance(face) {
 
   captureAbsenPhotoWithRetry(kioskVideoEl, ABS_PHOTO_MAX_RETRY, ABS_PHOTO_RETRY_DELAY)
     .then(function(photoBase64) {
-      console.log('[kioskProcessAttendance] Kirim absen. Panjang foto:', photoBase64 ? photoBase64.length : 0);
       callAPI('submitAttendanceKiosk', {
         userId: face.userId,
         lat: currentLoc.lat,
@@ -2713,7 +2643,7 @@ function kioskProcessAttendance(face) {
         })
         .catch(function(err) {
           kioskProcessingUser = null;
-          showKioskResult({ success: false, message: err.message || 'Mohon maaf, gagal. Ada gangguan, coba kembali.' }, face);
+          showKioskResult({ success: false, message: err.message || 'Gagal kirim absen' }, face);
         });
     });
 }
@@ -2796,6 +2726,8 @@ function showKioskResult(res, face) {
 }
 
 function closeKiosk() {
+  console.log('🔒 closeKiosk dipanggil. _kioskFromLogin:', _kioskFromLogin);
+
   if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
   if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
   if (kioskStream) {
@@ -2814,8 +2746,7 @@ function closeKiosk() {
   document.getElementById('kioskUnknownPanel').classList.remove('active');
   document.getElementById('kioskResult').className = 'kiosk-result hidden';
   document.getElementById('kioskScreen').classList.add('hidden');
-  
-  // Kalau kiosk dibuka dari login → kembali ke login
+
   if (_kioskFromLogin) {
     user = null;
     _kioskFromLogin = false;
@@ -2824,13 +2755,12 @@ function closeKiosk() {
     showToast('Mode Kiosk ditutup', 'ok', 2000);
     return;
   }
-  
-  // Kalau dari admin → ke tab home
+
   switchTab('home');
 }
 
 // ============================================================
-// LIIVENESS HELPERS
+// LIVENESS HELPERS
 // ============================================================
 function getYawRatio(landmarks) {
   try {
@@ -2873,8 +2803,6 @@ function getSmileRatio(landmarks) {
     var lowerLipInner = landmarks[66];
     var upperLipTop = landmarks[51];
     var lowerLipBottom = landmarks[57];
-    var noseTip = landmarks[33];
-    var chin = landmarks[8];
 
     var faceLeft = landmarks[0].x;
     var faceRight = landmarks[16].x;
@@ -2973,7 +2901,7 @@ function updateKioskChallengeUI(index) {
 }
 
 // ============================================================
-// TTS ABSENSI + LOGIN
+// BUILD TTS
 // ============================================================
 function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
   var jamAbsen = '';
@@ -2993,7 +2921,7 @@ function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
       if (m1) menitTelat = m1[1];
     }
     if (menitTelat) {
-      return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. Jam masuk ' + jamMasuk + ', toleransi ' + toleransi + ' menit. Anda absen saat ini jam ' + jamAbsen + '.';
+      return namaUser + ' tercatat hadir, tapi terlambat ' + menitTelat + ' menit. Anda absen saat ini jam ' + jamAbsen + '.';
     }
     return namaUser + ' tercatat hadir pada jam ' + jamAbsen + '.';
   } else {
@@ -3003,7 +2931,7 @@ function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
       if (n1) menitAwal = n1[1];
     }
     if (menitAwal) {
-      return namaUser + ' pulang lebih awal, jadi, ' + menitAwal + ' menit lagi akan tiba waktu pulang. Jam pulang ' + jamKeluar + '. Anda absen saat ini jam ' + jamAbsen + '.';
+      return namaUser + ' pulang lebih awal, ' + menitAwal + ' menit lagi akan tiba waktu pulang. Anda absen saat ini jam ' + jamAbsen + '.';
     }
     return namaUser + ' tercatat pulang pada jam ' + jamAbsen + '.';
   }
@@ -3017,13 +2945,10 @@ function buildLoginTTS(namaUser) {
     var jam = String(now.getHours()).padStart(2, '0');
     var menit = String(now.getMinutes()).padStart(2, '0');
     var waktu = jam + ':' + menit;
-    
+
     var tts = '';
-    if (namaUser) {
-      tts = namaUser + ', wajah Anda terdaftar. ';
-    } else {
-      tts = 'Wajah Anda terdaftar. ';
-    }
+    if (namaUser) tts = namaUser + ', wajah Anda terdaftar. ';
+    else tts = 'Wajah Anda terdaftar. ';
     tts += 'Hari ini ' + hari + ' pukul ' + waktu + '. ';
     tts += 'Silakan pilih absen masuk atau absen pulang.';
     return tts;
@@ -3063,15 +2988,9 @@ function clearPermitFile() {
 }
 
 // ============================================================
-// AKHIR BAGIAN 2 — LANJUT BAGIAN 3
-// ============================================================
-// ============================================================
-// BAGIAN 3 / 4 — ABSEN IN/OUT, ENROLLMENT, DASHBOARD, SETTINGS, MAPS
+// BAGIAN 3 / 4 — ABSEN, ENROLLMENT, DASHBOARD, LOG, MAPS, SETTINGS
 // ============================================================
 
-// ============================================================
-// START ATTENDANCE
-// ============================================================
 function startAttendance(type) {
   attType = type;
   unlockTTS();
@@ -3151,6 +3070,12 @@ function startAttendance(type) {
 }
 
 function startAbsCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById('absStatus').innerText = 'Kamera tidak didukung';
+    document.getElementById('absStatus').className = 'face-status warn';
+    showToast('Kamera tidak didukung browser ini. Buka lewat Chrome / HTTPS.', 'err', 8000, true);
+    return;
+  }
   navigator.mediaDevices.getUserMedia({
     video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
     audio: false
@@ -3179,10 +3104,15 @@ function startAbsCamera() {
     }
     startAbsLoop();
   }).catch(function(e) {
-    console.error(e);
+    console.error('Abs camera error:', e);
     document.getElementById('absStatus').innerText = 'Kamera tidak bisa diakses';
     document.getElementById('absStatus').className = 'face-status warn';
-    showToast('Izinkan akses kamera', 'err');
+    var msg = 'Kamera tidak bisa diakses. ';
+    if (e.name === 'NotAllowedError') msg += 'Izinkan kamera di browser (klik ikon 🔒 di address bar).';
+    else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera terdeteksi.';
+    else if (e.name === 'NotReadableError') msg += 'Kamera sedang dipakai aplikasi lain.';
+    else msg += e.message || e.name || '';
+    showToast(msg, 'err', 8000, true);
   });
 }
 
@@ -3462,7 +3392,7 @@ function captureAbsen() {
           refreshData();
         } else if (isAlready) {
           showToast(msg || 'Anda sudah absen hari ini', 'warn', 5000);
-          speakText(msg || 'Anda sudah Tercatat absen hari ini');
+          speakText(msg || 'Anda sudah tercatat absen hari ini');
           closeAbsen();
           switchTab('home');
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3552,6 +3482,12 @@ function openEnrollment() {
       showToast('Gagal memuat model AI', 'err');
       return;
     }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      document.getElementById('enrollStatus').innerText = 'Kamera tidak didukung';
+      document.getElementById('enrollStatus').className = 'face-status warn';
+      showToast('Kamera tidak didukung browser ini. Buka lewat Chrome / HTTPS.', 'err', 8000, true);
+      return;
+    }
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
       audio: false
@@ -3565,10 +3501,15 @@ function openEnrollment() {
       document.getElementById('enrollInstruction').innerText = 'Hadap depan';
       startEnrollLoop();
     }).catch(function(e) {
-      console.error('Camera error:', e);
+      console.error('Enroll camera error:', e);
       document.getElementById('enrollStatus').innerText = 'Kamera tidak bisa diakses';
       document.getElementById('enrollStatus').className = 'face-status warn';
-      showToast('Izinkan akses kamera di browser Anda', 'err');
+      var msg = 'Kamera tidak bisa diakses. ';
+      if (e.name === 'NotAllowedError') msg += 'Izinkan kamera di browser (klik ikon 🔒 di address bar).';
+      else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera terdeteksi.';
+      else if (e.name === 'NotReadableError') msg += 'Kamera sedang dipakai aplikasi lain.';
+      else msg += e.message || e.name || '';
+      showToast(msg, 'err', 8000, true);
     });
   });
 }
@@ -3677,9 +3618,7 @@ function autoCaptureEnroll() {
             return;
           }
           enrollDescriptors.push(Array.from(det.descriptor));
-          if (index === 0) {
-            enrollFrontPhoto = makeThumbnailHD(video);
-          }
+          if (index === 0) enrollFrontPhoto = makeThumbnailHD(video);
           enrollStep++;
           document.getElementById('enrollStep').innerText = enrollStep;
           showToast('Capture ' + enrollStep + '/6 berhasil!', 'ok', 1500);
@@ -3715,9 +3654,7 @@ function captureEnroll() {
         return;
       }
       enrollDescriptors.push(Array.from(det.descriptor));
-      if (enrollStep === 0) {
-        enrollFrontPhoto = makeThumbnailHD(video);
-      }
+      if (enrollStep === 0) enrollFrontPhoto = makeThumbnailHD(video);
       enrollStep++;
       document.getElementById('enrollStep').innerText = enrollStep;
       var instructions = [
@@ -3815,7 +3752,6 @@ function saveEnrollment(descriptor, thumbnail) {
 function cancelEnroll() {
   closeEnrollment();
   if (_enrollFromKiosk) {
-    // Kembali ke kiosk
     _enrollFromKiosk = false;
     openKiosk();
     return;
@@ -3835,8 +3771,7 @@ function closeEnrollment() {
   enrollCaptureInProgress = false;
   enrollFrontPhoto = null;
   document.getElementById('enrollScreen').classList.add('hidden');
-  
-  // Kalau dari kiosk, buka kembali kiosk
+
   if (_enrollFromKiosk) {
     _enrollFromKiosk = false;
     setTimeout(function() { openKiosk(); }, 500);
@@ -3887,11 +3822,8 @@ function refreshData() {
       if (typeof res.faceEnrolled !== 'undefined') {
         userFaceEnrolled = res.faceEnrolled;
         updateFaceBanner();
-        if (userFaceEnrolled) {
-          setAbsenButtonsState(true, null);
-        } else {
-          setAbsenButtonsState(false, 'Wajah belum terdaftar');
-        }
+        if (userFaceEnrolled) setAbsenButtonsState(true, null);
+        else setAbsenButtonsState(false, 'Wajah belum terdaftar');
       }
       checkTodayAttendanceComplete(res);
       initUserMap(office.lat, office.lng, office.rad);
@@ -4016,11 +3948,8 @@ function openUserModal(id, nama, jab, phone, role, livenessMode, livenessChallen
 function onUserLivenessModeChange() {
   var isGlobal = document.getElementById('uLmGlobal').checked;
   var box = document.getElementById('uLmCustomBox');
-  if (isGlobal) {
-    box.classList.add('opacity-50', 'pointer-events-none');
-  } else {
-    box.classList.remove('opacity-50', 'pointer-events-none');
-  }
+  if (isGlobal) box.classList.add('opacity-50', 'pointer-events-none');
+  else box.classList.remove('opacity-50', 'pointer-events-none');
 }
 
 function closeUserModal() {
@@ -4412,9 +4341,7 @@ function loadBackupSettings() {
         var sel = document.getElementById('backupPeriod');
         if (sel) sel.value = res.period || 'weekly';
         var lastEl = document.getElementById('backupLastRun');
-        if (lastEl) {
-          lastEl.innerText = res.last_run ? res.last_run : 'Belum pernah';
-        }
+        if (lastEl) lastEl.innerText = res.last_run ? res.last_run : 'Belum pernah';
       }
     })
     .catch(function(err) { console.warn('loadBackupSettings gagal:', err); });
@@ -4425,11 +4352,8 @@ function saveBackupSettings() {
   showToast('Menyimpan pengaturan backup...', 'info', 2000);
   callAPI('updateBackupSettings', { period: period })
     .then(function(res) {
-      if (res && res.success) {
-        showToast(res.message || 'Tersimpan!', 'ok');
-      } else {
-        showToast(res ? res.message : 'Gagal simpan', 'err');
-      }
+      if (res && res.success) showToast(res.message || 'Tersimpan!', 'ok');
+      else showToast(res ? res.message : 'Gagal simpan', 'err');
     })
     .catch(function(err) { showToast(err.message || 'Gagal terhubung', 'err'); });
 }
@@ -4471,10 +4395,8 @@ function renderGlobalLivenessUI() {
   var mode = globalLivenessSettings.mode || 'instruction';
   var chkStr = globalLivenessSettings.challenges || '';
   var keys = chkStr.split(',').map(function(k) { return String(k).trim().toUpperCase(); });
-
   document.getElementById('glModeInstruction').checked = (mode === 'instruction');
   document.getElementById('glModeNoInstruction').checked = (mode === 'no_instruction');
-
   document.getElementById('glChkFront').checked = keys.indexOf('FRONT') >= 0;
   document.getElementById('glChkLeft').checked  = keys.indexOf('LEFT') >= 0;
   document.getElementById('glChkRight').checked = keys.indexOf('RIGHT') >= 0;
@@ -4513,9 +4435,7 @@ function saveGlobalLivenessSettings() {
         showToast(res ? res.message : 'Gagal simpan', 'err');
       }
     })
-    .catch(function(err) {
-      showToast(err.message || 'Gagal terhubung ke server', 'err');
-    });
+    .catch(function(err) { showToast(err.message || 'Gagal terhubung ke server', 'err'); });
 }
 
 // ============================================================
@@ -4548,9 +4468,7 @@ function saveJamKerja() {
   if (!masuk || !keluar || !telat) return showToast("Semua field wajib diisi!", 'warn');
   showToast("Menyimpan...", 'info', 2000);
   callAPI('updateJamKerja', {
-    jam_masuk: masuk,
-    jam_keluar: keluar,
-    batas_telat: telat,
+    jam_masuk: masuk, jam_keluar: keluar, batas_telat: telat,
     toleransi_telat: jamKerja.toleransi_telat || '15',
     welcome_text: jamKerja.welcome_text || 'Halo {nama}, silakan absen'
   })
@@ -4737,7 +4655,7 @@ function loadRekapLengkap() {
   callAPI('getAttendanceRekap', { bulan: bulan || '' })
     .then(function(res) {
       if (!res || !res.success) {
-        tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal memuat: ' + escapeHtml(res ? res.message : 'unknown') + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal memuat</td></tr>';
         showToast(res ? res.message : 'Gagal memuat', 'err');
         return;
       }
@@ -4748,7 +4666,7 @@ function loadRekapLengkap() {
       showToast('Rekap dimuat: ' + allRekapData.length + ' data', 'ok', 2500);
     })
     .catch(function(err) {
-      tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal terhubung: ' + escapeHtml(err.message || '') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" class="py-8 text-center text-red-400 text-xs">Gagal terhubung</td></tr>';
       showToast(err.message || 'Gagal terhubung', 'err');
     });
 }
@@ -4864,44 +4782,29 @@ function exportRekapLengkap() {
 }
 
 // ============================================================
-// EVENT LISTENER
-// ============================================================
-document.addEventListener('change', function(e) {
-  if (e.target && e.target.name === 'uLivenessMode') {
-    onUserLivenessModeChange();
-  }
-});
-
-// ============================================================
-// AKHIR BAGIAN 3 — LANJUT BAGIAN 4
-// ============================================================
-// ============================================================
-// BAGIAN 4 / 4 — UNDUH & PRINT BACKUP, HELPERS, INIT FINAL
+// BAGIAN 4 / 4 — UNDUH/PRINT, LOADING, INIT FINAL, EXPOSE
 // ============================================================
 
-// ============================================================
-// UNDUH & PRINT OUT BACKUP
-// ============================================================
 var _currentBackupFiles = null;
 var _currentBackupBulan = null;
 
 function openDownloadMenu() {
   var bulan = getSelectedBulanRekap();
   if (!bulan) return showToast('Pilih bulan dulu di filter Rekap!', 'warn');
-  
+
   _currentBackupBulan = bulan;
   document.getElementById('unduhBulanLabel').innerText = formatBulanIndoRekap(bulan);
-  
+
   showLoadingOverlay('Memeriksa file backup...', 'Mencari di Drive');
-  
+
   callAPI('getBackupFiles', { bulan: bulan }).then(function(res) {
     hideLoadingOverlay();
-    
+
     if (!res || !res.success) {
       showToast(res ? res.message : 'Gagal cek file backup', 'err');
       return;
     }
-    
+
     if (!res.anyAvailable) {
       if (confirm('File backup untuk ' + res.bulanLabel + ' belum tersedia.\n\nBuat sekarang? (butuh ~30 detik)')) {
         generateBackupRekap(res.bulan, function() {
@@ -4913,14 +4816,13 @@ function openDownloadMenu() {
       }
       return;
     }
-    
+
     _currentBackupFiles = res.files;
-    
-    // Update disabled state tombol
+
     var btnPdf = document.getElementById('unduhPdf');
     var btnDocx = document.getElementById('unduhDocx');
     var btnXlsx = document.getElementById('unduhXlsx');
-    
+
     if (btnPdf) {
       btnPdf.disabled = !res.files.pdf;
       btnPdf.style.opacity = res.files.pdf ? '1' : '0.4';
@@ -4933,7 +4835,7 @@ function openDownloadMenu() {
       btnXlsx.disabled = !res.files.xlsx;
       btnXlsx.style.opacity = res.files.xlsx ? '1' : '0.4';
     }
-    
+
     document.getElementById('modalUnduh').classList.remove('hidden');
     document.getElementById('modalUnduh').classList.add('flex');
   }).catch(function(err) {
@@ -4945,20 +4847,20 @@ function openDownloadMenu() {
 function openPrintMenu() {
   var bulan = getSelectedBulanRekap();
   if (!bulan) return showToast('Pilih bulan dulu di filter Rekap!', 'warn');
-  
+
   _currentBackupBulan = bulan;
   document.getElementById('printBulanLabel').innerText = formatBulanIndoRekap(bulan);
-  
+
   showLoadingOverlay('Memeriksa file backup...', 'Mencari di Drive');
-  
+
   callAPI('getBackupFiles', { bulan: bulan }).then(function(res) {
     hideLoadingOverlay();
-    
+
     if (!res || !res.success) {
       showToast(res ? res.message : 'Gagal cek file backup', 'err');
       return;
     }
-    
+
     if (!res.anyAvailable) {
       if (confirm('File backup untuk ' + res.bulanLabel + ' belum tersedia.\n\nBuat sekarang? (butuh ~30 detik)')) {
         generateBackupRekap(res.bulan, function() {
@@ -4970,7 +4872,7 @@ function openPrintMenu() {
       }
       return;
     }
-    
+
     _currentBackupFiles = res.files;
     document.getElementById('modalPrint').classList.remove('hidden');
     document.getElementById('modalPrint').classList.add('flex');
@@ -4985,16 +4887,14 @@ function doDownload(format) {
     showToast('File tidak tersedia', 'err');
     return;
   }
-  
+
   var file = _currentBackupFiles[format];
-  
+
   if (format === 'xlsx' && (file.isGoogleSheet || file.previewId)) {
-    // Excel/Sheets: buka Google Sheets → user download sebagai .xlsx
     var sheetId = file.previewId || file.id;
     window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
     showToast('📊 Google Sheets terbuka. Klik File → Download → Microsoft Excel.', 'info', 10000);
   } else {
-    // Word/PDF: langsung download
     var a = document.createElement('a');
     a.href = file.url;
     a.download = file.name;
@@ -5004,7 +4904,7 @@ function doDownload(format) {
     document.body.removeChild(a);
     showToast('📥 Mengunduh ' + file.name, 'ok', 3000);
   }
-  
+
   closeRekapModal('modalUnduh');
 }
 
@@ -5013,17 +4913,15 @@ function doPrint(format) {
     showToast('File tidak tersedia', 'err');
     return;
   }
-  
+
   var file = _currentBackupFiles[format];
   closeRekapModal('modalPrint');
-  
+
   if (format === 'pdf') {
-    // PDF: Google Drive Viewer → Ctrl+P
     window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
     showToast('📄 PDF terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
-    
+
   } else if (format === 'docx') {
-    // Word: Google Docs Editor
     if (file.previewId) {
       window.open('https://docs.google.com/document/d/' + file.previewId + '/edit', '_blank');
       showToast('📝 Word terbuka di Editor. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
@@ -5031,26 +4929,22 @@ function doPrint(format) {
       window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
       showToast('📝 Word terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
     }
-    
-} else if (format === 'xlsx') {
-  if (file.isGoogleSheet || file.previewId) {
-    var sheetId = file.previewId || file.id;
-    // Buka Google Sheets native (bukan Drive preview) supaya =IMAGE muncul
-    window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
-    showToast('📊 Tunggu 3 detik, lalu Ctrl+P. Foto akan muncul.', 'info', 8000);
-  } else {
-    // Fallback: pakai PDF kalau ada
-    if (_currentBackupFiles && _currentBackupFiles.pdf) {
-      window.open('https://drive.google.com/file/d/' + _currentBackupFiles.pdf.id + '/view', '_blank');
-      showToast('📄 PDF dibuka. Print dari sini.', 'info', 8000);
+
+  } else if (format === 'xlsx') {
+    if (file.isGoogleSheet || file.previewId) {
+      var sheetId = file.previewId || file.id;
+      window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
+      showToast('📊 Google Sheets terbuka. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
     } else {
       window.open(file.viewUrl, '_blank');
+      showToast('📊 File terbuka.', 'info', 8000);
     }
   }
 }
+
 function generateBackupRekap(bulan, callback) {
   showLoadingOverlay('Membuat file backup...', 'Butuh ~30 detik. Jangan tutup halaman.');
-  
+
   callAPI('generateBackupForMonth', { bulan: bulan }).then(function(res) {
     hideLoadingOverlay();
     if (res && res.success) {
@@ -5107,10 +5001,8 @@ function closeRekapModal(id) {
 }
 
 // ============================================================
-// INIT FINAL — Semua event listener tambahan
+// INIT FINAL
 // ============================================================
-
-// Enter di login → trigger login
 document.addEventListener('DOMContentLoaded', function() {
   var loginPass = document.getElementById('loginPass');
   if (loginPass) {
@@ -5129,7 +5021,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Cek koneksi internet
 window.addEventListener('online', function() {
   console.log('🌐 Online kembali');
   if (user) refreshData();
@@ -5139,7 +5030,6 @@ window.addEventListener('offline', function() {
   showToast('Koneksi internet terputus', 'warn', 5000, true);
 });
 
-// Bersihkan resource saat tab ditutup
 window.addEventListener('beforeunload', function() {
   if (enrollStream) { try { enrollStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e){} }
   if (absStream) { try { absStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e){} }
@@ -5147,8 +5037,7 @@ window.addEventListener('beforeunload', function() {
 });
 
 // ============================================================
-// EXPOSE fungsi global untuk akses dari HTML onclick
-// (beberapa browser butuh explicit)
+// EXPOSE FUNGSI KE WINDOW
 // ============================================================
 window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
@@ -5200,6 +5089,7 @@ window.saveGPS = saveGPS;
 window.updateMapCircle = updateMapCircle;
 window.centerMapOnUser = centerMapOnUser;
 window.saveKioskPassword = saveKioskPassword;
+window.saveKioskOpenPassword = saveKioskOpenPassword;
 window.changeMyPassword = changeMyPassword;
 window.resetMyFace = resetMyFace;
 window.loadPermitApproval = loadPermitApproval;
@@ -5212,11 +5102,8 @@ window.setKioskType = setKioskType;
 window.showPhotoZoom = showPhotoZoom;
 window.closeRekapModal = closeRekapModal;
 
-console.log('✅ App loaded v32 — Kiosk + Auto-Daftar Wajah + 3 Foto/User + Folder Tahun');
-
-// ============================================================
-// AKHIR BAGIAN 4 / AKHIR FILE
-// ============================================================
+console.log('✅ App loaded v33 — 2 Password Kiosk + Fix Bug Tutup + 3 Foto/User + Folder Tahun');
+console.log('✅ Semua fungsi exposed ke window. Siap untuk Web App.');
 </script>
 </body>
-</html>     
+</html>
