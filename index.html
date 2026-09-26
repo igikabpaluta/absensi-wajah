@@ -5032,19 +5032,22 @@ function doPrint(format) {
       showToast('📝 Word terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
     }
     
-  } else if (format === 'xlsx') {
-    // Excel: Google Sheets (foto muncul!)
-    if (file.isGoogleSheet || file.previewId) {
-      var sheetId = file.previewId || file.id;
-      window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
-      showToast('📊 Google Sheets terbuka. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
+} else if (format === 'xlsx') {
+  if (file.isGoogleSheet || file.previewId) {
+    var sheetId = file.previewId || file.id;
+    // Buka Google Sheets native (bukan Drive preview) supaya =IMAGE muncul
+    window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
+    showToast('📊 Tunggu 3 detik, lalu Ctrl+P. Foto akan muncul.', 'info', 8000);
+  } else {
+    // Fallback: pakai PDF kalau ada
+    if (_currentBackupFiles && _currentBackupFiles.pdf) {
+      window.open('https://drive.google.com/file/d/' + _currentBackupFiles.pdf.id + '/view', '_blank');
+      showToast('📄 PDF dibuka. Print dari sini.', 'info', 8000);
     } else {
       window.open(file.viewUrl, '_blank');
-      showToast('📊 File terbuka.', 'info', 8000);
     }
   }
 }
-
 function generateBackupRekap(bulan, callback) {
   showLoadingOverlay('Membuat file backup...', 'Butuh ~30 detik. Jangan tutup halaman.');
   
