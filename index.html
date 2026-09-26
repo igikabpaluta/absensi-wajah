@@ -4931,27 +4931,26 @@ function doPrint(format) {
       showToast('📝 Word terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
     }
 
-  } else if (format === 'xlsx') {
-    // ✅ PAKSA buka di Google Sheets Editor supaya foto =IMAGE() muncul
-    var sheetId = file.previewId || file.id;
-    if (!sheetId) {
-      showToast('File ID tidak ditemukan', 'err');
-      return;
-    }
-    // Deteksi apakah file adalah Google Sheets native (bukan .xlsx)
-    var isSheetsNative = file.isGoogleSheet || file.isNativeSheets ||
-                        (file.name && file.name.indexOf('.xlsx') === -1 && file.name.indexOf('.xls') === -1);
+} else if (format === 'xlsx') {
+  // ✅ Buka FOLDER BACKUP di Google Drive
+  // User bisa pilih sendiri file: Sheets native, PDF, atau Word
+  var folderUrl = file.folderUrl || file.parentUrl;
 
-    if (isSheetsNative) {
-      // Buka Google Sheets editor
-      var url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/edit';
-      console.log('📊 Buka Google Sheets Editor:', url);
-      var win = window.open(url, '_blank');
-      if (!win) {
-        showToast('Popup diblokir. Izinkan popup di browser.', 'warn', 5000);
-      } else {
-        showToast('📊 Google Sheets terbuka. Tunggu 3 detik, lalu Ctrl+P untuk print.', 'info', 10000);
-      }
+  if (!folderUrl) {
+    // Fallback: kalau tidak ada URL folder, ambil dari file ID
+    // Buka file-nya di Drive preview (user masih bisa klik "Buka dengan Google Sheets")
+    folderUrl = 'https://drive.google.com/drive/folders/1BqV9f-j_jPLACEHOLDER';
+    // ⚠️ GANTI dengan cara ambil folder ID yang benar (lihat Patch 2)
+  }
+
+  console.log('📂 Buka folder Backup:', folderUrl);
+  var win = window.open(folderUrl, '_blank');
+  if (!win) {
+    showToast('Popup diblokir. Izinkan popup di browser.', 'warn', 5000);
+  } else {
+    showToast('📂 Folder Backup terbuka. Pilih file Sheets/PDF/Word untuk print.', 'info', 10000);
+  }
+}
     } else {
       // File .xlsx biasa — arahkan ke Sheets viewer (Google akan konversi otomatis)
       // Pakai URL /edit yang akan trigger "Buka dengan Google Sheets"
