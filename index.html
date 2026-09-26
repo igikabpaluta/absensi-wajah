@@ -1,6 +1,6 @@
 <!-- ============================================================
-     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v33
-     Bagian 1/4: HEAD, CSS, HTML BODY
+     APLIKASI ABSENSI FACE RECOGNITION - FULL FILE v34
+     Fitur: WebAuthn (Fingerprint Login) + Semua fitur v33
      ============================================================ -->
 <!DOCTYPE html>
 <html lang="id">
@@ -291,16 +291,16 @@ input, select { font-size:16px !important; }
 <body class="safe-bottom">
 
 <!-- LOGIN -->
-<div id="loginScreen" class="fixed inset-0 z-[600] bg-white p-8 flex flex-col justify-center items-center">
-  <div class="w-full max-sm:max-w-xs space-y-6">
+<div id="loginScreen" class="fixed inset-0 z-[600] bg-white p-8 flex flex-col justify-center items-center overflow-y-auto">
+  <div class="w-full max-sm:max-w-xs space-y-4 my-auto">
     <div class="text-center">
-      <div class="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl text-white text-3xl">
+      <div class="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl text-white text-3xl">
         <i class="fas fa-face-smile"></i>
       </div>
-      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">ABSENSI WAJAH LOKASI</h1>
-      <p class="text-gray-500 mt-2">Dibuat oleh : Ramadan Hasibuan, S.Pd </p>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">ABSENSI WAJAH LOKASI</h1>
+      <p class="text-gray-500 text-sm mt-1">Dibuat oleh : IGI KAB.PALUTA</p>
     </div>
-    <div class="space-y-4">
+    <div class="space-y-3">
       <div class="relative">
         <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
         <input type="tel" id="loginPhone" placeholder="Nomor HP"
@@ -317,18 +317,57 @@ input, select { font-size:16px !important; }
       </button>
     </div>
 
-    <!-- Pemisah -->
     <div class="flex items-center gap-3 my-2">
       <div class="flex-1 h-px bg-gray-200"></div>
       <span class="text-[10px] font-bold text-gray-400 uppercase">atau</span>
       <div class="flex-1 h-px bg-gray-200"></div>
     </div>
 
+    <!-- Tombol LOGIN SIDIK JARI -->
+    <button onclick="webauthnLoginPrompt()" type="button" id="btnFingerprintLogin"
+      class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+      <i class="fas fa-fingerprint mr-2"></i> LOGIN SIDIK JARI
+    </button>
+
     <!-- Tombol KIOSK -->
     <button onclick="openKioskPasswordFromLogin()" type="button" id="btnKioskLogin"
       class="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
       <i class="fas fa-video mr-2"></i> MODE KIOSK (ABSENSI MASSAL)
     </button>
+  </div>
+</div>
+
+<!-- MODAL LOGIN SIDIK JARI -->
+<div id="fingerprintLoginModal" class="fixed inset-0 z-[700] bg-black/80 backdrop-blur-md hidden items-center justify-center p-6">
+  <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i class="fas fa-fingerprint text-indigo-600 text-2xl"></i>
+      </div>
+      <h3 class="text-xl font-black text-gray-900">🖐️ Login Sidik Jari</h3>
+      <p class="text-xs text-gray-500 mt-1">Pilih cara login</p>
+    </div>
+
+    <div id="fplStep1">
+      <p class="text-xs text-gray-500 mb-2 text-center">Masukkan Nomor HP Anda</p>
+      <input type="tel" id="fplPhone" placeholder="Nomor HP"
+        class="w-full p-4 bg-gray-50 rounded-2xl outline-none ring-1 ring-gray-100 font-bold text-center"
+        onkeypress="if(event.key==='Enter') webauthnLoginStep1()">
+      <p class="text-[10px] text-red-500 text-center font-bold hidden mt-2" id="fplError1">Nomor HP tidak ditemukan</p>
+      <div class="flex gap-3 pt-4">
+        <button onclick="closeFingerprintLoginModal()" type="button" class="flex-1 py-4 font-bold text-gray-400">Batal</button>
+        <button onclick="webauthnLoginStep1()" type="button" class="flex-1 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg">LANJUT</button>
+      </div>
+    </div>
+
+    <div id="fplStep2" class="hidden text-center space-y-4">
+      <div class="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto animate-pulse">
+        <i class="fas fa-fingerprint text-indigo-600 text-5xl"></i>
+      </div>
+      <p class="text-sm font-bold text-gray-700">Sentuh sensor sidik jari Anda</p>
+      <p class="text-xs text-gray-500" id="fplStatus">Menunggu...</p>
+      <button onclick="closeFingerprintLoginModal()" type="button" class="w-full py-3 text-sm font-bold text-gray-400">Batal</button>
+    </div>
   </div>
 </div>
 
@@ -573,6 +612,32 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
+    <!-- LOGIN SIDIK JARI -->
+    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-fingerprint text-indigo-600 text-lg"></i>
+        <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Login Sidik Jari</h4>
+      </div>
+      <p class="text-[10px] text-gray-500 mb-4 italic">
+        Aktifkan login dengan sidik jari HP Anda. Setelah aktif, Anda bisa login tanpa ketik password.
+      </p>
+
+      <div id="fprintStatusBox" class="bg-gray-50 p-4 rounded-2xl mb-3">
+        <p class="text-[10px] font-bold text-gray-500">Status:</p>
+        <p id="fprintStatus" class="text-sm font-black text-gray-700 mt-1">Memeriksa...</p>
+      </div>
+
+      <div id="fprintList" class="space-y-2 mb-3"></div>
+
+      <button onclick="webauthnRegister()" type="button" id="btnFprintRegister"
+        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+        <i class="fas fa-plus mr-2"></i> AKTIFKAN SIDIK JARI DI HP INI
+      </button>
+      <p class="text-[10px] text-gray-400 italic mt-3 text-center">
+        ⚠️ Sidik jari hanya tersimpan di HP Anda. Tidak dikirim ke server.
+      </p>
+    </div>
+
     <!-- BACKUP OTOMATIS -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
@@ -605,7 +670,7 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- REKAP ABSENSI LENGKAP -->
+    <!-- REKAP -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-table-list text-indigo-600 text-lg"></i>
@@ -796,14 +861,12 @@ input, select { font-size:16px !important; }
       </div>
     </div>
 
-    <!-- PASSWORD KIOSK — 2 PASSWORD -->
+    <!-- PASSWORD KIOSK -->
     <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="fas fa-lock text-red-500 text-lg"></i>
         <h4 class="font-black text-sm uppercase tracking-widest text-gray-700">Password Kiosk</h4>
       </div>
-
-      <!-- Password BUKA -->
       <div class="mb-4 p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-200">
         <div class="flex items-center gap-2 mb-2">
           <i class="fas fa-unlock text-emerald-600"></i>
@@ -817,8 +880,6 @@ input, select { font-size:16px !important; }
           <i class="fas fa-save mr-2"></i> SIMPAN PASSWORD BUKA
         </button>
       </div>
-
-      <!-- Password TUTUP -->
       <div class="p-4 bg-red-50 rounded-2xl border-2 border-red-200">
         <div class="flex items-center gap-2 mb-2">
           <i class="fas fa-lock text-red-600"></i>
@@ -1160,7 +1221,7 @@ input, select { font-size:16px !important; }
   <img id="photoZoomImg" src="" class="max-w-full max-h-full rounded-2xl shadow-2xl">
 </div>
 
-<!-- MODAL PILIH FORMAT UNDUH -->
+<!-- MODAL UNDUH -->
 <div id="modalUnduh" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl">
     <div class="text-center mb-6">
@@ -1211,7 +1272,7 @@ input, select { font-size:16px !important; }
   </div>
 </div>
 
-<!-- MODAL PILIH FORMAT PRINT -->
+<!-- MODAL PRINT -->
 <div id="modalPrint" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm hidden items-center justify-center p-6">
   <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl">
     <div class="text-center mb-6">
@@ -1276,10 +1337,8 @@ input, select { font-size:16px !important; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 // ============================================================
-// BAGIAN 2 / 4 — VARIABEL, API, TTS, LOGIN, KIOSK
+// VARIABEL & KONFIGURASI
 // ============================================================
-
-// ⚠️ GANTI DENGAN URL DEPLOYMENT APPS SCRIPT ANDA
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxbaebNb_LaEB51AmanRmPPO-yOad3wLTPaNOVdyuJ--zFW4ub_JvbnV09VfUnno2fo/exec';
 
 var user = null;
@@ -1299,7 +1358,6 @@ var allRekapData = [];
 var _clockInterval = null;
 var _mapInitDone = false;
 
-// TTS
 var _ttsUnlocked = false;
 var _ttsQueue = [];
 var _ttsQueueRunning = false;
@@ -1307,7 +1365,6 @@ var _lastSpokenText = '';
 var _speakLastAt = 0;
 var _speakDedupWindow = 2000;
 
-// FACE
 var faceModelsLoaded = false;
 var faceModelsLoading = false;
 var FACE_THRESHOLD = 0.58;
@@ -1317,15 +1374,12 @@ var FACE_DETECT_THRESHOLD = 0.5;
 var FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 var FACE_MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
-// LIVENESS
 var LIVENESS_HOLD_MS = 1000;
 var LIVENESS_SMILE_HOLD_MS = 1500;
 var KIOSK_NO_INSTR_TIMEOUT = 30000;
 var ABS_NO_INSTR_TIMEOUT = 30000;
-
 var ABS_PHOTO_MAX_RETRY = 8;
 var ABS_PHOTO_RETRY_DELAY = 300;
-
 var KIOSK_UNKNOWN_THRESHOLD = 3;
 var kioskUnknownCount = 0;
 var kioskUnknownLastAt = 0;
@@ -1347,7 +1401,6 @@ var ALL_CHALLENGES = {
 
 var LIVENESS_CHALLENGES = [];
 var ACTIVE_LIVENESS_MODE = 'instruction';
-
 var livenessChallengeIndex = 0;
 var livenessHoldStart = 0;
 var livenessVerifiedDescriptors = [];
@@ -1452,15 +1505,325 @@ function getEffectiveLivenessSettings(userObj) {
   if (userObj) {
     var uMode = String(userObj.livenessMode || '').trim();
     var uChal = String(userObj.livenessChallenges || '').trim();
-    if (uMode === 'instruction' || uMode === 'no_instruction') {
-      result.mode = uMode;
-    }
-    if (uChal) {
-      result.challenges = uChal;
-    }
+    if (uMode === 'instruction' || uMode === 'no_instruction') result.mode = uMode;
+    if (uChal) result.challenges = uChal;
   }
   return result;
 }
+
+// ============================================================
+// WEBAUTHN
+// ============================================================
+function webauthnIsSupported() {
+  return !!(window.PublicKeyCredential &&
+            navigator.credentials &&
+            navigator.credentials.create &&
+            navigator.credentials.get);
+}
+
+function base64UrlToBuffer(base64url) {
+  var padding = '='.repeat((4 - base64url.length % 4) % 4);
+  var base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var rawData = atob(base64);
+  var buffer = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; i++) buffer[i] = rawData.charCodeAt(i);
+  return buffer.buffer;
+}
+
+function bufferToBase64Url(buffer) {
+  var bytes = new Uint8Array(buffer);
+  var binary = '';
+  for (var i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function webauthnRegister() {
+  if (!user) { showToast('Harus login dulu', 'warn'); return; }
+  if (!webauthnIsSupported()) {
+    showToast('HP/browser ini tidak mendukung sidik jari', 'err', 6000);
+    return;
+  }
+
+  showToast('Menyiapkan pendaftaran sidik jari...', 'info', 2000);
+
+  callAPI('webauthnRegisterBegin', { userId: user.id })
+    .then(function(res) {
+      if (!res || !res.success) {
+        showToast(res ? res.message : 'Gagal mulai pendaftaran', 'err');
+        return;
+      }
+
+      var publicKey = {
+        challenge: base64UrlToBuffer(res.challenge),
+        rp: res.rp,
+        user: {
+          id: base64UrlToBuffer(res.user.id),
+          name: res.user.name,
+          displayName: res.user.displayName
+        },
+        pubKeyCredParams: res.pubKeyCredParams,
+        timeout: res.timeout || 60000,
+        attestation: res.attestation || 'none',
+        authenticatorSelection: res.authenticatorSelection,
+        excludeCredentials: (res.excludeCredentials || []).map(function(c) {
+          return { id: base64UrlToBuffer(c.id), type: 'public-key' };
+        })
+      };
+
+      return navigator.credentials.create({ publicKey: publicKey });
+    })
+    .then(function(cred) {
+      if (!cred) return;
+
+      var response = cred.response;
+      var attestationObj = {
+        credentialId: cred.id,
+        publicKey: '',
+        counter: 0
+      };
+
+      try {
+        if (response.getPublicKey) {
+          attestationObj.publicKey = bufferToBase64Url(response.getPublicKey());
+        }
+      } catch (e) {}
+
+      try {
+        if (response.getAuthenticatorData) {
+          var authData = new Uint8Array(response.getAuthenticatorData());
+          if (authData.length >= 37) {
+            attestationObj.counter = (authData[33] << 24) | (authData[34] << 16) | (authData[35] << 8) | authData[36];
+          }
+        }
+      } catch (e) {}
+
+      var label = 'HP ' + (navigator.userAgent.indexOf('Android') >= 0 ? 'Android' : (navigator.userAgent.indexOf('iPhone') >= 0 || navigator.userAgent.indexOf('iPad') >= 0 ? 'iOS' : 'Lain'));
+
+      return callAPI('webauthnRegisterFinish', {
+        userId: user.id,
+        attestation: attestationObj,
+        deviceLabel: label
+      });
+    })
+    .then(function(res) {
+      if (!res) return;
+      if (res.success) {
+        showToast('✅ Sidik jari berhasil didaftarkan!', 'ok', 4000);
+        speakText('Sidik jari berhasil didaftarkan.');
+        loadWebAuthnCredentials();
+      } else {
+        showToast(res.message || 'Gagal daftar sidik jari', 'err', 5000);
+      }
+    })
+    .catch(function(err) {
+      console.error('WebAuthn register error:', err);
+      var msg = 'Gagal daftar sidik jari';
+      if (err.name === 'NotAllowedError') msg = 'Pendaftaran dibatalkan atau ditolak';
+      else if (err.name === 'InvalidStateError') msg = 'Perangkat ini sudah terdaftar';
+      else if (err.name === 'NotSupportedError') msg = 'HP/browser tidak mendukung';
+      else msg = err.message || msg;
+      showToast(msg, 'err', 6000);
+    });
+}
+
+function loadWebAuthnCredentials() {
+  if (!user) return;
+  if (!webauthnIsSupported()) {
+    var statusEl0 = document.getElementById('fprintStatus');
+    if (statusEl0) statusEl0.innerText = '⚠️ HP ini tidak mendukung';
+    var btnReg0 = document.getElementById('btnFprintRegister');
+    if (btnReg0) btnReg0.disabled = true;
+    return;
+  }
+
+  callAPI('webauthnListCredentials', { userId: user.id })
+    .then(function(res) {
+      var statusEl = document.getElementById('fprintStatus');
+      var listEl = document.getElementById('fprintList');
+      if (!statusEl || !listEl) return;
+
+      if (res && res.success && res.data && res.data.length > 0) {
+        statusEl.innerText = '✅ ' + res.data.length + ' perangkat terdaftar';
+        statusEl.className = 'text-sm font-black text-emerald-600 mt-1';
+        listEl.innerHTML = res.data.map(function(c) {
+          var idAttr = escapeJsArg(c.credentialId);
+          return '<div class="flex items-center gap-2 bg-emerald-50 p-3 rounded-xl">' +
+            '<i class="fas fa-fingerprint text-emerald-600"></i>' +
+            '<div class="flex-1">' +
+              '<p class="text-xs font-bold text-emerald-900">' + escapeHtml(c.deviceLabel) + '</p>' +
+              '<p class="text-[9px] text-emerald-600">' + escapeHtml(c.createdAt) + '</p>' +
+            '</div>' +
+            '<button onclick="webauthnDelete(\'' + idAttr + '\')" type="button" class="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center"><i class="fas fa-trash text-[10px]"></i></button>' +
+          '</div>';
+        }).join('');
+      } else {
+        statusEl.innerText = '❌ Belum ada perangkat terdaftar';
+        statusEl.className = 'text-sm font-black text-amber-600 mt-1';
+        listEl.innerHTML = '';
+      }
+    })
+    .catch(function(err) {
+      console.warn('Load credentials error:', err);
+    });
+}
+
+function webauthnDelete(credentialId) {
+  if (!confirm('Hapus sidik jari ini? Anda tidak bisa login dengan sidik jari ini lagi.')) return;
+  callAPI('webauthnDeleteCredential', { userId: user.id, credentialId: credentialId })
+    .then(function(res) {
+      if (res && res.success) {
+        showToast('Sidik jari dihapus', 'ok');
+        loadWebAuthnCredentials();
+      } else {
+        showToast(res ? res.message : 'Gagal hapus', 'err');
+      }
+    })
+    .catch(function(err) { showToast(err.message || 'Gagal hapus', 'err'); });
+}
+
+function webauthnLoginPrompt() {
+  if (!webauthnIsSupported()) {
+    showToast('HP/browser ini tidak mendukung sidik jari. Pakai HP+password.', 'err', 6000);
+    return;
+  }
+  var modal = document.getElementById('fingerprintLoginModal');
+  var step1 = document.getElementById('fplStep1');
+  var step2 = document.getElementById('fplStep2');
+  var err1 = document.getElementById('fplError1');
+  var input = document.getElementById('fplPhone');
+
+  if (input) input.value = '';
+  if (err1) err1.classList.add('hidden');
+  if (step1) step1.classList.remove('hidden');
+  if (step2) step2.classList.add('hidden');
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(function() { if (input) input.focus(); }, 200);
+}
+
+function closeFingerprintLoginModal() {
+  var modal = document.getElementById('fingerprintLoginModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function webauthnLoginStep1() {
+  var phone = document.getElementById('fplPhone').value.trim();
+  var err1 = document.getElementById('fplError1');
+  if (!phone) {
+    if (err1) err1.classList.remove('hidden');
+    return;
+  }
+  if (err1) err1.classList.add('hidden');
+
+  showToast('Mencari akun...', 'info', 1500);
+
+  callAPI('getUsers', {})
+    .then(function(users) {
+      var found = null;
+      if (users && users.length) {
+        for (var i = 0; i < users.length; i++) {
+          if (String(users[i][3]).trim() === phone) { found = users[i]; break; }
+        }
+      }
+      if (!found) {
+        if (err1) err1.classList.remove('hidden');
+        return;
+      }
+      webauthnDoLogin(found[0]);
+    })
+    .catch(function(err) {
+      showToast('Gagal cari user: ' + err.message, 'err');
+    });
+}
+
+function webauthnDoLogin(userId) {
+  var step1 = document.getElementById('fplStep1');
+  var step2 = document.getElementById('fplStep2');
+  var statusEl = document.getElementById('fplStatus');
+
+  if (step1) step1.classList.add('hidden');
+  if (step2) step2.classList.remove('hidden');
+  if (statusEl) statusEl.innerText = 'Menyiapkan...';
+
+  callAPI('webauthnLoginBegin', { userId: userId })
+    .then(function(res) {
+      if (!res || !res.success) {
+        showToast(res ? res.message : 'Belum ada sidik jari terdaftar. Daftarkan dulu di Setting.', 'warn', 6000);
+        closeFingerprintLoginModal();
+        return;
+      }
+
+      if (statusEl) statusEl.innerText = 'Sentuh sensor sidik jari...';
+
+      var publicKey = {
+        challenge: base64UrlToBuffer(res.challenge),
+        rpId: res.rpId,
+        allowCredentials: (res.allowCredentials || []).map(function(c) {
+          return { id: base64UrlToBuffer(c.id), type: 'public-key' };
+        }),
+        userVerification: res.userVerification || 'required',
+        timeout: res.timeout || 60000
+      };
+
+      return navigator.credentials.get({ publicKey: publicKey });
+    })
+    .then(function(cred) {
+      if (!cred) return;
+
+      var assertion = {
+        credentialId: cred.id,
+        rawId: bufferToBase64Url(cred.rawId)
+      };
+
+      return callAPI('webauthnLoginFinish', {
+        userId: userId,
+        assertion: assertion
+      });
+    })
+    .then(function(res) {
+      if (!res) return;
+      if (res.success && res.user) {
+        closeFingerprintLoginModal();
+        user = res.user;
+        localStorage.setItem('presensi_user_v3', JSON.stringify(user));
+        setupApp();
+        speakText(buildLoginTTS(user.nama));
+        setAbsenButtonsState(false, 'Memeriksa wajah...');
+        checkFaceAndRedirect();
+        showToast('✅ Login sidik jari berhasil!', 'ok', 3000);
+      } else {
+        showToast(res.message || 'Login gagal', 'err', 5000);
+        closeFingerprintLoginModal();
+      }
+    })
+    .catch(function(err) {
+      console.error('WebAuthn login error:', err);
+      var msg = 'Login gagal';
+      if (err.name === 'NotAllowedError') msg = 'Verifikasi sidik jari dibatalkan/ditolak';
+      else if (err.name === 'NotSupportedError') msg = 'HP tidak mendukung';
+      else msg = err.message || msg;
+      showToast(msg, 'err', 6000);
+      closeFingerprintLoginModal();
+    });
+}
+
+(function() {
+  if (!webauthnIsSupported()) {
+    console.warn('⚠️ WebAuthn tidak didukung browser ini');
+    setTimeout(function() {
+      var btn = document.getElementById('btnFingerprintLogin');
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-fingerprint mr-2"></i> SIDIK JARI TIDAK DIDUKUNG';
+      }
+    }, 500);
+  }
+})();
 
 // ============================================================
 // FETCH / API
@@ -1993,6 +2356,7 @@ function switchTab(id) {
       loadKioskPassword();
       loadGlobalLivenessSettings();
       loadBackupSettings();
+      loadWebAuthnCredentials();
     } else if (id === 'home') {
       if (userMap) { userMap.invalidateSize(); centerMapOnUser(); }
       else initUserMap(office.lat, office.lng, office.rad);
@@ -2003,18 +2367,13 @@ function switchTab(id) {
 }
 
 // ============================================================
-// KIOSK DARI HALAMAN LOGIN
+// KIOSK DARI LOGIN
 // ============================================================
 function openKioskPasswordFromLogin() {
   console.log('🔓 Tombol KIOSK diklik');
   unlockTTS();
-
   var modal = document.getElementById('kioskPasswordLoginModal');
-  if (!modal) {
-    console.error('❌ Modal kioskPasswordLoginModal TIDAK DITEMUKAN');
-    return;
-  }
-
+  if (!modal) return;
   var input = document.getElementById('kioskLoginPwdInput');
   if (input) input.value = '';
   var errEl = document.getElementById('kioskLoginPwdError');
@@ -2031,9 +2390,7 @@ function openKioskPasswordFromLogin() {
 
   modal.classList.remove('hidden');
   modal.classList.add('flex');
-  setTimeout(function() {
-    if (input) input.focus();
-  }, 200);
+  setTimeout(function() { if (input) input.focus(); }, 200);
 }
 
 function closeKioskPasswordLoginModal() {
@@ -2047,13 +2404,11 @@ function closeKioskPasswordLoginModal() {
 function verifyKioskPasswordLogin() {
   var input = document.getElementById('kioskLoginPwdInput');
   var pwd = input ? input.value.trim() : '';
-
   if (!pwd) {
     var errEl = document.getElementById('kioskLoginPwdError');
     if (errEl) errEl.classList.remove('hidden');
     return;
   }
-
   console.log('🔐 Verifikasi password BUKA...');
 
   callAPI('verifyKioskOpenPassword', { password: pwd })
@@ -2078,7 +2433,6 @@ function verifyKioskPasswordLogin() {
 
 function openKioskFromLogin() {
   console.log('🚀 Membuka kiosk dari login');
-
   user = {
     id: 'KIOSK_GUEST',
     nama: 'Mode Kiosk',
@@ -2088,7 +2442,6 @@ function openKioskFromLogin() {
     livenessMode: '',
     livenessChallenges: ''
   };
-
   console.log('👤 User di-set:', user);
   _kioskFromLogin = true;
 
@@ -2101,13 +2454,10 @@ function openKioskFromLogin() {
         _kioskFromLogin = false;
         return;
       }
-      console.log('✅ GPS OK, buka openKiosk()');
       openKiosk();
     }, 3000);
     return;
   }
-
-  console.log('✅ GPS OK, buka openKiosk()');
   openKiosk();
 }
 
@@ -2115,14 +2465,11 @@ function openKioskFromLogin() {
 // ENROLL DARI KIOSK
 // ============================================================
 function openEnrollFromKiosk() {
-  console.log('📷 Daftar wajah dari kiosk');
-
   if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
   if (kioskStream) {
     kioskStream.getTracks().forEach(function(t) { t.stop(); });
     kioskStream = null;
   }
-
   document.getElementById('kioskScreen').classList.add('hidden');
   document.getElementById('kioskUnknownPanel').classList.remove('active');
 
@@ -2137,7 +2484,6 @@ function openEnrollFromKiosk() {
       livenessChallenges: ''
     };
   }
-
   _enrollFromKiosk = true;
   openEnrollment();
 }
@@ -2239,21 +2585,17 @@ function verifyKioskPasswordAndClose() {
 }
 
 // ============================================================
-// KIOSK — BUKA
+// KIOSK BUKA
 // ============================================================
 function openKiosk() {
   console.log('🎬 openKiosk dipanggil');
-
   var isKioskGuest = (user && user.id === 'KIOSK_GUEST');
   var isAdmin = (user && user.role === 'admin');
-
-  console.log('🔍 Cek akses:', { isKioskGuest: isKioskGuest, isAdmin: isAdmin });
 
   if (!isKioskGuest && !isAdmin) {
     showToast('Akses ditolak', 'err');
     return;
   }
-
   unlockTTS();
   if (!office.lat || !office.lng) {
     showToast("Lokasi kantor belum diatur!", 'err');
@@ -2286,13 +2628,11 @@ function openKiosk() {
   kioskUnknownLastAt = 0;
   if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
 
-  console.log('🎬 Load face models...');
   loadFaceModels().then(function(ok) {
-    console.log('🎬 Face models loaded:', ok);
     if (!ok) {
       showToast("Gagal memuat model AI", 'err');
       if (isKioskGuest) {
-        document.getElementById('kioskInfoText').innerText = '⚠️ Gagal muat model AI. Coba refresh.';
+        document.getElementById('kioskInfoText').innerText = '⚠️ Gagal muat model AI.';
         return;
       }
       closeKiosk();
@@ -2301,7 +2641,6 @@ function openKiosk() {
 
     callAPI('getAllFaceDescriptors', {})
       .then(function(res) {
-        console.log('🎬 GetAllFaceDescriptors result:', res ? res.total : 0);
         if (!res || !res.success) {
           showToast("Gagal memuat data wajah", 'err');
           if (isKioskGuest) {
@@ -2311,31 +2650,20 @@ function openKiosk() {
           closeKiosk();
           return;
         }
-
         kioskKnownFaces = res.data || [];
-        console.log('👥 Kiosk known faces:', kioskKnownFaces.length);
-
-        if (kioskKnownFaces.length > 0) {
-          kioskKnownFaces.slice(0, 5).forEach(function(f) {
-            console.log('  👤 ' + f.userId + ' = ' + f.nama);
-          });
-        }
-
         if (kioskKnownFaces.length === 0) {
           showToast("Belum ada wajah terdaftar", 'warn');
-          document.getElementById('kioskInfoText').innerText = '⚠️ Belum ada wajah terdaftar. Daftar wajah dulu.';
+          document.getElementById('kioskInfoText').innerText = '⚠️ Belum ada wajah terdaftar.';
           document.getElementById('kioskUnknownPanel').classList.add('active');
           startKioskCamera();
           return;
         }
-
-        console.log('🎬 Start kiosk camera...');
         startKioskCamera();
       })
       .catch(function(err) {
         showToast(err.message || "Gagal ambil data wajah", 'err');
         if (isKioskGuest) {
-          document.getElementById('kioskInfoText').innerText = '⚠️ Koneksi gagal. Coba refresh.';
+          document.getElementById('kioskInfoText').innerText = '⚠️ Koneksi gagal.';
           return;
         }
         closeKiosk();
@@ -2362,7 +2690,7 @@ function setKioskType(type) {
 
 function startKioskCamera() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showToast('Kamera tidak didukung browser ini. Buka lewat Chrome / HTTPS.', 'err', 8000, true);
+    showToast('Kamera tidak didukung browser ini.', 'err', 8000, true);
     if (!_kioskFromLogin) closeKiosk();
     return;
   }
@@ -2379,10 +2707,9 @@ function startKioskCamera() {
   }).catch(function(e) {
     console.error('Kiosk camera error:', e);
     var msg = 'Kamera tidak bisa diakses. ';
-    if (e.name === 'NotAllowedError') msg += 'Izinkan kamera di browser (klik ikon 🔒 di address bar).';
-    else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera terdeteksi.';
-    else if (e.name === 'NotReadableError') msg += 'Kamera sedang dipakai aplikasi lain.';
-    else msg += e.message || e.name || '';
+    if (e.name === 'NotAllowedError') msg += 'Izinkan kamera di browser.';
+    else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera.';
+    else if (e.name === 'NotReadableError') msg += 'Kamera dipakai app lain.';
     showToast(msg, 'err', 8000, true);
     if (!_kioskFromLogin) closeKiosk();
   });
@@ -2394,7 +2721,6 @@ function startKioskCamera() {
 function startKioskLoop() {
   if (kioskLoopTimer) clearInterval(kioskLoopTimer);
   var video = document.getElementById('kioskVideo');
-
   kioskLoopTimer = setInterval(function() {
     if (kioskInferenceBusy || !faceModelsLoaded || !video.videoWidth) return;
     if (kioskProcessingUser) return;
@@ -2403,14 +2729,12 @@ function startKioskLoop() {
 
     kioskInferenceBusy = true;
     var src = enhanceFrameForFaceAPI(video);
-
     faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold: FACE_DETECT_THRESHOLD }))
       .withFaceLandmarks()
       .withFaceDescriptor()
       .then(function(det) {
         var guide = document.getElementById('kioskGuide');
         var unknownPanel = document.getElementById('kioskUnknownPanel');
-
         if (!det) {
           guide.className = 'kiosk-face-guide';
           kioskCurrentDescriptor = null;
@@ -2430,7 +2754,6 @@ function startKioskLoop() {
 
         var descriptor = Array.from(det.descriptor);
         kioskCurrentDescriptor = descriptor;
-
         var bestMatch = null;
         var bestDist = FACE_THRESHOLD;
         for (var i = 0; i < kioskKnownFaces.length; i++) {
@@ -2444,43 +2767,26 @@ function startKioskLoop() {
           guide.className = 'kiosk-face-guide detected';
           kioskUnknownCount++;
           kioskUnknownLastAt = Date.now();
-
-          console.log('❓ Tidak dikenal. Count: ' + kioskUnknownCount + '/' + KIOSK_UNKNOWN_THRESHOLD);
-
           if (kioskUnknownCount >= KIOSK_UNKNOWN_THRESHOLD) {
             unknownPanel.classList.add('active');
-            document.getElementById('kioskInfoText').innerText = 'Wajah tidak dikenali — silakan daftar';
+            document.getElementById('kioskInfoText').innerText = 'Wajah tidak dikenali';
             var now2 = Date.now();
             if (now2 - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
               kioskLastUnknownAt = now2;
-              speakText('Wajah tidak dikenali. Silakan daftar wajah terlebih dahulu.');
+              speakText('Wajah tidak dikenali. Silakan daftar wajah.');
             }
-          } else {
-            var now3 = Date.now();
-            if (now3 - kioskLastUnknownAt > KIOSK_UNKNOWN_COOLDOWN && !_ttsQueueRunning) {
-              kioskLastUnknownAt = now3;
-              speakText('Wajah tidak dikenali. Silakan coba kembali.');
-            }
-          }
-
-          if (kioskLivenessActive) {
-            kioskLivenessHoldStart = 0;
-            document.getElementById('kioskInfoText').innerText = 'Wajah bukan pemilik sesi';
           }
           return;
         }
 
         kioskUnknownCount = 0;
         unknownPanel.classList.remove('active');
-        console.log('✅ Wajah dikenali: ' + bestMatch.nama);
-
         guide.className = 'kiosk-face-guide matched';
 
         if (!kioskLivenessActive) {
           startKioskLiveness(bestMatch);
           return;
         }
-
         if (String(bestMatch.userId) !== String(kioskLivenessFace.userId)) {
           kioskLivenessHoldStart = 0;
           document.getElementById('kioskInfoText').innerText = 'Wajah berbeda, tunggu...';
@@ -2500,13 +2806,10 @@ function startKioskLoop() {
           return;
         }
         var ok = matchesChallenge(challenge.key, landmarks);
-
         if (ok) {
           if (kioskLivenessHoldStart === 0) {
             kioskLivenessHoldStart = Date.now();
-            if (kioskActiveMode === 'no_instruction') {
-              speakText('Tahan!');
-            }
+            if (kioskActiveMode === 'no_instruction') speakText('Tahan!');
           }
           var held = Date.now() - kioskLivenessHoldStart;
           var kHoldMs = (challenge.key === 'SMILE') ? LIVENESS_SMILE_HOLD_MS : LIVENESS_HOLD_MS;
@@ -2515,7 +2818,6 @@ function startKioskLoop() {
           } else {
             document.getElementById('kioskInfoText').innerText = 'Tahan...';
           }
-
           if (held >= kHoldMs) {
             kioskLivenessVerifiedDescriptors.push(descriptor);
             kioskLivenessChallengeIndex++;
@@ -2563,7 +2865,7 @@ function startKioskNoInstrTimer() {
       kioskLivenessFace = null;
       kioskLivenessChallengeIndex = 0;
       kioskLivenessHoldStart = 0;
-      document.getElementById('kioskInfoText').innerText = 'Waktu habis, silakan coba lagi';
+      document.getElementById('kioskInfoText').innerText = 'Waktu habis, coba lagi';
       speakText('Waktu habis. Silakan coba lagi.');
       kioskLastResultAt = Date.now();
       setTimeout(function() { kioskLastResultAt = 0; }, 3000);
@@ -2597,7 +2899,6 @@ function startKioskLiveness(face) {
   }
 
   kioskLivenessActive = true;
-
   if (kioskActiveMode === 'no_instruction') {
     document.getElementById('kioskChallenge').classList.add('hidden');
     document.getElementById('kioskInfoText').innerText = 'Ikuti panduan suara...';
@@ -2607,7 +2908,7 @@ function startKioskLiveness(face) {
   } else {
     updateKioskChallengeUI(0);
     document.getElementById('kioskInfoText').innerText = 'Ikuti instruksi';
-    speakText('Halo ' + face.nama + '. Ikuti instruksi gerakan. ' + kioskActiveChallenges[0].label);
+    speakText('Halo ' + face.nama + '. Ikuti instruksi. ' + kioskActiveChallenges[0].label);
   }
 }
 
@@ -2617,7 +2918,7 @@ function finishKioskLiveness() {
   if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
   document.getElementById('kioskChallenge').classList.add('hidden');
   document.getElementById('kioskInfoText').innerText = 'Verifikasi selesai, memproses absen...';
-  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda telah dicatat.');
+  speakText('Verifikasi selesai. ' + face.nama + ', absen Anda dicatat.');
   kioskProcessAttendance(face);
 }
 
@@ -2625,9 +2926,7 @@ function kioskProcessAttendance(face) {
   if (kioskProcessingUser) return;
   kioskProcessingUser = face.userId;
   kioskLastResultAt = Date.now();
-
   var kioskVideoEl = document.getElementById('kioskVideo');
-
   captureAbsenPhotoWithRetry(kioskVideoEl, ABS_PHOTO_MAX_RETRY, ABS_PHOTO_RETRY_DELAY)
     .then(function(photoBase64) {
       callAPI('submitAttendanceKiosk', {
@@ -2726,8 +3025,6 @@ function showKioskResult(res, face) {
 }
 
 function closeKiosk() {
-  console.log('🔒 closeKiosk dipanggil. _kioskFromLogin:', _kioskFromLogin);
-
   if (kioskLoopTimer) { clearInterval(kioskLoopTimer); kioskLoopTimer = null; }
   if (kioskNoInstrTimeoutTimer) { clearTimeout(kioskNoInstrTimeoutTimer); kioskNoInstrTimeoutTimer = null; }
   if (kioskStream) {
@@ -2755,7 +3052,6 @@ function closeKiosk() {
     showToast('Mode Kiosk ditutup', 'ok', 2000);
     return;
   }
-
   switchTab('home');
 }
 
@@ -2803,23 +3099,18 @@ function getSmileRatio(landmarks) {
     var lowerLipInner = landmarks[66];
     var upperLipTop = landmarks[51];
     var lowerLipBottom = landmarks[57];
-
     var faceLeft = landmarks[0].x;
     var faceRight = landmarks[16].x;
     var faceWidth = Math.abs(faceRight - faceLeft);
     if (faceWidth < 1) return 0;
-
     var mouthOpenInner = Math.abs(lowerLipInner.y - upperLipInner.y);
     var openRatio = mouthOpenInner / faceWidth;
-
     var mouthCenterY = (upperLipTop.y + lowerLipBottom.y) / 2;
     var cornerY = (mouthLeft.y + mouthRight.y) / 2;
     var liftPixels = mouthCenterY - cornerY;
     var liftRatio = liftPixels / faceWidth;
-
     var mouthWidth = Math.abs(mouthRight.x - mouthLeft.x);
     var widthRatio = mouthWidth / faceWidth;
-
     var score = 0;
     if (openRatio > 0.04) score += 0.3;
     if (openRatio > 0.06) score += 0.2;
@@ -2827,7 +3118,6 @@ function getSmileRatio(landmarks) {
     if (liftRatio > 0.025) score += 0.2;
     if (widthRatio > 0.32) score += 0.2;
     if (widthRatio > 0.38) score += 0.2;
-
     return score;
   } catch (e) { return 0; }
 }
@@ -2867,7 +3157,6 @@ function updateChallengeUI(index) {
   if (stepEl) stepEl.innerText = (index + 1);
   if (totalEl) totalEl.innerText = total;
   if (instEl && LIVENESS_CHALLENGES[index]) instEl.innerText = LIVENESS_CHALLENGES[index].label;
-
   if (dots) {
     for (var i = 0; i < dots.length; i++) {
       dots[i].style.display = (i < total) ? '' : 'none';
@@ -2889,7 +3178,6 @@ function updateKioskChallengeUI(index) {
   if (stepEl) stepEl.innerText = (index + 1);
   if (totalEl) totalEl.innerText = total;
   if (instEl && kioskActiveChallenges[index]) instEl.innerText = kioskActiveChallenges[index].label;
-
   if (dots) {
     for (var i = 0; i < dots.length; i++) {
       dots[i].style.display = (i < total) ? '' : 'none';
@@ -2910,10 +3198,6 @@ function buildAttendanceTTS(namaUser, type, keterangan, serverTime) {
     var now = new Date();
     jamAbsen = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   }
-  var jamMasuk = jamKerja.jam_masuk || '08:00';
-  var jamKeluar = jamKerja.jam_keluar || '17:00';
-  var toleransi = jamKerja.toleransi_telat || '15';
-
   if (type === 'IN') {
     var menitTelat = null;
     if (keterangan) {
@@ -2945,7 +3229,6 @@ function buildLoginTTS(namaUser) {
     var jam = String(now.getHours()).padStart(2, '0');
     var menit = String(now.getMinutes()).padStart(2, '0');
     var waktu = jam + ':' + menit;
-
     var tts = '';
     if (namaUser) tts = namaUser + ', wajah Anda terdaftar. ';
     else tts = 'Wajah Anda terdaftar. ';
@@ -2988,16 +3271,15 @@ function clearPermitFile() {
 }
 
 // ============================================================
-// BAGIAN 3 / 4 — ABSEN, ENROLLMENT, DASHBOARD, LOG, MAPS, SETTINGS
+// ABSEN
 // ============================================================
-
 function startAttendance(type) {
   attType = type;
   unlockTTS();
 
   if (!userFaceEnrolled) {
     showToast("Wajah belum terdaftar! Daftar dulu.", 'warn');
-    speakText("Wajah Anda belum terdaftar. Silakan daftar wajah terlebih dahulu.");
+    speakText("Wajah Anda belum terdaftar.");
     setTimeout(openEnrollment, 800);
     return;
   }
@@ -3036,11 +3318,11 @@ function startAttendance(type) {
   if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
     document.getElementById('challengeBox').style.display = 'none';
     document.getElementById('silentBanner').classList.add('active');
-    document.getElementById('absSubtitle').innerText = 'Ikuti panduan suara — jangan bergerak saat diminta';
+    document.getElementById('absSubtitle').innerText = 'Ikuti panduan suara';
   } else {
     document.getElementById('challengeBox').style.display = 'block';
     document.getElementById('silentBanner').classList.remove('active');
-    document.getElementById('absSubtitle').innerText = 'Ikuti instruksi untuk verifikasi wajah';
+    document.getElementById('absSubtitle').innerText = 'Ikuti instruksi untuk verifikasi';
     updateChallengeUI(0);
     document.getElementById('challengeTimer').innerText = 'Tahan 1 detik';
   }
@@ -3073,7 +3355,7 @@ function startAbsCamera() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     document.getElementById('absStatus').innerText = 'Kamera tidak didukung';
     document.getElementById('absStatus').className = 'face-status warn';
-    showToast('Kamera tidak didukung browser ini. Buka lewat Chrome / HTTPS.', 'err', 8000, true);
+    showToast('Kamera tidak didukung browser ini.', 'err', 8000, true);
     return;
   }
   navigator.mediaDevices.getUserMedia({
@@ -3089,7 +3371,7 @@ function startAbsCamera() {
 
     if (LIVENESS_CHALLENGES.length === 0) {
       document.getElementById('absInstruction').innerText = 'Menunggu wajah dikenali...';
-      speakText('Menunggu wajah dikenali. Absen akan diproses otomatis.');
+      speakText('Menunggu wajah dikenali.');
     } else {
       if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
         document.getElementById('absInstruction').innerText = 'Ikuti panduan suara';
@@ -3099,7 +3381,7 @@ function startAbsCamera() {
         startAbsNoInstrTimer();
       } else {
         document.getElementById('absInstruction').innerText = 'Ikuti instruksi di atas';
-        speakText('Ikuti instruksi gerakan. ' + LIVENESS_CHALLENGES[0].label);
+        speakText('Ikuti instruksi. ' + LIVENESS_CHALLENGES[0].label);
       }
     }
     startAbsLoop();
@@ -3108,10 +3390,9 @@ function startAbsCamera() {
     document.getElementById('absStatus').innerText = 'Kamera tidak bisa diakses';
     document.getElementById('absStatus').className = 'face-status warn';
     var msg = 'Kamera tidak bisa diakses. ';
-    if (e.name === 'NotAllowedError') msg += 'Izinkan kamera di browser (klik ikon 🔒 di address bar).';
-    else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera terdeteksi.';
-    else if (e.name === 'NotReadableError') msg += 'Kamera sedang dipakai aplikasi lain.';
-    else msg += e.message || e.name || '';
+    if (e.name === 'NotAllowedError') msg += 'Izinkan kamera.';
+    else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera.';
+    else if (e.name === 'NotReadableError') msg += 'Kamera dipakai app lain.';
     showToast(msg, 'err', 8000, true);
   });
 }
@@ -3130,8 +3411,8 @@ function startAbsNoInstrTimer() {
     }
     if (elapsed >= ABS_NO_INSTR_TIMEOUT) {
       absNoInstrTimeoutTimer = null;
-      showToast('Waktu habis. Verifikasi gagal, silakan coba lagi.', 'err', 5000);
-      speakText('Waktu habis. Silakan coba lagi.');
+      showToast('Waktu habis. Verifikasi gagal.', 'err', 5000);
+      speakText('Waktu habis.');
       closeAbsen();
       return;
     }
@@ -3174,7 +3455,7 @@ function startAbsLoop() {
         if (!faceMatch) {
           guide.className = 'face-guide detected';
           status.className = 'face-status warn';
-          status.innerText = 'Wajah tidak cocok (skor: ' + (1 - dist).toFixed(2) + ')';
+          status.innerText = 'Wajah tidak cocok';
           indicator.className = 'liveness-indicator wait';
           indicator.innerText = '● TIDAK COCOK';
           livenessHoldStart = 0;
@@ -3188,10 +3469,10 @@ function startAbsLoop() {
           status.innerText = 'Wajah dikenali';
           indicator.className = 'liveness-indicator ok';
           indicator.innerText = '● COCOK';
-          document.getElementById('absInstruction').innerText = 'Wajah dikenali! Memproses absen...';
+          document.getElementById('absInstruction').innerText = 'Wajah dikenali! Memproses...';
           if (!window._currentAbsDescriptor) {
             window._currentAbsDescriptor = descriptor;
-            speakText('Silahkan Tunggu, ' + user.nama + '. Absen Anda sedang dikirim.');
+            speakText('Silahkan Tunggu, ' + user.nama + '.');
             setTimeout(function() { captureAbsen(); }, 800);
           }
           return;
@@ -3226,11 +3507,8 @@ function startAbsLoop() {
         if (ok) {
           if (livenessHoldStart === 0) {
             livenessHoldStart = Date.now();
-            if (ACTIVE_LIVENESS_MODE === 'no_instruction') {
-              speakText('Tahan!');
-            } else {
-              document.getElementById('challengeTimer').innerText = 'Tahan 1 detik...';
-            }
+            if (ACTIVE_LIVENESS_MODE === 'no_instruction') speakText('Tahan!');
+            else document.getElementById('challengeTimer').innerText = 'Tahan 1 detik...';
           }
           var held = Date.now() - livenessHoldStart;
           var holdMs = (challenge.key === 'SMILE') ? LIVENESS_SMILE_HOLD_MS : LIVENESS_HOLD_MS;
@@ -3292,7 +3570,6 @@ function startAbsLoop() {
 
 function finishLiveness() {
   if (absNoInstrTimeoutTimer) { clearTimeout(absNoInstrTimeoutTimer); absNoInstrTimeoutTimer = null; }
-
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
   btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -3301,7 +3578,7 @@ function finishLiveness() {
   document.getElementById('absStatus').className = 'face-status ok';
   document.getElementById('absStatus').innerText = 'Verifikasi selesai';
   var doneLabel = (attType === 'IN') ? 'ABSEN MASUK' : 'ABSEN PULANG';
-  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Absen ' + doneLabel + ' sedang dikirim...';
+  document.getElementById('absInstruction').innerText = 'Saya kenal Anda, ' + user.nama + '. Mengirim ' + doneLabel + '...';
   document.getElementById('livenessIndicator').className = 'liveness-indicator ok';
   document.getElementById('livenessIndicator').innerText = '● SELESAI';
   if (ACTIVE_LIVENESS_MODE === 'instruction') {
@@ -3327,7 +3604,6 @@ function finishLiveness() {
   }
 
   window._absenProcessing = true;
-
   setTimeout(function() {
     if (!window._absenProcessing) return;
     if (!window._currentAbsDescriptor) return;
@@ -3342,18 +3618,14 @@ function captureAbsen() {
     showToast("Verifikasi wajah belum selesai", 'warn', 3000, true);
     return;
   }
-
   unlockTTS();
   var btn = document.getElementById('absBtn');
   btn.disabled = true;
   btn.innerHTML = 'Mengambil foto & mengirim...';
-
   var absVideoEl = document.getElementById('absVideo');
-
   captureAbsenPhotoWithRetry(absVideoEl, ABS_PHOTO_MAX_RETRY, ABS_PHOTO_RETRY_DELAY)
     .then(function(photoBase64) {
-      var photoLen = photoBase64 ? photoBase64.length : 0;
-      console.log('[captureAbsen] Kirim absen. Panjang foto:', photoLen);
+      console.log('[captureAbsen] Panjang foto:', photoBase64 ? photoBase64.length : 0);
       doSubmitAttendance(photoBase64);
     })
     .catch(function(err) {
@@ -3485,7 +3757,7 @@ function openEnrollment() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       document.getElementById('enrollStatus').innerText = 'Kamera tidak didukung';
       document.getElementById('enrollStatus').className = 'face-status warn';
-      showToast('Kamera tidak didukung browser ini. Buka lewat Chrome / HTTPS.', 'err', 8000, true);
+      showToast('Kamera tidak didukung browser ini.', 'err', 8000, true);
       return;
     }
     navigator.mediaDevices.getUserMedia({
@@ -3505,10 +3777,9 @@ function openEnrollment() {
       document.getElementById('enrollStatus').innerText = 'Kamera tidak bisa diakses';
       document.getElementById('enrollStatus').className = 'face-status warn';
       var msg = 'Kamera tidak bisa diakses. ';
-      if (e.name === 'NotAllowedError') msg += 'Izinkan kamera di browser (klik ikon 🔒 di address bar).';
-      else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera terdeteksi.';
-      else if (e.name === 'NotReadableError') msg += 'Kamera sedang dipakai aplikasi lain.';
-      else msg += e.message || e.name || '';
+      if (e.name === 'NotAllowedError') msg += 'Izinkan kamera.';
+      else if (e.name === 'NotFoundError') msg += 'Tidak ada kamera.';
+      else if (e.name === 'NotReadableError') msg += 'Kamera dipakai app lain.';
       showToast(msg, 'err', 8000, true);
     });
   });
@@ -3585,14 +3856,7 @@ function autoCaptureEnroll() {
   enrollFrontPhoto = null;
   document.getElementById('enrollStep').innerText = '0';
 
-  var instructions = [
-    'Hadap depan',
-    'Miring ke kiri',
-    'Miring ke kanan',
-    'Tengadah ke atas',
-    'Menunduk ke bawah',
-    'Senyum lebar'
-  ];
+  var instructions = ['Hadap depan', 'Miring ke kiri', 'Miring ke kanan', 'Tengadah ke atas', 'Menunduk ke bawah', 'Senyum lebar'];
 
   function doCapture(index) {
     if (index >= 6) {
@@ -3657,14 +3921,7 @@ function captureEnroll() {
       if (enrollStep === 0) enrollFrontPhoto = makeThumbnailHD(video);
       enrollStep++;
       document.getElementById('enrollStep').innerText = enrollStep;
-      var instructions = [
-        'Hadap depan',
-        'Miringkan wajah ke kiri',
-        'Miringkan wajah ke kanan',
-        'Tengadah ke atas',
-        'Menunduk ke bawah',
-        'Senyum lebar'
-      ];
+      var instructions = ['Hadap depan', 'Miringkan wajah ke kiri', 'Miringkan wajah ke kanan', 'Tengadah ke atas', 'Menunduk ke bawah', 'Senyum lebar'];
       if (enrollStep < 6) {
         document.getElementById('enrollInstruction').innerText = instructions[enrollStep];
         showToast('Capture ' + enrollStep + '/6 berhasil!', 'ok', 2500);
@@ -3696,7 +3953,7 @@ function finalizeEnrollment() {
   callAPI('checkFaceDuplicateApi', { descriptor: avgDescriptor, excludeUserId: user.id })
     .then(function(dup) {
       if (dup && dup.duplicate && dup.matchedUser) {
-        showToast("Wajah ini sudah terdaftar untuk " + dup.matchedUser.nama + ". Hubungi admin.", 'err', 6000);
+        showToast("Wajah ini sudah terdaftar untuk " + dup.matchedUser.nama + ".", 'err', 6000);
         enrollStep = 0;
         enrollDescriptors = [];
         enrollCaptureInProgress = false;
@@ -3757,7 +4014,7 @@ function cancelEnroll() {
     return;
   }
   if (!userFaceEnrolled) {
-    showToast("Wajah belum terdaftar. Absen tidak akan bisa.", 'warn');
+    showToast("Wajah belum terdaftar.", 'warn');
     setAbsenButtonsState(false, 'Wajah belum terdaftar');
   }
 }
@@ -3771,7 +4028,6 @@ function closeEnrollment() {
   enrollCaptureInProgress = false;
   enrollFrontPhoto = null;
   document.getElementById('enrollScreen').classList.add('hidden');
-
   if (_enrollFromKiosk) {
     _enrollFromKiosk = false;
     setTimeout(function() { openKiosk(); }, 500);
@@ -3973,7 +4229,7 @@ function submitUser() {
   var lc = arr.join(',');
 
   if (lm !== '' && arr.length === 0) {
-    showToast('Pilih minimal 1 gerakan untuk mode ini!', 'warn');
+    showToast('Pilih minimal 1 gerakan!', 'warn');
     return;
   }
   if (lm === '') lc = '';
@@ -4253,7 +4509,7 @@ function loadPermitApproval() {
       var list = document.getElementById('permitApprovalList');
       var pending = permits.filter(function(p) { return String(p[5]) === 'Menunggu'; });
       if (!pending.length) {
-        list.innerHTML = '<p class="text-center text-xs text-gray-400 py-3">Tidak ada izin menunggu approval</p>';
+        list.innerHTML = '<p class="text-center text-xs text-gray-400 py-3">Tidak ada izin menunggu</p>';
         return;
       }
       list.innerHTML = pending.map(function(p) {
@@ -4295,17 +4551,13 @@ function approvePermit(id, status) {
     .catch(function(err) { showToast(err.message || 'Gagal terhubung server', 'err'); });
 }
 
-// ============================================================
-// EXPORT CSV
-// ============================================================
 function exportLogCSV() {
   if (!allLogData || !allLogData.length) {
-    showToast('Tidak ada data untuk di-export', 'warn');
+    showToast('Tidak ada data', 'warn');
     return;
   }
   showToast('Menyiapkan CSV...', 'info', 2000);
-  var rows = [];
-  rows.push(['Nama', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan', 'Latitude', 'Longitude']);
+  var rows = [['Nama', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan', 'Latitude', 'Longitude']];
   allLogData.forEach(function(a) {
     var nama = a[a.length - 1] || 'Anonim';
     rows.push([nama, normalizeDateStr(a[2]), a[3] || '', a[4] || '', a[9] || 'Hadir', a[12] || '', a[5] || '', a[6] || '']);
@@ -4313,9 +4565,7 @@ function exportLogCSV() {
   var csv = rows.map(function(r) {
     return r.map(function(c) {
       var s = String(c == null ? '' : c);
-      if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
-        s = '"' + s.replace(/"/g, '""') + '"';
-      }
+      if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) s = '"' + s.replace(/"/g, '""') + '"';
       return s;
     }).join(',');
   }).join('\n');
@@ -4328,7 +4578,7 @@ function exportLogCSV() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('CSV berhasil di-download!', 'ok');
+  showToast('CSV berhasil!', 'ok');
 }
 
 // ============================================================
@@ -4349,7 +4599,7 @@ function loadBackupSettings() {
 
 function saveBackupSettings() {
   var period = document.getElementById('backupPeriod').value;
-  showToast('Menyimpan pengaturan backup...', 'info', 2000);
+  showToast('Menyimpan...', 'info', 2000);
   callAPI('updateBackupSettings', { period: period })
     .then(function(res) {
       if (res && res.success) showToast(res.message || 'Tersimpan!', 'ok');
@@ -4359,8 +4609,8 @@ function saveBackupSettings() {
 }
 
 function runBackupNow() {
-  if (!confirm('Jalankan backup sekarang?\n\nFile Google Sheets, Word (.docx), dan PDF akan dibuat di folder Presensi_App_Data/Backup/.')) return;
-  showToast('Menjalankan backup... mohon tunggu', 'info', 5000);
+  if (!confirm('Jalankan backup sekarang?')) return;
+  showToast('Menjalankan backup...', 'info', 5000);
   callAPI('runBackupNow', {})
     .then(function(res) {
       if (res && res.success) {
@@ -4374,7 +4624,7 @@ function runBackupNow() {
 }
 
 // ============================================================
-// GLOBAL LIVENESS SETTINGS
+// GLOBAL LIVENESS
 // ============================================================
 function loadGlobalLivenessSettings() {
   callAPI('getLivenessSettings', {})
@@ -4430,12 +4680,12 @@ function saveGlobalLivenessSettings() {
       if (res && res.success) {
         globalLivenessSettings.mode = res.mode || mode;
         globalLivenessSettings.challenges = res.challenges || challengesStr;
-        showToast(res.message || 'Pengaturan global disimpan!', 'ok');
+        showToast(res.message || 'Pengaturan disimpan!', 'ok');
       } else {
         showToast(res ? res.message : 'Gagal simpan', 'err');
       }
     })
-    .catch(function(err) { showToast(err.message || 'Gagal terhubung ke server', 'err'); });
+    .catch(function(err) { showToast(err.message || 'Gagal terhubung', 'err'); });
 }
 
 // ============================================================
@@ -4482,7 +4732,7 @@ function saveJamKerja() {
         showToast(res ? res.message : "Gagal simpan", 'err');
       }
     })
-    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
 }
 
 function saveSoundSettings() {
@@ -4506,12 +4756,9 @@ function saveSoundSettings() {
         showToast(res ? res.message : "Gagal simpan", 'err');
       }
     })
-    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
 }
 
-// ============================================================
-// GANTI PASSWORD SENDIRI
-// ============================================================
 function changeMyPassword() {
   var p1 = document.getElementById('myNewPass').value;
   var p2 = document.getElementById('myNewPass2').value;
@@ -4534,15 +4781,12 @@ function changeMyPassword() {
         showToast(res ? res.message : "Gagal simpan", 'err');
       }
     })
-    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
 }
 
-// ============================================================
-// RESET WAJAH SENDIRI
-// ============================================================
 function resetMyFace() {
   if (!user) return;
-  if (!confirm("Yakin mau reset wajah Anda? Anda harus daftar ulang wajah.")) return;
+  if (!confirm("Yakin mau reset wajah Anda?")) return;
   showToast("Menghapus data wajah...", 'info', 2000);
   callAPI('deleteFaceDescriptor', { userId: user.id })
     .then(function(res) {
@@ -4556,12 +4800,9 @@ function resetMyFace() {
         showToast(res ? res.message : "Gagal reset", 'err');
       }
     })
-    .catch(function(err) { showToast(err.message || "Gagal terhubung ke server", 'err'); });
+    .catch(function(err) { showToast(err.message || "Gagal terhubung", 'err'); });
 }
 
-// ============================================================
-// PERMIT (Izin / Sakit)
-// ============================================================
 function openPermitModal() {
   if (window._todayAttendanceComplete === true) {
     var msg = 'Tidak bisa buka IZIN/SAKIT. Anda sudah absen masuk dan keluar hari ini.';
@@ -4589,7 +4830,7 @@ function submitPermitAction() {
   var btn = document.getElementById('btnSubmitPermit');
 
   if (!pDate || !pReason) return showToast("Tanggal & Alasan wajib diisi!", 'warn');
-  if (!_permitFile) return showToast("Wajib lampirkan bukti (Kamera / Galeri)!", 'warn');
+  if (!_permitFile) return showToast("Wajib lampirkan bukti!", 'warn');
 
   btn.innerHTML = 'Loading...';
   btn.disabled = true;
@@ -4683,26 +4924,13 @@ function renderRekapTable(data) {
     var r = data[i];
     var fotoMasukHtml = '<span class="text-gray-300">—</span>';
     if (r.fotoMasukUrl) {
-      fotoMasukHtml = '<img src="' + escapeHtml(r.fotoMasukUrl) + '" ' +
-        'class="w-12 h-12 object-cover rounded border-2 border-emerald-300 mx-auto cursor-pointer" ' +
-        'onclick="showPhotoZoom(\'' + escapeJsArg(r.fotoMasukUrl) + '\')" ' +
-        'onerror="this.outerHTML=\'<span class=&quot;text-red-400 text-[9px]&quot;>err</span>\'">';
+      fotoMasukHtml = '<img src="' + escapeHtml(r.fotoMasukUrl) + '" class="w-12 h-12 object-cover rounded border-2 border-emerald-300 mx-auto cursor-pointer" onclick="showPhotoZoom(\'' + escapeJsArg(r.fotoMasukUrl) + '\')">';
     }
     var fotoKeluarHtml = '<span class="text-gray-300">—</span>';
     if (r.fotoKeluarUrl) {
-      fotoKeluarHtml = '<img src="' + escapeHtml(r.fotoKeluarUrl) + '" ' +
-        'class="w-12 h-12 object-cover rounded border-2 border-red-300 mx-auto cursor-pointer" ' +
-        'onclick="showPhotoZoom(\'' + escapeJsArg(r.fotoKeluarUrl) + '\')" ' +
-        'onerror="this.outerHTML=\'<span class=&quot;text-red-400 text-[9px]&quot;>err</span>\'">';
+      fotoKeluarHtml = '<img src="' + escapeHtml(r.fotoKeluarUrl) + '" class="w-12 h-12 object-cover rounded border-2 border-red-300 mx-auto cursor-pointer" onclick="showPhotoZoom(\'' + escapeJsArg(r.fotoKeluarUrl) + '\')">';
     }
     var petaHtml = '<span class="text-gray-300">—</span>';
-    if (r.petaUrl) {
-      petaHtml = '<a href="' + escapeHtml(r.petaLink) + '" target="_blank" title="Buka di Google Maps">' +
-        '<img src="' + escapeHtml(r.petaUrl) + '" ' +
-        'class="w-20 h-14 object-cover rounded border-2 border-indigo-300 mx-auto cursor-pointer" ' +
-        'onerror="this.outerHTML=\'<span class=&quot;text-gray-300&quot;>—</span>\'">' +
-        '</a>';
-    }
     var rowClass = (i % 2 === 0) ? 'bg-white' : 'bg-gray-50';
     html += '<tr class="' + rowClass + ' border-b border-gray-100 text-[10px] hover:bg-indigo-50">' +
       '<td class="py-2 px-2 font-bold text-gray-500 text-center">' + escapeHtml(r.no) + '</td>' +
@@ -4747,12 +4975,11 @@ function closePhotoZoom() {
 
 function exportRekapLengkap() {
   if (!allRekapData || allRekapData.length === 0) {
-    showToast('Tidak ada data untuk di-export. Klik TAMPILKAN dulu.', 'warn');
+    showToast('Tidak ada data', 'warn');
     return;
   }
   showToast('Menyiapkan CSV...', 'info', 2000);
-  var rows = [];
-  rows.push(['No', 'Nama', 'Jabatan', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan', 'Foto Masuk URL', 'Foto Keluar URL', 'Maps URL']);
+  var rows = [['No', 'Nama', 'Jabatan', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan', 'Foto Masuk URL', 'Foto Keluar URL', 'Maps URL']];
   allRekapData.forEach(function(r) {
     rows.push([
       r.no || '', r.nama || '', r.jabatan || '', r.tanggal || '',
@@ -4763,9 +4990,7 @@ function exportRekapLengkap() {
   var csv = rows.map(function(row) {
     return row.map(function(c) {
       var s = String(c == null ? '' : c);
-      if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
-        s = '"' + s.replace(/"/g, '""') + '"';
-      }
+      if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) s = '"' + s.replace(/"/g, '""') + '"';
       return s;
     }).join(',');
   }).join('\n');
@@ -4778,35 +5003,30 @@ function exportRekapLengkap() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('CSV berhasil di-download!', 'ok');
+  showToast('CSV berhasil!', 'ok');
 }
 
 // ============================================================
-// BAGIAN 4 / 4 — UNDUH/PRINT, LOADING, INIT FINAL, EXPOSE
+// UNDUH/PRINT
 // ============================================================
-
 var _currentBackupFiles = null;
 var _currentBackupBulan = null;
 
 function openDownloadMenu() {
   var bulan = getSelectedBulanRekap();
   if (!bulan) return showToast('Pilih bulan dulu di filter Rekap!', 'warn');
-
   _currentBackupBulan = bulan;
   document.getElementById('unduhBulanLabel').innerText = formatBulanIndoRekap(bulan);
-
   showLoadingOverlay('Memeriksa file backup...', 'Mencari di Drive');
 
   callAPI('getBackupFiles', { bulan: bulan }).then(function(res) {
     hideLoadingOverlay();
-
     if (!res || !res.success) {
-      showToast(res ? res.message : 'Gagal cek file backup', 'err');
+      showToast(res ? res.message : 'Gagal cek file', 'err');
       return;
     }
-
     if (!res.anyAvailable) {
-      if (confirm('File backup untuk ' + res.bulanLabel + ' belum tersedia.\n\nBuat sekarang? (butuh ~30 detik)')) {
+      if (confirm('File backup untuk ' + res.bulanLabel + ' belum tersedia.\n\nBuat sekarang?')) {
         generateBackupRekap(res.bulan, function() {
           setTimeout(function() {
             _currentBackupFiles = null;
@@ -4816,26 +5036,13 @@ function openDownloadMenu() {
       }
       return;
     }
-
     _currentBackupFiles = res.files;
-
     var btnPdf = document.getElementById('unduhPdf');
     var btnDocx = document.getElementById('unduhDocx');
     var btnXlsx = document.getElementById('unduhXlsx');
-
-    if (btnPdf) {
-      btnPdf.disabled = !res.files.pdf;
-      btnPdf.style.opacity = res.files.pdf ? '1' : '0.4';
-    }
-    if (btnDocx) {
-      btnDocx.disabled = !res.files.docx;
-      btnDocx.style.opacity = res.files.docx ? '1' : '0.4';
-    }
-    if (btnXlsx) {
-      btnXlsx.disabled = !res.files.xlsx;
-      btnXlsx.style.opacity = res.files.xlsx ? '1' : '0.4';
-    }
-
+    if (btnPdf) { btnPdf.disabled = !res.files.pdf; btnPdf.style.opacity = res.files.pdf ? '1' : '0.4'; }
+    if (btnDocx) { btnDocx.disabled = !res.files.docx; btnDocx.style.opacity = res.files.docx ? '1' : '0.4'; }
+    if (btnXlsx) { btnXlsx.disabled = !res.files.xlsx; btnXlsx.style.opacity = res.files.xlsx ? '1' : '0.4'; }
     document.getElementById('modalUnduh').classList.remove('hidden');
     document.getElementById('modalUnduh').classList.add('flex');
   }).catch(function(err) {
@@ -4847,22 +5054,18 @@ function openDownloadMenu() {
 function openPrintMenu() {
   var bulan = getSelectedBulanRekap();
   if (!bulan) return showToast('Pilih bulan dulu di filter Rekap!', 'warn');
-
   _currentBackupBulan = bulan;
   document.getElementById('printBulanLabel').innerText = formatBulanIndoRekap(bulan);
-
   showLoadingOverlay('Memeriksa file backup...', 'Mencari di Drive');
 
   callAPI('getBackupFiles', { bulan: bulan }).then(function(res) {
     hideLoadingOverlay();
-
     if (!res || !res.success) {
-      showToast(res ? res.message : 'Gagal cek file backup', 'err');
+      showToast(res ? res.message : 'Gagal cek file', 'err');
       return;
     }
-
     if (!res.anyAvailable) {
-      if (confirm('File backup untuk ' + res.bulanLabel + ' belum tersedia.\n\nBuat sekarang? (butuh ~30 detik)')) {
+      if (confirm('File backup untuk ' + res.bulanLabel + ' belum tersedia.\n\nBuat sekarang?')) {
         generateBackupRekap(res.bulan, function() {
           setTimeout(function() {
             _currentBackupFiles = null;
@@ -4872,7 +5075,6 @@ function openPrintMenu() {
       }
       return;
     }
-
     _currentBackupFiles = res.files;
     document.getElementById('modalPrint').classList.remove('hidden');
     document.getElementById('modalPrint').classList.add('flex');
@@ -4887,13 +5089,11 @@ function doDownload(format) {
     showToast('File tidak tersedia', 'err');
     return;
   }
-
   var file = _currentBackupFiles[format];
-
-  if (format === 'xlsx' && (file.isGoogleSheet || file.previewId)) {
+  if (format === 'xlsx') {
     var sheetId = file.previewId || file.id;
     window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
-    showToast('📊 Google Sheets terbuka. Klik File → Download → Microsoft Excel.', 'info', 10000);
+    showToast('📊 Google Sheets terbuka. File → Download → Excel.', 'info', 10000);
   } else {
     var a = document.createElement('a');
     a.href = file.url;
@@ -4904,47 +5104,37 @@ function doDownload(format) {
     document.body.removeChild(a);
     showToast('📥 Mengunduh ' + file.name, 'ok', 3000);
   }
-
   closeRekapModal('modalUnduh');
 }
-
 
 function doPrint(format) {
   if (!_currentBackupFiles || !_currentBackupFiles[format]) {
     showToast('File tidak tersedia', 'err');
     return;
   }
-
   var file = _currentBackupFiles[format];
   closeRekapModal('modalPrint');
 
   if (format === 'pdf') {
     window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
-    showToast('📄 PDF terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
+    showToast('📄 PDF terbuka. Ctrl+P.', 'info', 8000);
   } else if (format === 'docx') {
-    if (file.previewId) {
-      window.open('https://docs.google.com/document/d/' + file.previewId + '/edit', '_blank');
-      showToast('📝 Word terbuka di Editor. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
-    } else {
-      window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
-      showToast('📝 Word terbuka. Klik ikon printer atau Ctrl+P.', 'info', 8000);
-    }
+    if (file.previewId) window.open('https://docs.google.com/document/d/' + file.previewId + '/edit', '_blank');
+    else window.open('https://drive.google.com/file/d/' + file.id + '/view', '_blank');
+    showToast('📝 Word terbuka. Ctrl+P.', 'info', 8000);
   } else if (format === 'xlsx') {
     var sheetId = file.previewId || file.id;
     window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
-    showToast('📊 Google Sheets terbuka. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
+    showToast('📊 Google Sheets terbuka. Ctrl+P.', 'info', 8000);
   }
 }
 
-
-     
 function generateBackupRekap(bulan, callback) {
   showLoadingOverlay('Membuat file backup...', 'Butuh ~30 detik. Jangan tutup halaman.');
-
   callAPI('generateBackupForMonth', { bulan: bulan }).then(function(res) {
     hideLoadingOverlay();
     if (res && res.success) {
-      showToast('Backup ' + (res.bulanLabel || bulan) + ' berhasil dibuat!', 'ok', 4000);
+      showToast('Backup ' + (res.bulanLabel || bulan) + ' berhasil!', 'ok', 4000);
       if (callback) callback();
     } else {
       showToast(res ? res.message : 'Gagal generate backup', 'err', 5000);
@@ -4969,9 +5159,6 @@ function getSelectedBulanRekap() {
   return el ? el.value : null;
 }
 
-// ============================================================
-// LOADING OVERLAY & MODAL HELPERS
-// ============================================================
 function showLoadingOverlay(text, subtext) {
   var el = document.getElementById('overlayLoading');
   if (!el) return;
@@ -5097,8 +5284,16 @@ window.closePhotoZoom = closePhotoZoom;
 window.setKioskType = setKioskType;
 window.showPhotoZoom = showPhotoZoom;
 window.closeRekapModal = closeRekapModal;
+// WebAuthn
+window.webauthnRegister = webauthnRegister;
+window.webauthnLoginPrompt = webauthnLoginPrompt;
+window.closeFingerprintLoginModal = closeFingerprintLoginModal;
+window.webauthnLoginStep1 = webauthnLoginStep1;
+window.webauthnDoLogin = webauthnDoLogin;
+window.webauthnDelete = webauthnDelete;
+window.loadWebAuthnCredentials = loadWebAuthnCredentials;
 
-console.log('✅ App loaded v33 — 2 Password Kiosk + Fix Bug Tutup + 3 Foto/User + Folder Tahun');
+console.log('✅ App loaded v34 — WebAuthn (Fingerprint Login) + Semua fitur v33');
 console.log('✅ Semua fungsi exposed ke window. Siap untuk Web App.');
 </script>
 </body>
