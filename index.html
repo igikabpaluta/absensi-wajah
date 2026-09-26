@@ -4908,6 +4908,7 @@ function doDownload(format) {
   closeRekapModal('modalUnduh');
 }
 
+
 function doPrint(format) {
   if (!_currentBackupFiles || !_currentBackupFiles[format]) {
     showToast('File tidak tersedia', 'err');
@@ -4931,17 +4932,43 @@ function doPrint(format) {
     }
 
   } else if (format === 'xlsx') {
-    if (file.isGoogleSheet || file.previewId) {
-      var sheetId = file.previewId || file.id;
-      window.open('https://docs.google.com/spreadsheets/d/' + sheetId + '/edit', '_blank');
-      showToast('📊 Google Sheets terbuka. Tunggu 3 detik, lalu Ctrl+P.', 'info', 8000);
+    // ✅ PAKSA buka di Google Sheets Editor supaya foto =IMAGE() muncul
+    var sheetId = file.previewId || file.id;
+    if (!sheetId) {
+      showToast('File ID tidak ditemukan', 'err');
+      return;
+    }
+    // Deteksi apakah file adalah Google Sheets native (bukan .xlsx)
+    var isSheetsNative = file.isGoogleSheet || file.isNativeSheets ||
+                        (file.name && file.name.indexOf('.xlsx') === -1 && file.name.indexOf('.xls') === -1);
+
+    if (isSheetsNative) {
+      // Buka Google Sheets editor
+      var url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/edit';
+      console.log('📊 Buka Google Sheets Editor:', url);
+      var win = window.open(url, '_blank');
+      if (!win) {
+        showToast('Popup diblokir. Izinkan popup di browser.', 'warn', 5000);
+      } else {
+        showToast('📊 Google Sheets terbuka. Tunggu 3 detik, lalu Ctrl+P untuk print.', 'info', 10000);
+      }
     } else {
-      window.open(file.viewUrl, '_blank');
-      showToast('📊 File terbuka.', 'info', 8000);
+      // File .xlsx biasa — arahkan ke Sheets viewer (Google akan konversi otomatis)
+      // Pakai URL /edit yang akan trigger "Buka dengan Google Sheets"
+      var urlConv = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/edit';
+      var win2 = window.open(urlConv, '_blank');
+      if (!win2) {
+        showToast('Popup diblokir. Izinkan popup di browser.', 'warn', 5000);
+      } else {
+        showToast('📊 File dibuka. Jika muncul "Buka dengan Google Sheets", klik OK.', 'info', 10000);
+      }
     }
   }
 }
 
+
+
+     
 function generateBackupRekap(bulan, callback) {
   showLoadingOverlay('Membuat file backup...', 'Butuh ~30 detik. Jangan tutup halaman.');
 
